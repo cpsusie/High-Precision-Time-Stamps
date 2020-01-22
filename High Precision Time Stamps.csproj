@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>High_Precision_Time_Stamps</RootNamespace>
+  </PropertyGroup>
+
+</Project>
