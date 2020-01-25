@@ -8,12 +8,14 @@ using System.Threading;
 using HpTimesStamps;
 using JetBrains.Annotations;
 
-namespace ConsoleApp1
+namespace TestApp
 {
     class Program
     {
         static void Main()
         {
+            bool needToDispose = false;
+            List<ITsGenThread> threads = null;
             try
             {
                 int numThreads = 6;
@@ -23,11 +25,13 @@ namespace ConsoleApp1
                 string highPrecTs = TimeStampSource.IsHighPrecision ? " have " : " do not have ";
                 Console.WriteLine($"We {highPrecTs} high precision timestamps.");
                 Console.WriteLine($"Here is an example: [{TimeStampSource.Now:O}].");
-                var threads = CreateThreads(numThreads, duration, sleepInterval);
+                threads = CreateThreads(numThreads, duration, sleepInterval);
+                needToDispose = true;
                 DateTime createdAllThreadsAt = TimeStampSource.Now;
                 Console.WriteLine($"All {numThreads} threads started at [{createdAllThreadsAt:O}].");
                 Console.WriteLine($"Should take slightly more than {duration.TotalSeconds:N} seconds.");
                 var results = GenerateResults(threads);
+                needToDispose = false;
                 DateTime gotResultsAt = TimeStampSource.Now;
                 TimeSpan totalTime = gotResultsAt - createdAllThreadsAt;
                 Console.WriteLine($"Results retrieved.  Time elapsed: {totalTime.TotalSeconds:F6} seconds.");
@@ -46,6 +50,17 @@ namespace ConsoleApp1
                 Console.Error.WriteLine($"Test FAILED.  Exception: [{ex}].");
                 Environment.Exit(-1);
             }
+            finally
+            {
+                if (needToDispose)
+                {
+                    IEnumerable<ITsGenThread> disposeUs = threads;
+                    foreach (var item in disposeUs?.Reverse() ?? Enumerable.Empty<ITsGenThread>())
+                    {
+                        item.Dispose();
+                    }
+                }
+            }
         }
 
         private static string ProcessResults(ImmutableDictionary<int, ImmutableList<DateTime>> results, TimeSpan sleepInterval)
@@ -53,6 +68,9 @@ namespace ConsoleApp1
             TimeSpan epsilon = TimeSpan.FromMilliseconds(2);
             SortedDictionary<ResPair, Dictionary<int, int>>duplicateDictionary = new SortedDictionary<ResPair, Dictionary<int, int>>();
             StringBuilder sb = new StringBuilder();
+            List<TimeSpan> shortestOfTheFilteredShort = new List<TimeSpan>();
+            List<TimeSpan> longestOfTheFilteredLong = new List<TimeSpan>();
+            List<TimeSpan> averageOfFilteredAverages = new List<TimeSpan>();
             foreach (var kvp in results)
             {
                 sb.AppendLine($"Thread# {kvp.Key.ToString()} gathered {kvp.Value.Count} timestamps.");
@@ -83,18 +101,21 @@ namespace ConsoleApp1
                             span = span.Slice(0, indexOfFirstNotSleepAffectedSpan + 1);
                             if (span.Length > 1)
                             {
+                                var filteredShortest = span[0];
+                                var filteredLongest = span[^1];
                                 TimeSpan averageFiltered = ComputeAverage(span);
                                 sb.AppendLine("\tShowing FILTERED (for sleep interval) statistics:");
                                 sb.AppendLine($"\tFor thread: [{kvp.Key.ToString()}], shortest consecutive interval: " +
-                                              $"[{span[0].TotalMilliseconds:F3}] ms; " +
+                                              $"[{filteredShortest.TotalMilliseconds:F3}] ms; " +
                                               "longest consecutive interval: " +
-                                              $"[{span[^1].TotalMilliseconds:F3}] ms; " +
+                                              $"[{filteredLongest.TotalMilliseconds:F3}] ms; " +
                                               "average consecutive interval: " +
                                               $"[{averageFiltered.TotalMilliseconds:F3}] ms.");
+                                shortestOfTheFilteredShort.Add(filteredShortest);
+                                longestOfTheFilteredLong.Add(filteredLongest);
+                                averageOfFilteredAverages.Add(averageFiltered);
                             }
                         }
-                        
-                        
                     }
                 }
                 sb.AppendLine();
@@ -118,7 +139,7 @@ namespace ConsoleApp1
                     foreach (var threadCountPair in kvp.Value)
                     {
                         sb.AppendLine(
-                            $"\t\tIt appears {threadCountPair.Value} times in thread# [{threadCountPair.Key}].");
+                            $"\t\tIt appears {threadCountPair.Value} {TimeOrTimes(threadCountPair.Value)} in thread# [{threadCountPair.Key}].");
                     }
                     sb.AppendLine();
                 }
@@ -128,8 +149,30 @@ namespace ConsoleApp1
                 sb.AppendLine("There were no duplicate timestamps.");
             }
 
+            if (shortestOfTheFilteredShort.Any())
+            {
+                shortestOfTheFilteredShort.Sort();
+                sb.AppendLine(
+                    $"The shortest of all filtered consecutive differences was: {shortestOfTheFilteredShort.First().TotalMilliseconds:F3} ms.");
+            }
+            if (longestOfTheFilteredLong.Any())
+            {
+                longestOfTheFilteredLong.Sort();
+                sb.AppendLine(
+                    $"The longest of all filtered consecutive differences was: {longestOfTheFilteredLong.Last().TotalMilliseconds:F3} ms.");
+            }
+
+            if (averageOfFilteredAverages.Any())
+            {
+                TimeSpan averageOfAverages = ComputeAverage(averageOfFilteredAverages.ToArray());
+                sb.AppendLine(
+                    $"The average of all average consecutive differences was {averageOfAverages.TotalMilliseconds:F3} ms.");
+            }
+
             sb.AppendLine();
             return sb.ToString();
+
+            string TimeOrTimes(int number) => number == 1 ? "time" : "times";
 
             int FindLastIndexOfSpanLessThanOrEqualTo(ImmutableArray<TimeSpan> sortedArrAscending, TimeSpan query)
             {
@@ -147,7 +190,6 @@ namespace ConsoleApp1
             {
                 List<TimeSpan> spans;
                 TimeSpan shortest, longest, average;
-                TimeSpan sum = TimeSpan.Zero;
                 switch (times.Count)
                 {
                     case 1:
@@ -159,8 +201,8 @@ namespace ConsoleApp1
                 }
 
                 var allSpans = spans.ToImmutableArray().Sort();
-                shortest = spans.First();
-                longest = spans.Last();
+                shortest = allSpans.First();
+                longest = allSpans.Last();
                 average = ComputeAverage(allSpans.AsSpan());
                 return (allSpans, shortest, longest, average);
             }
@@ -326,7 +368,7 @@ namespace ConsoleApp1
             return ret;
         }
 
-        public int ThreadNumber => _threadNum;
+        public int ThreadNumber { get; }
 
         public ImmutableList<DateTime> Timestamps
         {
@@ -351,9 +393,9 @@ namespace ConsoleApp1
         private TsGeneratingThread(TimeSpan sleepInterval, TimeSpan duration)
         {
             _gathered = null;
-            _threadNum = Interlocked.Increment(ref s_threadNum);
+            ThreadNumber = Interlocked.Increment(ref s_threadNum);
             _thread = new Thread(Loop)
-                {Name = $"ThrdTsGen_{_threadNum.ToString()}", IsBackground = false, Priority = ThreadPriority.Normal};
+                {Name = $"ThrdTsGen_{ThreadNumber.ToString()}", IsBackground = false, Priority = ThreadPriority.Normal};
             ValidateTimeSpans();
             _sleepInterval = sleepInterval;
             _duration = duration;
@@ -480,6 +522,7 @@ namespace ConsoleApp1
                 {
                     _threadFlag.SignalRunningOrThrow();
                     token.ThrowIfCancellationRequested();
+                    TimeStampSource.Calibrate();
                     Execute(token);
                 }
                 else
@@ -541,11 +584,10 @@ namespace ConsoleApp1
         private DisposeFlag _isDisposed = new DisposeFlag();
         private ThreadStatusFlag _threadFlag = new ThreadStatusFlag();
         [CanBeNull] private volatile ImmutableList<DateTime> _gathered;
-        private TimeSpan _sleepInterval;
-        private TimeSpan _duration;
+        private readonly TimeSpan _sleepInterval;
+        private readonly TimeSpan _duration;
         [NotNull] private readonly Thread _thread;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-        private readonly int _threadNum;
         private static int s_threadNum;
     }
 

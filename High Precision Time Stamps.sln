@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "High Precision Time Stamps", "High Precision Time Stamps.csproj", "{5E8F2AF2-F8D4-4D15-830B-AF03F6A72114}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "TestApp\ConsoleApp1\ConsoleApp1.csproj", "{AECB9BDF-27C9-43C9-AA00-DE4DF334CCA5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\ConsoleApp1\TestApp.csproj", "{AECB9BDF-27C9-43C9-AA00-DE4DF334CCA5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

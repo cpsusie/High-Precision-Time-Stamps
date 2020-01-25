@@ -1,13 +1,35 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>HpTimesStamps</RootNamespace>
     <AssemblyName>HighPrecisionTimeStamps</AssemblyName>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Authors>Christopher P. Susie</Authors>
+    <Company>CJM Screws, LLC</Company>
+    <Version>0.0.1-alpha</Version>
+    <Description>This pre-release alpha package provides timestamps in a similar manner to DateTime.Now except it uses the hardware's high precision event timer, where available.  Time stamps are more precise and, when retrieved on the same thread within a short time of each other, can be expected to be more accurate relative to each other than those retrieved by DateTime.Now.  They may be less accurate in reference to offical UTC time or system time, but, under most circumstances, should remain approximately accurate.
+
+The use-case for this project is when approximately accurate timestamps are needed for purposes of identifying when an event happened, but are also used to measure elapsed time between events that happen on a scale of milliseconds or microseconds.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReleaseNotes>Pre-release alpha version.
+
+TimeStampSource.Now works.  
+
+TimeStampSource.UtcNow probably does not work and has not been tested.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High Precision Time Stamps\High Precision Time Stamps.xml</DocumentationFile>
+    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High Precision Time Stamps\HighPrecisionTimeStamps.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High Precision Time Stamps\HighPrecisionTimeStamps.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
