@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>HighPrecisionTimeStamps</name>
+    </assembly>
+    <members>
+        <member name="T:HpTimesStamps.ITimeStampUtil">
+            <summary>
+            Note that the times retrieved are not more accurate in ABSOLUTE terms.
+            If <see cref="P:HpTimesStamps.ITimeStampUtil.IsHighPrecision"/> successive calls to get timestamp will
+            be more accurate (with respect to each other, within the <see cref="P:HpTimesStamps.ITimeStampUtil.CalibrationWindow"/>).  
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.StopWatchTicksPerSecond">
+            <summary>
+            Number of ticks per second by the stop watch's (and if <see cref="P:HpTimesStamps.ITimeStampUtil.IsHighPrecision"/>, the HPET's)
+            reckoning
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.DateTimeTicksPerSecond">
+            <summary>
+            Number of ticks per second by DateTime and TimeSpan's reckoning
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.IsHighPrecision">
+            <summary>
+            Check whether high precision timestamps are possible, if not,
+            might as well use DateTime.Now (unless you want hp wherever possible)
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.CurrentLocalTimeStamp">
+            <summary>
+            Like DateTime.Now but based off of a reading from the high precision event timer
+            and then converted into terms of the local time system
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.CurrentUtcTimeStamp">
+            <summary>
+            Like DateTime.UtcNow, but based off of a reading from the high precision event timer
+            then converted into terms of utc time system
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.CalibrationWindow">
+            <summary>
+            The amount of time calibration lasts for.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.TimeSinceLastCalibration">
+            <summary>
+            Amount of time since last calibration.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.ITimeStampUtil.IsCalibrated">
+            <summary>
+            Whether the util is calibrated at present
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.ITimeStampUtil.Calibrate">
+            <summary>
+            Manually force a calibration.  If not calibrated, upon call to
+            <see cref="P:HpTimesStamps.ITimeStampUtil.CurrentLocalTimeStamp"/> or <see cref="P:HpTimesStamps.ITimeStampUtil.CurrentUtcTimeStamp"/> calibration will
+            be performed before TimeStamp retrieval causing a delay.  If you want to avoid that,
+            calling this will do the trick.
+            </summary>
+        </member>
+        <member name="T:HpTimesStamps.TimeStampSource">
+            <summary>
+            Calibration is PER THREAD.  Calls are therefore thread-safe, but calibration may need to be done
+            on each thread using this resource.
+            </summary>
+        </member>
+    </members>
+</doc>
