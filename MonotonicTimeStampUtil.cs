@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
@@ -66,33 +67,83 @@ namespace HpTimesStamps
 
     public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<TStampContext>, IComparable<TStampContext> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
-        public ref readonly TStampContext Context => ref MonotonicTimeStampUtil<TStampContext>.StampContext; 
+        public ref readonly TStampContext Context => ref MonotonicTimeStampUtil<TStampContext>.StampContext;
+
+        public (DateTime UtcReferenceTime, TimeSpan OffsetFromReference, TimeSpan OffsetFromUtc) Value => (UtcReference,
+            (StopwatchTicksAsTimeSpan - ReferenceTicksAsTimeSpan), UtcOffsetPeriod);
+        
+        public TimeSpan ElapsedSinceUtcReference
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (StopwatchTicksAsTimeSpan - ReferenceTicksAsTimeSpan);
+        }
+        private TimeSpan StopwatchTicksAsTimeSpan => TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(_stopWatchTicks));
+
         static MonotonicTimeStamp()
         {
             ref readonly TStampContext context = ref MonotonicTimeStampUtil<TStampContext>.StampContext;
-
-            ReferenceTicks = context.ReferenceTicks;
+            UtcReference = context.UtcDateTimeBeginReference;
+            long referenceTicks = context.ReferenceTicks;
             long swTicksPerSecond = context.TicksPerSecond; //e.g. 1000
             long tsTicksPerSecond = TimeSpan.TicksPerSecond; //e.g. 100
-            OffsetPeriod = context.UtcDateTimeBeginReference - context.LocalTimeBeginReference;
-            TheToTsTickConversionFactor = (double) tsTicksPerSecond / swTicksPerSecond;
-            
+            Debug.Assert(swTicksPerSecond > 0 && tsTicksPerSecond > 0);
+            long gcd = (long) Gcd((ulong) swTicksPerSecond, (ulong) tsTicksPerSecond);
+            Debug.Assert(swTicksPerSecond % gcd == 0 && tsTicksPerSecond % gcd == 0);
+            TheToTsTickConversionFactorNumerator = tsTicksPerSecond / gcd;
+            ToToTsTickConversionFactorDenominator = swTicksPerSecond / gcd;
+            UtcOffsetPeriod = context.UtcDateTimeBeginReference - context.LocalTimeBeginReference;
+            ReferenceTicksAsTimeSpan = TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(referenceTicks));
         }
 
-        public MonotonicTimeStamp(long stopwatchTicks)
-        {
-            _stopWatchTicks = stopwatchTicks;
-        }
-
-
-        public DateTime ToLocalDateTime() => UtcReference + (TimeSpan.FromTicks(_stopWatchTicks) - ReferenceTicksAsTimeSpan) + OffsetPeriod;
+        public MonotonicTimeStamp(long stopwatchTicks) => _stopWatchTicks = stopwatchTicks;
         
-        private TimeSpan FromTicks => TimeSpan.FromTicks((long) (TheToTsTickConversionFactor * (_stopWatchTicks - ReferenceTicks)));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public DateTime ToLocalDateTime() => UtcReference + ElapsedSinceUtcReference + UtcOffsetPeriod;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public DateTime ToUtcDateTime() => UtcReference + ElapsedSinceUtcReference;
 
+        public static bool operator ==(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            lhs._stopWatchTicks == rhs._stopWatchTicks;
+        public static bool operator !=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            !(lhs == rhs);
+
+        public static bool operator >(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
+        public static bool operator <(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
+        public static bool operator >=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
+        public static bool operator <=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
+
+        private static long ConvertStopwatchTicksToReferenceTicks(long stopwatchTicks)
+        {
+#if DEBUG
+            checked
+            {
+                return (stopwatchTicks * TheToTsTickConversionFactorNumerator) / ToToTsTickConversionFactorDenominator;
+            }
+#else
+            return (stopwatchTicks * TheToTsTickConversionFactorNumerator) / ToToTsTickConversionFactorDenominator;
+#endif
+        }
+
+        private static ulong Gcd(ulong a, ulong b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                    a %= b;
+                else
+                    b %= a;
+            }
+
+            return a | b;
+        }
+
+        // ReSharper disable StaticMemberInGenericType
         private static readonly TimeSpan ReferenceTicksAsTimeSpan; 
         private static readonly DateTime UtcReference;
-        private static readonly TimeSpan OffsetPeriod;
-        private static readonly double TheToTsTickConversionFactor;
+        private static readonly TimeSpan UtcOffsetPeriod;
+        private static readonly long TheToTsTickConversionFactorNumerator;
+        private static readonly long ToToTsTickConversionFactorDenominator;
+        // ReSharper restore StaticMemberInGenericType
         private readonly long _stopWatchTicks;
     }
 
