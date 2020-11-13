@@ -65,7 +65,7 @@ namespace HpTimesStamps
             => $"The delegate named {offendingDelegateName} of type {offendingDelegate.GetType().Name} returned a null-reference in violation of requirements.";
     }
 
-    public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<TStampContext>, IComparable<TStampContext> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
+    public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<MonotonicTimeStamp<TStampContext>>, IComparable<MonotonicTimeStamp<TStampContext>> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         public ref readonly TStampContext Context => ref MonotonicTimeStampUtil<TStampContext>.StampContext;
 
@@ -95,22 +95,55 @@ namespace HpTimesStamps
             ReferenceTicksAsTimeSpan = TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(referenceTicks));
         }
 
-        public MonotonicTimeStamp(long stopwatchTicks) => _stopWatchTicks = stopwatchTicks;
+        private MonotonicTimeStamp(long stopwatchTicks) => _stopWatchTicks = stopwatchTicks;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTime ToLocalDateTime() => UtcReference + ElapsedSinceUtcReference + UtcOffsetPeriod;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DateTime ToUtcDateTime() => UtcReference + ElapsedSinceUtcReference;
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
             lhs._stopWatchTicks == rhs._stopWatchTicks;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
             !(lhs == rhs);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator >(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            lhs._stopWatchTicks > rhs._stopWatchTicks;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator <(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            lhs._stopWatchTicks < rhs._stopWatchTicks;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator >=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            !(lhs < rhs);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator <=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            !(lhs > rhs);
+        public override int GetHashCode() => _stopWatchTicks.GetHashCode();
+        public override bool Equals(object other) => other is MonotonicTimeStamp<TStampContext> mts && mts == this;
+        public bool Equals(MonotonicTimeStamp<TStampContext> other) => other == this;
+        public int CompareTo(MonotonicTimeStamp<TStampContext> other) =>
+            _stopWatchTicks.CompareTo(other._stopWatchTicks);
 
-        public static bool operator >(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
-        public static bool operator <(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
-        public static bool operator >=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
-        public static bool operator <=(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs);
+        public static MonotonicTimeStamp<TStampContext> operator
+            +(MonotonicTimeStamp<TStampContext> lhs, TimeSpan rhs) =>
+            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks + ConvertTsTicksToSwTicks(rhs.Ticks));
+        public static MonotonicTimeStamp<TStampContext> operator
+            +(TimeSpan lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            new MonotonicTimeStamp<TStampContext>(rhs._stopWatchTicks + ConvertTsTicksToSwTicks(lhs.Ticks));
+        public static MonotonicTimeStamp<TStampContext> operator -(MonotonicTimeStamp<TStampContext> invertMe) =>
+            new MonotonicTimeStamp<TStampContext>(-(invertMe._stopWatchTicks));
+        public static MonotonicTimeStamp<TStampContext> operator +(MonotonicTimeStamp<TStampContext> invertMe) =>
+            invertMe;
+        public static TimeSpan operator
+            -(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(lhs._stopWatchTicks - rhs._stopWatchTicks));
+        public static MonotonicTimeStamp<TStampContext> operator
+            -(MonotonicTimeStamp<TStampContext> lhs, TimeSpan rhs) =>
+            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks - ConvertTsTicksToSwTicks(rhs.Ticks));
+
+        public override string ToString() => ToLocalDateTime().ToString("O");
 
         private static long ConvertStopwatchTicksToReferenceTicks(long stopwatchTicks)
         {
@@ -124,6 +157,18 @@ namespace HpTimesStamps
 #endif
         }
 
+        private static long ConvertTsTicksToSwTicks(long ticks)
+        {
+#if DEBUG
+            checked
+            {
+                return (ticks * ToToTsTickConversionFactorDenominator) / TheToTsTickConversionFactorNumerator;
+            }
+#else
+            return (ticks * ToToTsTickConversionFactorDenominator) / TheToTsTickConversionFactorNumerator;
+#endif
+        }
+
         private static ulong Gcd(ulong a, ulong b)
         {
             while (a != 0 && b != 0)
@@ -133,7 +178,6 @@ namespace HpTimesStamps
                 else
                     b %= a;
             }
-
             return a | b;
         }
 
