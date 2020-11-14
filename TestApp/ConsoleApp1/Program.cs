@@ -2,17 +2,118 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using HpTimesStamps;
 using JetBrains.Annotations;
-
+using MonotonicContext = HpTimesStamps.MonotonicStampContext;
 namespace TestApp
 {
+    using MonotonicSource = MonotonicTimeStampUtil<MonotonicContext>;
+    using MonotonicStamp = MonotonicTimeStamp<MonotonicContext>;
+
     class Program
     {
         static void Main()
+        {
+            Console.WriteLine("Begin hp timestamp test.");
+            TestHpTimestamps();
+            Console.WriteLine("End hp timestamp test.");
+            Console.WriteLine();
+
+            Console.WriteLine("Begin monotonic timestamp test.");
+            TestMonotonicTimestamps();
+            Console.WriteLine("End monotonic timestamp tests.");
+
+            Console.WriteLine("DONE");
+        }
+
+        static void TestMonotonicTimestamps()
+        {
+            ref readonly MonotonicContext
+                stampContext = ref MonotonicSource.StampContext;
+            Deny(stampContext.IsInvalid, "The stamp context should not be invalid");
+            Console.WriteLine("Stamp context: [" + stampContext + "].");
+            
+            MonotonicStamp now = MonotonicSource.StampNow;
+            var (utcReferenceTime, offsetFromReference, offsetFromUtcReference) = now.Value;
+            DateTime dtLocalNow = now.ToLocalDateTime();
+            Assert((dtLocalNow - offsetFromUtcReference) == now.ToUtcDateTime(),
+                "Subtract offset to get utc from local.");
+            Console.WriteLine(
+                $"now reference time: {utcReferenceTime:O}, elapsed since reference: {offsetFromReference.TotalMilliseconds:F4} milliseconds, local utc offset: {offsetFromUtcReference.TotalHours:N1} hours");
+            MonotonicStamp nowPlusX = MonotonicSource.StampNow;
+            TimeSpan diff = nowPlusX - now;
+            Assert(diff > TimeSpan.Zero, "Difference should be positive.");
+            Assert(nowPlusX - diff == now, "Subtracting difference should yield original.");
+            Assert(nowPlusX + diff == diff + nowPlusX, "Addition should be commutative.");
+
+            bool needToDispose = false;
+            List<ITsGenThread> threads = null;
+            try
+            {
+                int numThreads = 6;
+                TimeSpan duration = TimeSpan.FromSeconds(30);
+                TimeSpan sleepInterval = TimeSpan.FromSeconds(5);
+                Console.WriteLine("Hello World!");
+                string highPrecTs = TimeStampSource.IsHighPrecision ? " have " : " do not have ";
+                Console.WriteLine($"We {highPrecTs} high precision monotonic timestamps.");
+                Console.WriteLine($"Here is an example: [{MonotonicSource.Now:O}].");
+                threads = CreateMonoThreads(numThreads, duration, sleepInterval);
+                needToDispose = true;
+                DateTime createdAllThreadsAt = MonotonicSource.Now;
+                Console.WriteLine($"All {numThreads} threads started at [{createdAllThreadsAt:O}].");
+                Console.WriteLine($"Should take slightly more than {duration.TotalSeconds:N} seconds.");
+                var results = GenerateResults(threads);
+                needToDispose = false;
+                DateTime gotResultsAt = MonotonicSource.Now;
+                TimeSpan totalTime = gotResultsAt - createdAllThreadsAt;
+                Console.WriteLine($"Results retrieved.  Time elapsed: {totalTime.TotalSeconds:F6} seconds.");
+                Console.WriteLine("Processing results...");
+                DateTime beginProcessResultsAt = MonotonicSource.Now;
+                string textOfResults = ProcessResults(results, sleepInterval);
+                DateTime endProcessResultsAt = MonotonicSource.Now;
+                TimeSpan elapsed = endProcessResultsAt - beginProcessResultsAt;
+                Console.WriteLine($"It took {elapsed.TotalMilliseconds:F3} ms to process the results.");
+                Console.WriteLine("Results:");
+                Console.WriteLine(textOfResults);
+                Console.WriteLine("Test COMPLETED OK.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Test FAILED.  Exception: [{ex}].");
+                Environment.Exit(-1);
+            }
+            finally
+            {
+                if (needToDispose)
+                {
+                    IEnumerable<ITsGenThread> disposeUs = threads;
+                    foreach (var item in disposeUs?.Reverse() ?? Enumerable.Empty<ITsGenThread>())
+                    {
+                        item.Dispose();
+                    }
+                }
+            }
+
+        }
+
+        [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")]  //kinda the whole point
+        static void Deny(bool predicate, string faultMsg)
+        {
+            if (predicate) throw new InvalidOperationException($"Test failed: {faultMsg}");
+        }
+
+        [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")] //kinda the whole point
+        static void Assert(bool predicate, string faultMsg)
+        {
+            if (!predicate)
+                throw new InvalidOperationException($"Test failed: {faultMsg}");
+        }
+
+        static void TestHpTimestamps()
         {
             bool needToDispose = false;
             List<ITsGenThread> threads = null;
@@ -25,7 +126,7 @@ namespace TestApp
                 string highPrecTs = TimeStampSource.IsHighPrecision ? " have " : " do not have ";
                 Console.WriteLine($"We {highPrecTs} high precision timestamps.");
                 Console.WriteLine($"Here is an example: [{TimeStampSource.Now:O}].");
-                threads = CreateThreads(numThreads, duration, sleepInterval);
+                threads = CreateHpThreads(numThreads, duration, sleepInterval);
                 needToDispose = true;
                 DateTime createdAllThreadsAt = TimeStampSource.Now;
                 Console.WriteLine($"All {numThreads} threads started at [{createdAllThreadsAt:O}].");
@@ -268,7 +369,7 @@ namespace TestApp
 
 
 
-        static ImmutableDictionary<int, ImmutableList<DateTime>> GenerateResults([NotNull] List<ITsGenThread> threads)
+        static ImmutableDictionary<int, ImmutableList<DateTime>> GenerateResults([JetBrains.Annotations.NotNull] List<ITsGenThread> threads)
         {
             var ret = ImmutableDictionary.CreateBuilder<int, ImmutableList<DateTime>>();
             IEnumerable<ITsGenThread> toIterateBackwards = threads;
@@ -281,15 +382,43 @@ namespace TestApp
             return ret.ToImmutable();
         }
 
-
-        static List<ITsGenThread> CreateThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
+        static List<ITsGenThread> CreateMonoThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
         {
             List<ITsGenThread> ret = new List<ITsGenThread>(numThreads);
             try
             {
                 while (ret.Count < numThreads)
                 {
-                    ret.Add(TsGeneratingThread.GenerateThread(duration, sleepInterval));
+                    ret.Add(MonoTsGeneratingThread.GenerateThread(duration, sleepInterval));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLineAsync(ex.ToString());
+                IEnumerable<ITsGenThread> threads = ret;
+                foreach (var thread in threads.Reverse())
+                {
+                    try
+                    {
+                        thread.Dispose();
+                    }
+                    catch (Exception ex2)
+                    {
+                        Console.Error.WriteLineAsync(ex2.ToString());
+                    }
+                }
+                throw;
+            }
+            return ret;
+        }
+        static List<ITsGenThread> CreateHpThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
+        {
+            List<ITsGenThread> ret = new List<ITsGenThread>(numThreads);
+            try
+            {
+                while (ret.Count < numThreads)
+                {
+                    ret.Add(HpTsGeneratingThread.GenerateThread(duration, sleepInterval));
                 }
             }
             catch (Exception ex)
@@ -332,18 +461,18 @@ namespace TestApp
     internal interface ITsGenThread : IDisposable
     {
         int ThreadNumber { get; }
-        [NotNull] ImmutableList<DateTime> Timestamps { get; }
-        [NotNull] ImmutableList<DateTime> Join();
+        [JetBrains.Annotations.NotNull] ImmutableList<DateTime> Timestamps { get; }
+        [JetBrains.Annotations.NotNull] ImmutableList<DateTime> Join();
         bool IsDisposed { get; }
         bool IsThreadActive { get; }
 
     }
 
-    sealed class TsGeneratingThread : ITsGenThread
+    sealed class MonoTsGeneratingThread : ITsGenThread
     {
         public static ITsGenThread GenerateThread(TimeSpan duration, TimeSpan sleepInterval)
         {
-            var ret = new TsGeneratingThread(sleepInterval, duration);
+            var ret = new MonoTsGeneratingThread(sleepInterval, duration);
             try
             {
                 ret.Start();
@@ -390,7 +519,260 @@ namespace TestApp
             }
         }
 
-        private TsGeneratingThread(TimeSpan sleepInterval, TimeSpan duration)
+        private MonoTsGeneratingThread(TimeSpan sleepInterval, TimeSpan duration)
+        {
+            _gathered = null;
+            ThreadNumber = Interlocked.Increment(ref s_threadNum);
+            _thread = new Thread(Loop)
+            { Name = $"ThrdTsGen_{ThreadNumber.ToString()}", IsBackground = false, Priority = ThreadPriority.Normal };
+            ValidateTimeSpans();
+            _sleepInterval = sleepInterval;
+            _duration = duration;
+            Debug.Assert(_threadFlag.Status == ThreadStatus.Initialized);
+
+            void ValidateTimeSpans()
+            {
+                if (sleepInterval <= TimeSpan.Zero)
+                    throw new ArgumentOutOfRangeException(nameof(sleepInterval), sleepInterval, "Value must be positive.");
+                if (duration <= TimeSpan.Zero)
+                    throw new ArgumentOutOfRangeException(nameof(duration), duration, "Value must be positive.");
+                if (sleepInterval * 5 > duration)
+                    throw new ArgumentException(
+                        $"Parameter {nameof(sleepInterval)} (value: {sleepInterval.TotalSeconds:F6} seconds) " +
+                        $"multiplied by 5 (value * 5: {(sleepInterval * 5).TotalSeconds:F6)} seconds) " +
+                        $"must be less than or equal to {nameof(duration)}  (value of duration: {duration.TotalSeconds:F6}). " +
+                        @"It is not.");
+            }
+        }
+
+        ~MonoTsGeneratingThread() => Dispose(false);
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public ImmutableList<DateTime> Join()
+        {
+            ImmutableList<DateTime> ret;
+            if (_threadFlag.Status == ThreadStatus.Terminated)
+            {
+                var temp = _gathered;
+                ret = temp ?? ImmutableList<DateTime>.Empty;
+            }
+            else
+            {
+                _thread.Join();
+                while (_threadFlag.Status != ThreadStatus.Terminated)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(1));
+                }
+                var temp = _gathered;
+                ret = temp ?? ImmutableList<DateTime>.Empty;
+            }
+            return ret;
+        }
+
+        private void Start()
+        {
+            _threadFlag.RequestStartOrThrow();
+            _thread.Start(_cts.Token);
+            while (_threadFlag.Status == ThreadStatus.StartRequested)
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(1));
+            }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing && _isDisposed.TryDispose())
+            {
+                if (_threadFlag.Status != ThreadStatus.Terminated)
+                {
+                    try
+                    {
+                        _cts.Cancel();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLineAsync(ex.ToString());
+                    }
+
+                    DateTime giveUpAt = DateTime.Now + TimeSpan.FromSeconds(1);
+                    while (_threadFlag.Status != ThreadStatus.Terminated && DateTime.Now <= giveUpAt)
+                    {
+                        Thread.Sleep(TimeSpan.FromMilliseconds(1));
+                    }
+                }
+                DisposeLogExContinue(_cts);
+            }
+            else if (_isDisposed.TryDispose())
+            {
+                if (_threadFlag.Status != ThreadStatus.Terminated)
+                {
+                    try
+                    {
+                        _cts.Cancel();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLineAsync(ex.ToString());
+                    }
+
+                    DateTime giveUpAt = DateTime.Now + TimeSpan.FromSeconds(1);
+                    while (_threadFlag.Status != ThreadStatus.Terminated && DateTime.Now <= giveUpAt)
+                    {
+                        Thread.Sleep(TimeSpan.FromMilliseconds(1));
+                    }
+                }
+            }
+
+            _isDisposed.TryDispose();
+
+            void DisposeLogExContinue<TDisposable>(TDisposable disposable) where TDisposable : class, IDisposable
+            {
+                try
+                {
+                    disposable?.Dispose();
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLineAsync(e.ToString());
+                }
+            }
+        }
+
+        private void Loop(object cancellationToken)
+        {
+            try
+            {
+                if (cancellationToken is CancellationToken token)
+                {
+                    _threadFlag.SignalRunningOrThrow();
+                    token.ThrowIfCancellationRequested();
+                    TimeStampSource.Calibrate();
+                    Execute(token);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Thread expected object of type {typeof(CancellationToken).Namespace}; it got {cancellationToken?.GetType().Name ?? "NULL REFERENCE"}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Thread# {ThreadNumber.ToString()} was cancelled.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLineAsync($"Thread# {ThreadNumber.ToString()} Faulted.  Exception: {ex}.");
+            }
+            finally
+            {
+                Interlocked.CompareExchange(ref _gathered, ImmutableList<DateTime>.Empty, null);
+                _threadFlag.SignalTerminated();
+            }
+        }
+
+        private void Execute(in CancellationToken token)
+        {
+            DateTime quitAfter = DateTime.Now + _duration;
+            var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<DateTime>();
+            try
+            {
+                while (DateTime.Now <= quitAfter)
+                {
+                    token.ThrowIfCancellationRequested();
+                    for (int i = 0; i < 10; ++i)
+                    {
+                        builder.Add(MonotonicSource.Now);
+                        Thread.SpinWait(2500);
+                    }
+
+                    token.ThrowIfCancellationRequested();
+                    SleepFor(_sleepInterval, in token);
+                }
+            }
+            finally
+            {
+                Interlocked.CompareExchange(ref _gathered, builder.ToImmutable(), null);
+            }
+        }
+
+        private void SleepFor(TimeSpan ts, in CancellationToken token)
+        {
+            DateTime wakeUpAfter = DateTime.Now + ts;
+            while (DateTime.Now <= wakeUpAfter)
+            {
+                token.ThrowIfCancellationRequested();
+                Thread.Sleep(ts);
+            }
+        }
+
+        private DisposeFlag _isDisposed;
+        private ThreadStatusFlag _threadFlag;
+        [CanBeNull] private volatile ImmutableList<DateTime> _gathered;
+        private readonly TimeSpan _sleepInterval;
+        private readonly TimeSpan _duration;
+        [JetBrains.Annotations.NotNull] private readonly Thread _thread;
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private static int s_threadNum;
+    }
+
+
+    sealed class HpTsGeneratingThread : ITsGenThread
+    {
+        public static ITsGenThread GenerateThread(TimeSpan duration, TimeSpan sleepInterval)
+        {
+            var ret = new HpTsGeneratingThread(sleepInterval, duration);
+            try
+            {
+                ret.Start();
+                DateTime giveUp = DateTime.Now + TimeSpan.FromMilliseconds(100);
+                while (!ret.IsThreadActive && DateTime.Now <= giveUp)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(1));
+                }
+
+                var status = ret._threadFlag.Status;
+                if (status != ThreadStatus.Running && status != ThreadStatus.Terminated)
+                {
+                    throw new InvalidOperationException("Unable to confirm thread start.");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLineAsync(e.ToString());
+                ret.Dispose();
+                throw;
+            }
+            return ret;
+        }
+
+        public int ThreadNumber { get; }
+
+        public ImmutableList<DateTime> Timestamps
+        {
+            get
+            {
+                var temp = _gathered;
+                return temp ?? ImmutableList<DateTime>.Empty;
+            }
+        }
+
+        public bool IsDisposed => _isDisposed.IsDisposed;
+
+        public bool IsThreadActive
+        {
+            get
+            {
+                var temp = _threadFlag.Status;
+                return (temp != ThreadStatus.Initialized && temp != ThreadStatus.Terminated);
+            }
+        }
+
+        private HpTsGeneratingThread(TimeSpan sleepInterval, TimeSpan duration)
         {
             _gathered = null;
             ThreadNumber = Interlocked.Increment(ref s_threadNum);
@@ -416,7 +798,7 @@ namespace TestApp
             }
         }
 
-        ~TsGeneratingThread() => Dispose(false);
+        ~HpTsGeneratingThread() => Dispose(false);
 
         public void Dispose()
         {
@@ -586,7 +968,7 @@ namespace TestApp
         [CanBeNull] private volatile ImmutableList<DateTime> _gathered;
         private readonly TimeSpan _sleepInterval;
         private readonly TimeSpan _duration;
-        [NotNull] private readonly Thread _thread;
+        [JetBrains.Annotations.NotNull] private readonly Thread _thread;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private static int s_threadNum;
     }

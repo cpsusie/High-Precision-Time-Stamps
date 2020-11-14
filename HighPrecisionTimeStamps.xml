@@ -4,6 +4,117 @@
         <name>HighPrecisionTimeStamps</name>
     </assembly>
     <members>
+        <member name="T:HpTimesStamps.DelegateException">
+            <summary>
+            Exception that is thrown to indicate a supplied
+            delegate has not fulfilled its contract with the entity
+            to which it has been supplied.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.DelegateException.OffendingDelegate">
+            <summary>
+            The offending delegate
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.DelegateException.DelegateName">
+            <summary>
+            The name of the offending delegate
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.DelegateException.#ctor(System.String,System.String,System.Delegate,System.Exception)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="message">message</param>
+            <param name="offendingDelegateName">name of the offending delegate</param>
+            <param name="offendingDelegate">the offending delegate</param>
+            <param name="inner">if another exception is the cause of this exception, it should go here.</param>
+            One or more of <exception cref="T:System.ArgumentNullException"><paramref name="message"/>, <paramref name="offendingDelegateName"/>, and
+            <paramref name="offendingDelegate"/> was null</exception>
+        </member>
+        <member name="T:HpTimesStamps.DelegateReturnedNullException">
+            <summary>
+            Exception that is thrown to indicate a supplied delegate violated its contract
+            with the object or function to which it was supplied by returning a null reference.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.DelegateReturnedNullException.#ctor(System.String,System.Delegate)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="offendingDelegateName">name of the offending delegate</param>
+            <param name="offendingDelegate">the offending delegate</param>
+            <exception cref="T:System.ArgumentNullException">At least one argument was null.</exception>
+        </member>
+        <member name="T:HpTimesStamps.DelegateThrewException">
+            <summary>
+            An exception that is thrown to indicate that a delegate
+            violated its contract with the object to which it was supplied by
+            throwing an exception.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.DelegateThrewException.#ctor(System.String,System.Delegate,System.Exception)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="offendingDelegateName">The name of the offending delegate.</param>
+            <param name="offendingDelegate">The offending delegate.</param>
+            <param name="inner">The exception that was thrown in violation of the delegate's contract.</param>
+            <exception cref="T:System.ArgumentNullException">One or more arguments was null.</exception>
+        </member>
+        <member name="T:HpTimesStamps.IMonotonicStampContext">
+            <summary>
+            The monotonic time stamp context should be implemented
+            as a readonly struct
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.IsInvalid">
+            <summary>
+            True if the struct implementing this interface
+            was not properly initialized.  Usually
+            testing <see cref="P:HpTimesStamps.IMonotonicStampContext.ContextId"/> against
+            the <see langword = "default"/> value of <see cref="T:System.Guid"/>
+            is sufficient
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.ContextId">
+            <summary>
+            Unique id
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.AllTimestampsUtc">
+            <summary>
+            True if <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/> equals
+            <see cref="P:HpTimesStamps.IMonotonicStampContext.LocalTimeBeginReference"/>, false otherwise
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference">
+            <summary>
+            The UTC neutral date time represented by
+            <see cref="P:HpTimesStamps.IMonotonicStampContext.ReferenceTicks"/>.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.LocalTimeBeginReference">
+            <summary>
+            The local time version of <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/>.
+            If <see cref="P:HpTimesStamps.IMonotonicStampContext.AllTimestampsUtc"/>, this value is equal to <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/>.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.ReferenceTicks">
+            <summary>
+            The number of clock ticks that equals <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/>
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.TicksPerSecond">
+            <summary>
+            The number of clock ticks in one second
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.UtcLocalTimeOffset">
+            <summary>
+            Difference between <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/> and <see cref="P:HpTimesStamps.IMonotonicStampContext.LocalTimeBeginReference"/>.
+            </summary>
+        </member>
         <member name="T:HpTimesStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -62,6 +173,439 @@
             be performed before TimeStamp retrieval causing a delay.  If you want to avoid that,
             calling this will do the trick.
             </summary>
+        </member>
+        <member name="T:HpTimesStamps.LocklessLazyWriteOnceValue`1">
+            <summary>
+            
+            </summary>
+            <typeparam name="TValue"></typeparam>
+        </member>
+        <member name="P:HpTimesStamps.LocklessLazyWriteOnceValue`1.IsSet">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.LocklessLazyWriteOnceValue`1.#ctor(System.Func{`0})">
+            <summary>
+            
+            </summary>
+            <param name="ctor"></param>
+        </member>
+        <member name="T:HpTimesStamps.MonotonicClockNotAvailableException">
+            <summary>
+            If the runtime / hardware does not have a monotonic clock available,  this exception is thrown.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicClockNotAvailableException.#ctor">
+            <summary>
+            CTOR
+            </summary>
+        </member>
+        <member name="T:HpTimesStamps.MonotonicStampContext">
+            <summary>
+            The implementation of <see cref="T:HpTimesStamps.IMonotonicStampContext"/> this library provides.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.CreateStampContext">
+            <summary>
+            Create a stamp context to serve as reference point for monotonic timestamps
+            </summary>
+            <returns>context value</returns>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.IsInvalid">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.ContextId">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.UtcDateTimeBeginReference">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.LocalTimeBeginReference">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.ReferenceTicks">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.TicksPerSecond">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.UtcLocalTimeOffset">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.AllTimestampsUtc">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.ToString">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.GetHashCode">
+            <summary>
+            Get a value-based hash code for this object
+            </summary>
+            <returns>a hash code</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.Equals(System.Object)">
+            <summary>
+            Test another object to see whether it has the same value as this one.
+            </summary>
+            <param name="obj">The other object</param>
+            <returns>True if the other object is of the same type as this one and has
+            the same value as this one.  False otherwise.</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.Equals(HpTimesStamps.MonotonicStampContext)">
+            <summary>
+            Test to see whether another value of this type has the same value as this one
+            </summary>
+            <param name="other">the other value</param>
+            <returns>true if same value, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_Equality(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Tests two stamp contexts for value equality
+            </summary>
+            <param name="lhs">left hand comparand</param>
+            <param name="rhs">right hand comparand</param>
+            <returns>true if they have the same value, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_Inequality(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Tests two stamp contexts for value inequality
+            </summary>
+            <param name="lhs">left hand comparand</param>
+            <param name="rhs">right hand comparand</param>
+            <returns>true if they have the distinct values, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_GreaterThan(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Test to see whether the left hand comparand is greater than (succeeds in sort order) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is greater than the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_LessThan(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Test to see whether the left hand comparand is less than (precedes in sort order) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is less than the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_GreaterThanOrEqual(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Test to see whether the left hand comparand is greater than (i.e. succeeds in sort-order) or equal to (i.e. is identical
+            with and therefore holds sample place in sort order as) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is greater than or equal to the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.op_LessThanOrEqual(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Test to see whether the left hand comparand is less than than (i.e. precedes in sort-order) or equal to (i.e. is identical
+            with and therefore holds sample place in sort order as) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is less than or equal to the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.CompareTo(HpTimesStamps.MonotonicStampContext)">
+            <summary>
+            Compare this context with another to establish the ordering between them
+            </summary>
+            <param name="other">the other</param>
+            <returns>A negative number if the this value precedes the other value in the sort order.
+            Zero if the this value is identical to the other value (and thus occupies same space in sort order).
+            A positive number if this value succeeds the other value in sort order.</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicStampContext.Compare(HpTimesStamps.MonotonicStampContext@,HpTimesStamps.MonotonicStampContext@)">
+            <summary>
+            Compare two monotonic stamp contexts to establish their
+            positions relative to each other in the sort order.
+            </summary>
+            <param name="lhs">left-hand comparand</param>
+            <param name="rhs">Right-hand comparand</param>
+            <returns>A negative number if the left-hand comparand precedes the right-hand comparand in the sort order.
+            Zero if the left-hand comparand is identical to the right hand comparand (and thus occupies same space in sort order).
+            A positive number if the left-hand comparand succeeds the right-hand comparand in sort order.</returns>
+        </member>
+        <member name="T:HpTimesStamps.MonotonicTimeStamp`1">
+             <summary>
+             A monotonic time stamp is a time stamp retrieved from a monotonic clock.
+             Monotonic clocks have the property that for any two tick queries at T0 and T1
+             OCCURRING IN PROCESS the ticks returned from query at T1 will always be greater
+             than or equal to the ticks retrieved at query T0 (where T1 happens after T0).
+            
+             Using DateTime.Now as a timestamp source is problematic because it is based on a system /
+             wall clock.  System / wall clocks can change forwards or backwards and thus can be problematic
+             when used with the expectation DateTime t2 - DateTime t1 will give the time elapsed between t2 and t1
+             (when DateTime t1 was recorded at T0 and DateTime t2 recorded at T1 where T1 was later in time than T0).
+             In fact, the difference could even be negative -- saying that the later time was earlier:
+                 Daylights savings adjustments
+                 User adjustments to system clock
+                 System clock synchronization with a reference clock
+                 leap seconds, etc
+            
+             These timestamps:
+                 1- are obtained from a source with a finer resolution that most DateTimes
+                 2- are obtained from a source unaffected by adjustments to the system clock,
+                    DST, leap seconds, etc.
+             Advantages:
+                 1- individually represented simply as ticks from a monotonic clock 
+                 2- a reference date time is correlated with a reference number of ticks from the monotonic clock 
+                 3- can be considered a reference date time and an offset period.
+                 4- when subtracting one from another WITHIN PROCESS, will yield a timespan as accurate as the monotonic
+                    clock supplying ticks
+                 5- most useful when used to compare elapsed time between events 
+             Disadvantages:
+                 1- NEVER SERIALIZE OR SHARE OUTSIDE OF PROCESS
+                 2- when interpreted as a date time, in the rare circumstances where the system clock changes, will be misleading
+                 3- NEVER SERIALIZE OR SHARE OUTSIDE OF PROCESS -- useful for RUNNING program only.  You could convert to a date time
+                    and serialize but may lose accuracy if the system clock and the monotonic clock are no longer in lockstep.
+             </summary>
+             <typeparam name="TStampContext">The common context used by all stamps parameterized with this type</typeparam>
+             <remarks>DO NOT USE ACROSS PROCESSES!  DO NOT SERIALIZE!  NOT FOR ARCHIVE!</remarks>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.CreateFromRefTicks(System.Int64)">
+            <summary>
+            Create a monotonic timestamp from a tick count retrieved from the reference clock.
+            </summary>
+            <param name="referenceTicks">the tick count</param>
+            <returns>a monotonic timestamp</returns>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStamp`1.Context">
+            <summary>
+            The stamp context shared by all timestamps parameterized by <typeparamref name="TStampContext"/>.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStamp`1.Value">
+            <summary>
+            Retrieve the data in the most honest/least problematic (though perhaps a little inconvenient)
+            format available:
+                1- The UTC reference date time
+                2- the amount of time that elapsed between the utc reference time
+                   and the recording of the stamp
+                3- the difference between the local reference time and utc reference time
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStamp`1.ElapsedSinceUtcReference">
+            <summary>
+            Amount of time elapsed since the Utc Reference Time between the timestamp being recorded and the utc reference time 
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.#ctor(System.Int64)">
+            <summary>
+            Private CTOR
+            </summary>
+            <param name="stopwatchTicks"></param>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ToLocalDateTime">
+            <summary>
+            Convert the timestamp to a local date time.  If the system clock and the reference
+            monotonic clock are out of sync (drift or adjustments made to system clock or time -- user edit,
+            syncing of system clock, daylight savings adjustments, leap seconds, etc), may not be accurate.
+            </summary>
+            <returns>a datetime</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ToUtcDateTime">
+            <summary>
+            Convert the timestamp to a utc date time.  If the system clock and the reference
+            monotonic clock are out of sync (drift or adjustments made to system clock or time -- user edit,
+            syncing of system clock, leap seconds, etc), may not be accurate.
+            </summary>
+            <returns>a date-time</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Equality(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Tests two stamps for value equality
+            </summary>
+            <param name="lhs">left hand comparand</param>
+            <param name="rhs">right hand comparand</param>
+            <returns>true if they have the same value, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Inequality(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Tests two stamps for value inequality
+            </summary>
+            <param name="lhs">left hand comparand</param>
+            <param name="rhs">right hand comparand</param>
+            <returns>true if they have the distinct values, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_GreaterThan(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Test to see whether the left hand comparand is greater than (succeeds in sort order) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is greater than the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_LessThan(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Test to see whether the left hand comparand is less than (precedes in sort order) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is less than the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_GreaterThanOrEqual(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Test to see whether the left hand comparand is greater than (i.e. succeeds in sort-order) or equal to (i.e. is identical
+            with and therefore holds sample place in sort order as) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is greater than or equal to the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_LessThanOrEqual(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Test to see whether the left hand comparand is less than than (i.e. precedes in sort-order) or equal to (i.e. is identical
+            with and therefore holds sample place in sort order as) the right hand comparand.
+            </summary>
+            <param name="lhs">The left hand comparand</param>
+            <param name="rhs">the right hand comparand</param>
+            <returns>true if the left hand comparand is less than or equal to the right hand comparand, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.GetHashCode">
+            <summary>
+            Get a value-based hash code for this object
+            </summary>
+            <returns>a hash code</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.Equals(System.Object)">
+            <summary>
+            Test another object to see whether it has the same value as this one.
+            </summary>
+            <param name="other">The other object</param>
+            <returns>True if the other object is of the same type as this one and has
+            the same value as this one.  False otherwise.</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.Equals(HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Test to see whether another value of this type has the same value as this one
+            </summary>
+            <param name="other">the other value</param>
+            <returns>true if same value, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.CompareTo(HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Compare this stamp with another to establish the ordering between them
+            </summary>
+            <param name="other">the other</param>
+            <returns>A negative number if the this value precedes the other value in the sort order.
+            Zero if the this value is identical to the other value (and thus occupies same space in sort order).
+            A positive number if this value succeeds the other value in sort order.</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(HpTimesStamps.MonotonicTimeStamp{`0},System.TimeSpan)">
+            <summary>
+            Add a stamp and timespan together yielding a stamp
+            </summary>
+            <param name="lhs">left hand stamp operand</param>
+            <param name="rhs">right hand timespan operand</param>
+            <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(System.TimeSpan,HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Add a stamp and timespan together yielding a stamp
+            </summary>
+            <param name="lhs">left hand timespan operand</param>
+            <param name="rhs">right hand stamp operand</param>
+            <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Subtraction(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
+            <summary>
+            Subtract the right hand stamp from the left hand comparand, yielding
+            the time elapsed between the two.
+            </summary>
+            <param name="lhs">the left hand operand</param>
+            <param name="rhs">the right and operand</param>
+            <returns>the amount of time elapsed between the operands</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Subtraction(HpTimesStamps.MonotonicTimeStamp{`0},System.TimeSpan)">
+            <summary>
+            Subtract a timespan from a stamp yielding a stamp
+            </summary>
+            <param name="lhs">the stamp minuend</param>
+            <param name="rhs">the timespan subtrahend</param>
+            <returns>A stamp difference</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ToString">
+            <summary>
+            Get a string representation of this value
+            </summary>
+            <returns>a string representation.</returns>
+            <remarks>Will be printed as a local DateTime represented in ISO format.  If
+            there has been significant drift between monotonic clock and system clock
+            or if the system clock has changed due to user adjustments, synchro with clock server,
+            daylight savings time, leap seconds ... may be inaccurate or misleading.</remarks>
+        </member>
+        <member name="T:HpTimesStamps.MonotonicTimeStampUtil`1">
+            <summary>
+            A utility designed to create monotonic timestamps
+            </summary>
+            <typeparam name="TStampContext">The type of context this utility uses to create timestamps.</typeparam>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStampUtil`1.StampNow">
+            <summary>
+            Retrieve a monotonic timestamp recorded right now.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStampUtil`1.Now">
+            <summary>
+            Get a monotonic timestamp as a local date time.
+            </summary>
+            <remarks>
+            If the system clock and the reference
+            monotonic clock are out of sync (drift or adjustments made to system clock or time -- user edit,
+            syncing of system clock, daylight savings adjustments, leap seconds, etc), may not be accurate
+            in an ABSOLUTE sense.
+            Subtracting/Comparing with another datetime obtained using this property
+            IN PROCESS should be accurate.
+            </remarks>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStampUtil`1.UtcNow">
+            <summary>
+            Get a monotonic timestamp as a utc date time.
+            </summary>
+            <remarks>
+            If the system clock and the reference
+            monotonic clock are out of sync (drift or adjustments made to system clock or time -- user edit,
+            syncing of system clock, leap seconds, etc), may not be accurate
+            in an ABSOLUTE sense.
+            Subtracting/Comparing with another datetime obtained using this property IN PROCESS
+            should be accurate.
+            </remarks>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStampUtil`1.StampContext">
+            <summary>
+            The stamp context available by readonly-reference.  Once set for a particular instantiation of <typeparamref name="TStampContext"/>
+            is immutable.  This value can be set by:
+                - Accessing this property for the first time (will be set to <see cref="F:HpTimesStamps.MonotonicTimeStampUtil`1.TheStampContext"/>) OR
+                - Calling <see cref="M:HpTimesStamps.MonotonicTimeStampUtil`1.TrySupplyNonDefaultContext(`0@)"/> or <see cref="M:HpTimesStamps.MonotonicTimeStampUtil`1.SupplyNonDefaultContextOrThrow(`0@)"/> (assuming call is successful).
+                  For these calls to BE successful, must be called before first time this property is accessed.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicTimeStampUtil`1.IsContextSet">
+            <summary>
+            True if <see cref="P:HpTimesStamps.MonotonicTimeStampUtil`1.StampContext"/> has been initialized, false otherwise.
+            Initialization is caused by access to the <see cref="P:HpTimesStamps.MonotonicTimeStampUtil`1.StampContext"/> property or
+            successful calls to <see cref="M:HpTimesStamps.MonotonicTimeStampUtil`1.TrySupplyNonDefaultContext(`0@)"/> or <see cref="M:HpTimesStamps.MonotonicTimeStampUtil`1.SupplyNonDefaultContextOrThrow(`0@)"/>.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStampUtil`1.TrySupplyNonDefaultContext(`0@)">
+            <summary>
+            Attempt to set the stamp context to the provided value
+            </summary>
+            <param name="context">The context</param>
+            <returns>True for success, false for failure</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStampUtil`1.SupplyNonDefaultContextOrThrow(`0@)">
+            <summary>
+            Supply a non-default context object or throw an exception
+            </summary>
+            <param name="context">the non-default context</param>
+            <exception cref="T:System.ArgumentException">The supplied context is invalid.</exception>
+            <exception cref="T:System.InvalidOperationException">The context has already been set.</exception>
         </member>
         <member name="T:HpTimesStamps.TimeStampSource">
             <summary>
