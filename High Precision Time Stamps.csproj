@@ -27,6 +27,7 @@ Test cases added for monotonic stamps.</PackageReleaseNotes>
     <PackageTags>Timestamps</PackageTags>
     <AssemblyVersion>0.0.2.0</AssemblyVersion>
     <FileVersion>0.0.2.0</FileVersion>
+    <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
