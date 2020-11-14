@@ -31,7 +31,7 @@ Test cases added for monotonic stamps.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High Precision Time Stamps\HighPrecisionTimeStamps.xml</DocumentationFile>
+    <DocumentationFile>./HighPrecisionTimeStamps.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <LangVersion>8.0</LangVersion>
     <WarningsAsErrors />
@@ -41,7 +41,7 @@ Test cases added for monotonic stamps.</PackageReleaseNotes>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>8.0</LangVersion>
     <WarningsAsErrors />
-    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High Precision Time Stamps\HighPrecisionTimeStamps.xml</DocumentationFile>
+    <DocumentationFile>./HighPrecisionTimeStamps.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
