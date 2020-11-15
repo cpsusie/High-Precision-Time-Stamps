@@ -303,12 +303,12 @@ namespace HpTimesStamps
             return a | b;
         }
 
-        // ReSharper disable StaticMemberInGenericType
+        // ReSharper disable StaticMemberInGenericType -- intentional and necessary
         private static readonly TimeSpan ReferenceTicksAsTimeSpan; 
         private static readonly DateTime UtcReference;
         private static readonly TimeSpan UtcLocalOffsetPeriod;
-        private static readonly long TheToTsTickConversionFactorNumerator;
-        private static readonly long ToToTsTickConversionFactorDenominator;
+        internal static readonly long TheToTsTickConversionFactorNumerator;
+        internal static readonly long ToToTsTickConversionFactorDenominator;
         // ReSharper restore StaticMemberInGenericType
         private readonly long _stopWatchTicks;
     }
