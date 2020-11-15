@@ -18,10 +18,10 @@ namespace TestApp
     {
         static void Main()
         {
-            Console.WriteLine("Begin hp timestamp test.");
-            TestHpTimestamps();
-            Console.WriteLine("End hp timestamp test.");
-            Console.WriteLine();
+            //Console.WriteLine("Begin hp timestamp test.");
+            //TestHpTimestamps();
+            //Console.WriteLine("End hp timestamp test.");
+            //Console.WriteLine();
 
             Console.WriteLine("Begin monotonic timestamp test.");
             TestMonotonicTimestamps();
@@ -44,12 +44,24 @@ namespace TestApp
                 "Subtract offset to get utc from local.");
             Console.WriteLine(
                 $"now reference time: {utcReferenceTime:O}, elapsed since reference: {offsetFromReference.TotalMilliseconds:F4} milliseconds, local utc offset: {offsetFromUtcReference.TotalHours:N1} hours");
+            
             MonotonicStamp nowPlusX = MonotonicSource.StampNow;
-            TimeSpan diff = nowPlusX - now;
+            Duration diff = nowPlusX - now;
+            Console.WriteLine("difference in milliseconds: [" + diff.TotalMilliseconds.ToString("N6") + "].");
             Assert(diff > TimeSpan.Zero, "Difference should be positive.");
             Assert(nowPlusX - diff == now, "Subtracting difference should yield original.");
             Assert(nowPlusX + diff == diff + nowPlusX, "Addition should be commutative.");
+            DateTime dtLocalNowPlusX = nowPlusX.ToLocalDateTime();
 
+
+            Console.WriteLine("Now do some converted to dt and ts arithmetic");
+            Console.WriteLine("now converted to local datetime: [" + dtLocalNow.ToString("O") + "].");
+            Console.WriteLine("nowplusx converted to local datetime: [" + dtLocalNowPlusX.ToString("O") + "].");
+            TimeSpan tsDiff = dtLocalNowPlusX - dtLocalNow;
+            Console.WriteLine("difference in milliseconds: [" + tsDiff.TotalMilliseconds.ToString("N6") + "].");
+            Assert(tsDiff > TimeSpan.Zero, "ts diff > 0");
+            Assert(dtLocalNowPlusX - tsDiff == dtLocalNow, "Difference between now plus x and x should be now.");
+            
             bool needToDispose = false;
             List<ITsGenThread> threads = null;
             try

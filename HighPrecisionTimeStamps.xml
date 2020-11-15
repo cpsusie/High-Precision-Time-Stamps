@@ -798,7 +798,7 @@
                  1- individually represented simply as ticks from a monotonic clock 
                  2- a reference date time is correlated with a reference number of ticks from the monotonic clock 
                  3- can be considered a reference date time and an offset period.
-                 4- when subtracting one from another WITHIN PROCESS, will yield a timespan as accurate as the monotonic
+                 4- when subtracting one from another WITHIN PROCESS, will yield a duration as accurate as the monotonic
                     clock supplying ticks
                  5- most useful when used to compare elapsed time between events 
              Disadvantages:
@@ -939,21 +939,21 @@
             Zero if the this value is identical to the other value (and thus occupies same space in sort order).
             A positive number if this value succeeds the other value in sort order.</returns>
         </member>
-        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(HpTimesStamps.MonotonicTimeStamp{`0},System.TimeSpan)">
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.Duration)">
             <summary>
-            Add a stamp and timespan together yielding a stamp
+            Add a stamp and duration together yielding a stamp
             </summary>
             <param name="lhs">left hand stamp operand</param>
-            <param name="rhs">right hand timespan operand</param>
-            <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+            <param name="rhs">right hand duration operand</param>
+            <returns>a stamp that is the result of adding a stamp and duration together</returns>
         </member>
-        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(System.TimeSpan,HpTimesStamps.MonotonicTimeStamp{`0})">
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Addition(HpTimesStamps.Duration,HpTimesStamps.MonotonicTimeStamp{`0})">
             <summary>
-            Add a stamp and timespan together yielding a stamp
+            Add a stamp and duration together yielding a stamp
             </summary>
-            <param name="lhs">left hand timespan operand</param>
+            <param name="lhs">left hand duration operand</param>
             <param name="rhs">right hand stamp operand</param>
-            <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+            <returns>a stamp that is the result of adding a stamp and duration together</returns>
         </member>
         <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Subtraction(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.MonotonicTimeStamp{`0})">
             <summary>
@@ -964,12 +964,12 @@
             <param name="rhs">the right and operand</param>
             <returns>the amount of time elapsed between the operands</returns>
         </member>
-        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Subtraction(HpTimesStamps.MonotonicTimeStamp{`0},System.TimeSpan)">
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Subtraction(HpTimesStamps.MonotonicTimeStamp{`0},HpTimesStamps.Duration)">
             <summary>
-            Subtract a timespan from a stamp yielding a stamp
+            Subtract a duration from a stamp yielding a stamp
             </summary>
             <param name="lhs">the stamp minuend</param>
-            <param name="rhs">the timespan subtrahend</param>
+            <param name="rhs">the duration subtrahend</param>
             <returns>A stamp difference</returns>
         </member>
         <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ToString">

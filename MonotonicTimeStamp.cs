@@ -28,7 +28,7 @@ namespace HpTimesStamps
     ///     1- individually represented simply as ticks from a monotonic clock 
     ///     2- a reference date time is correlated with a reference number of ticks from the monotonic clock 
     ///     3- can be considered a reference date time and an offset period.
-    ///     4- when subtracting one from another WITHIN PROCESS, will yield a timespan as accurate as the monotonic
+    ///     4- when subtracting one from another WITHIN PROCESS, will yield a duration as accurate as the monotonic
     ///        clock supplying ticks
     ///     5- most useful when used to compare elapsed time between events 
     /// Disadvantages:
@@ -65,27 +65,27 @@ namespace HpTimesStamps
         ///        and the recording of the stamp
         ///     3- the difference between the local reference time and utc reference time
         /// </summary>
-        public (DateTime UtcReferenceTime, TimeSpan OffsetFromReference, TimeSpan LocalUtcOffset) Value
+        public (DateTime UtcReferenceTime, Duration OffsetFromReference, TimeSpan LocalUtcOffset) Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get =>
                 (UtcReference,
-                    (StopwatchTicksAsTimeSpan - ReferenceTicksAsTimeSpan), UtcLocalOffsetPeriod);
+                    (StopwatchTicksAsDuration - ReferenceTicksAsDuration), UtcLocalOffsetPeriod);
         }
 
         /// <summary>
         /// Amount of time elapsed since the Utc Reference Time between the timestamp being recorded and the utc reference time 
         /// </summary>
-        public TimeSpan ElapsedSinceUtcReference
+        public Duration ElapsedSinceUtcReference
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (StopwatchTicksAsTimeSpan - ReferenceTicksAsTimeSpan);
+            get => (StopwatchTicksAsDuration - ReferenceTicksAsDuration);
         }
 
-        private TimeSpan StopwatchTicksAsTimeSpan
+        private Duration StopwatchTicksAsDuration
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(_stopWatchTicks));
+            get => Duration.FromTicks(ConvertStopwatchTicksToReferenceTicks(_stopWatchTicks));
         }
 
         static MonotonicTimeStamp()
@@ -101,7 +101,7 @@ namespace HpTimesStamps
             TheToTsTickConversionFactorNumerator = tsTicksPerSecond / gcd;
             ToToTsTickConversionFactorDenominator = swTicksPerSecond / gcd;
             UtcLocalOffsetPeriod = context.UtcLocalTimeOffset;
-            ReferenceTicksAsTimeSpan = TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(referenceTicks));
+            ReferenceTicksAsDuration = Duration.FromTicks(referenceTicks);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace HpTimesStamps
         /// </summary>
         /// <returns>a datetime</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DateTime ToLocalDateTime() => DateTime.SpecifyKind( (UtcReference + ElapsedSinceUtcReference) + UtcLocalOffsetPeriod, DateTimeKind.Local);
+        public DateTime ToLocalDateTime() => DateTime.SpecifyKind( (UtcReference + ((TimeSpan) ElapsedSinceUtcReference)) + UtcLocalOffsetPeriod, DateTimeKind.Local);
         /// <summary>
         /// Convert the timestamp to a utc date time.  If the system clock and the reference
         /// monotonic clock are out of sync (drift or adjustments made to system clock or time -- user edit,
@@ -125,7 +125,7 @@ namespace HpTimesStamps
         /// </summary>
         /// <returns>a date-time</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DateTime ToUtcDateTime() => DateTime.SpecifyKind(UtcReference + ElapsedSinceUtcReference, DateTimeKind.Utc);
+        public DateTime ToUtcDateTime() => DateTime.SpecifyKind(UtcReference + ((TimeSpan) ElapsedSinceUtcReference), DateTimeKind.Utc);
         
         /// <summary>
         /// Tests two stamps for value equality
@@ -213,27 +213,28 @@ namespace HpTimesStamps
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(MonotonicTimeStamp<TStampContext> other) =>
             _stopWatchTicks.CompareTo(other._stopWatchTicks);
+
         /// <summary>
-        /// Add a stamp and timespan together yielding a stamp
+        /// Add a stamp and duration together yielding a stamp
         /// </summary>
         /// <param name="lhs">left hand stamp operand</param>
-        /// <param name="rhs">right hand timespan operand</param>
-        /// <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+        /// <param name="rhs">right hand duration operand</param>
+        /// <returns>a stamp that is the result of adding a stamp and duration together</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MonotonicTimeStamp<TStampContext> operator
-            +(MonotonicTimeStamp<TStampContext> lhs, TimeSpan rhs) =>
-            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks + ConvertTsTicksToSwTicks(rhs.Ticks));
+            +(MonotonicTimeStamp<TStampContext> lhs, Duration rhs) =>
+            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks + (long) rhs._ticks);
         
         /// <summary>
-        /// Add a stamp and timespan together yielding a stamp
+        /// Add a stamp and duration together yielding a stamp
         /// </summary>
-        /// <param name="lhs">left hand timespan operand</param>
+        /// <param name="lhs">left hand duration operand</param>
         /// <param name="rhs">right hand stamp operand</param>
-        /// <returns>a stamp that is the result of adding a stamp and timespan together</returns>
+        /// <returns>a stamp that is the result of adding a stamp and duration together</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MonotonicTimeStamp<TStampContext> operator
-            +(TimeSpan lhs, MonotonicTimeStamp<TStampContext> rhs) =>
-            new MonotonicTimeStamp<TStampContext>(rhs._stopWatchTicks + ConvertTsTicksToSwTicks(lhs.Ticks));
+            +(Duration lhs, MonotonicTimeStamp<TStampContext> rhs) =>
+            new MonotonicTimeStamp<TStampContext>(rhs._stopWatchTicks + (long) lhs._ticks);
         /// <summary>
         /// Subtract the right hand stamp from the left hand comparand, yielding
         /// the time elapsed between the two.
@@ -242,19 +243,19 @@ namespace HpTimesStamps
         /// <param name="rhs">the right and operand</param>
         /// <returns>the amount of time elapsed between the operands</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TimeSpan operator
+        public static Duration operator
             -(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
-            TimeSpan.FromTicks(ConvertStopwatchTicksToReferenceTicks(lhs._stopWatchTicks - rhs._stopWatchTicks));
+            Duration.FromTicks(lhs._stopWatchTicks - rhs._stopWatchTicks);
         /// <summary>
-        /// Subtract a timespan from a stamp yielding a stamp
+        /// Subtract a duration from a stamp yielding a stamp
         /// </summary>
         /// <param name="lhs">the stamp minuend</param>
-        /// <param name="rhs">the timespan subtrahend</param>
+        /// <param name="rhs">the duration subtrahend</param>
         /// <returns>A stamp difference</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MonotonicTimeStamp<TStampContext> operator
-            -(MonotonicTimeStamp<TStampContext> lhs, TimeSpan rhs) =>
-            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks - ConvertTsTicksToSwTicks(rhs.Ticks));
+            -(MonotonicTimeStamp<TStampContext> lhs, Duration rhs) =>
+            new MonotonicTimeStamp<TStampContext>(lhs._stopWatchTicks - (long) rhs._ticks);
         /// <summary>
         /// Get a string representation of this value
         /// </summary>
@@ -304,7 +305,7 @@ namespace HpTimesStamps
         }
 
         // ReSharper disable StaticMemberInGenericType -- intentional and necessary
-        private static readonly TimeSpan ReferenceTicksAsTimeSpan; 
+        private static readonly Duration ReferenceTicksAsDuration; 
         private static readonly DateTime UtcReference;
         private static readonly TimeSpan UtcLocalOffsetPeriod;
         internal static readonly long TheToTsTickConversionFactorNumerator;
