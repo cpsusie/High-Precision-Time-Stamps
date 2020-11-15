@@ -52,6 +52,10 @@ TimeStampSource.UtcNow probably does not work and has not been tested.</PackageR
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="BigMath\BigInteger.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
   </ItemGroup>
 

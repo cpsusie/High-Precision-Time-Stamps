@@ -1,0 +1,5 @@
+﻿BigMath was retrieved from Github on November 15, 2020 (EST, UTC-5) from the following URL: https://github.com/cpsusie/BigMath.git.  
+It is licensed to us under the MIT license except for some code imported from Mono, the unmodified versions of which are under the Bouncy Castle License, which seems substantially compatible with the MIT license. 
+CJM Screws, LLC claims copyright to any modifications it has made to the code but no copyright to any code it has not modified.  The extent of CJM Screw's LLC copyright over material in this folder is limited
+to the extent of modifications it has made to the code.  It licenses these modifications to you under the MIT license and requires that you comply with the terms of Alexander Logger's MIT license and the Bouncy Castle 
+license of the Mono code.
