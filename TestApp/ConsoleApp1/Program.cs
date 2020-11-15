@@ -18,10 +18,10 @@ namespace TestApp
     {
         static void Main()
         {
-            //Console.WriteLine("Begin hp timestamp test.");
-            //TestHpTimestamps();
-            //Console.WriteLine("End hp timestamp test.");
-            //Console.WriteLine();
+            Console.WriteLine("Begin hp timestamp test.");
+            TestHpTimestamps();
+            Console.WriteLine("End hp timestamp test.");
+            Console.WriteLine();
 
             Console.WriteLine("Begin monotonic timestamp test.");
             TestMonotonicTimestamps();

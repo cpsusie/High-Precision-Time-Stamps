@@ -85,7 +85,7 @@ namespace HpTimesStamps
         private Duration StopwatchTicksAsDuration
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Duration.FromTicks(ConvertStopwatchTicksToReferenceTicks(_stopWatchTicks));
+            get => Duration.FromTicks(_stopWatchTicks);
         }
 
         static MonotonicTimeStamp()
