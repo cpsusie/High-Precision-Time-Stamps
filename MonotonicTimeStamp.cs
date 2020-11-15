@@ -85,7 +85,7 @@ namespace HpTimesStamps
         private Duration StopwatchTicksAsDuration
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Duration.FromTicks(_stopWatchTicks);
+            get => Duration.FromStopwatchTicks(_stopWatchTicks);
         }
 
         static MonotonicTimeStamp()
@@ -101,7 +101,7 @@ namespace HpTimesStamps
             TheToTsTickConversionFactorNumerator = tsTicksPerSecond / gcd;
             ToToTsTickConversionFactorDenominator = swTicksPerSecond / gcd;
             UtcLocalOffsetPeriod = context.UtcLocalTimeOffset;
-            ReferenceTicksAsDuration = Duration.FromTicks(referenceTicks);
+            ReferenceTicksAsDuration = Duration.FromStopwatchTicks(referenceTicks);
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace HpTimesStamps
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Duration operator
             -(MonotonicTimeStamp<TStampContext> lhs, MonotonicTimeStamp<TStampContext> rhs) =>
-            Duration.FromTicks(lhs._stopWatchTicks - rhs._stopWatchTicks);
+            Duration.FromStopwatchTicks(lhs._stopWatchTicks - rhs._stopWatchTicks);
         /// <summary>
         /// Subtract a duration from a stamp yielding a stamp
         /// </summary>

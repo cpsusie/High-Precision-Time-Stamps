@@ -1260,7 +1260,7 @@
         </member>
         <member name="F:HpTimesStamps.Duration.TickIntRightShiftGetSignBitAmount">
             <summary>
-            Amount to shift a <see cref="T:System.Int64"/> right to get its sign bit.
+            Amount to shift a <see cref="T:HpTimesStamps.BigMath.Int128"/> right to get its sign bit.
             </summary>
         </member>
         <member name="M:HpTimesStamps.Duration.op_Implicit(System.TimeSpan)~HpTimesStamps.Duration">
@@ -1323,7 +1323,7 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a Duration.</exception>
         </member>
-        <member name="M:HpTimesStamps.Duration.FromTicks(System.Int64@)">
+        <member name="M:HpTimesStamps.Duration.FromStopwatchTicks(HpTimesStamps.BigMath.Int128@)">
             <summary>
             Create a duration from ticks
             </summary>
@@ -1385,11 +1385,17 @@
             The duration represented in seconds, including fractional parts
             </summary>
         </member>
-        <member name="M:HpTimesStamps.Duration.#ctor(System.Int64@)">
+        <member name="M:HpTimesStamps.Duration.#ctor(HpTimesStamps.BigMath.Int128@)">
             <summary>
             CTOR
             </summary>
             <param name="ticks">stopwatch ticks</param>
+        </member>
+        <member name="M:HpTimesStamps.Duration.#ctor(System.Int64)">
+            <summary>
+            Create a duration from stopwatch ticks
+            </summary>
+            <param name="stopwatchTicks">the ticks</param>
         </member>
         <member name="M:HpTimesStamps.Duration.#ctor(System.Int32,System.Int32,System.Int32)">
             <summary>

@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using TickInt = System.Int64;
+using TickInt = HpTimesStamps.BigMath.Int128;
 
 namespace HpTimesStamps
 {
@@ -79,7 +79,7 @@ namespace HpTimesStamps
         /// <summary>
         /// Amount to shift a <see cref="TickInt"/> right to get its sign bit.
         /// </summary>
-        internal const int TickIntRightShiftGetSignBitAmount = 63;
+        internal const int TickIntRightShiftGetSignBitAmount = 127;
         #endregion
 
         #region Conversion Operators
@@ -156,14 +156,14 @@ namespace HpTimesStamps
         /// </summary>
         /// <param name="value">ticks</param>
         /// <returns>the value</returns>
-        public static Duration FromTicks(in TickInt value) => new Duration(in value);
+        internal static Duration FromStopwatchTicks(in TickInt value) => new Duration(in value);
         #endregion
 
         #region Public Properties
         /// <summary>
         /// Stopwatch ticks
         /// </summary>
-        public TickInt Ticks => _ticks;
+        internal TickInt Ticks => _ticks;
 
         /// <summary>
         /// Number of whole days represented, fractional time remaining discarded.
@@ -209,10 +209,10 @@ namespace HpTimesStamps
             get
             {
                 double temp = (double)_ticks / TicksPerMillisecond;
-                if (temp > MaxMilliseconds)
+                if (temp > (double) MaxMilliseconds)
                     return (double)MaxMilliseconds;
 
-                if (temp < MinMilliseconds)
+                if (temp < (double) MinMilliseconds)
                     return (double)MinMilliseconds;
 
                 return temp;
@@ -234,7 +234,13 @@ namespace HpTimesStamps
         /// CTOR
         /// </summary>
         /// <param name="ticks">stopwatch ticks</param>
-        public Duration(in TickInt ticks) => _ticks = ticks;
+        internal Duration(in TickInt ticks) => _ticks = ticks;
+
+        /// <summary>
+        /// Create a duration from stopwatch ticks
+        /// </summary>
+        /// <param name="stopwatchTicks">the ticks</param>
+        public Duration(long stopwatchTicks) => _ticks = stopwatchTicks; 
 
         /// <summary>
         /// CTOR
@@ -423,7 +429,7 @@ namespace HpTimesStamps
         /// <param name="t1">dividend</param>
         /// <param name="t2">divisor</param>
         /// <returns>quotient</returns>
-        public static double operator /(in Duration t1, in Duration t2) => t1.Ticks / (double)t2.Ticks;
+        public static double operator /(in Duration t1, in Duration t2) => (double) t1.Ticks / (double)t2.Ticks;
 
         /// <summary>
         /// Multiply a duration 
@@ -442,7 +448,7 @@ namespace HpTimesStamps
 
             // Rounding to the nearest tick is as close to the result we would have with unlimited
             // precision as possible, and so likely to have the least potential to surprise.
-            double ticks = Math.Round(timeSpan.Ticks * factor);
+            double ticks = Math.Round((double) timeSpan.Ticks * factor);
             return IntervalFromDoubleTicks(ticks);
         }
 
@@ -479,7 +485,7 @@ namespace HpTimesStamps
         [Pure]
         public Duration Add(in Duration ts)
         {
-            long result = _ticks + ts._ticks;
+            TickInt result = _ticks + ts._ticks;
             // Overflow if signs of operands was identical and result's
             // sign was opposite.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit (either 64 1's or 64 0's).
@@ -498,7 +504,7 @@ namespace HpTimesStamps
         [Pure]
         public Duration Subtract(in Duration ts)
         {
-            long result = _ticks - ts._ticks;
+            TickInt result = _ticks - ts._ticks;
             // Overflow if signs of operands was different and result's
             // sign was opposite from the first argument's sign.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit 
@@ -536,7 +542,7 @@ namespace HpTimesStamps
                 throw new ArgumentException("NaN is not a valid value for parameter", nameof(divisor));
             }
 
-            double ticks = Math.Round(timeSpan.Ticks / divisor);
+            double ticks = Math.Round((double) timeSpan.Ticks / divisor);
             return IntervalFromDoubleTicks(ticks);
         }
         #endregion
@@ -552,7 +558,7 @@ namespace HpTimesStamps
             (timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
             MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator;
         internal static long ConvertStopwatchTicksToTimespanTicks(in TickInt stopwatchTicks) =>
-            (stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
+            ((long) stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
                 MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator;
 
         private static Duration Interval(double value, double scale)
@@ -565,7 +571,7 @@ namespace HpTimesStamps
 
         private static Duration IntervalFromDoubleTicks(double ticks)
         {
-            if ((ticks > TickInt.MaxValue) || (ticks < TickInt.MinValue) || double.IsNaN(ticks))
+            if ((ticks > (double) TickInt.MaxValue) || (ticks < (double) TickInt.MinValue) || double.IsNaN(ticks))
                 throw new OverflowException("Value cannot fit in a TimeSpan.");
             if (ticks >= long.MaxValue)
                 return MaxValue;
