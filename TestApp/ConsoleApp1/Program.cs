@@ -678,6 +678,7 @@ namespace TestApp
             }
             catch (Exception ex)
             {
+                //test
                 Console.Error.WriteLineAsync($"Thread# {ThreadNumber.ToString()} Faulted.  Exception: {ex}.");
             }
             finally
