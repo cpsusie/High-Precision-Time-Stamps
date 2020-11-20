@@ -67,6 +67,17 @@ namespace HpTimesStamps
             IMonotonicStampContext
         {
             ref readonly TStampContext context = ref MonotonicTimeStampUtil<TStampContext>.StampContext;
+            Int128 contextRefDtFromNanoseconds =
+                StopwatchTicksFromNanoseconds(_dateTimeNanosecondOffsetFromMinValueUtc);
+            TimeSpan timeSpanTicksFromStopwatchTicks =
+                TimeSpan.FromTicks((long) contextRefDtFromNanoseconds * (TimeSpan.TicksPerSecond / LocalStopwatchFrequency));
+            Int128 myStopwatchTickOffset = _offsetInNanoseconds + (LocalStopwatchFrequency / NanosecondsFrequency);
+            
+            DateTime myUtcReferenceDateTime = DateTime.MinValue.ToUniversalTime() + timeSpanTicksFromStopwatchTicks;
+            Duration myOffsetFromReferenceDateTime = Duration.FromStopwatchTicks(in myStopwatchTickOffset);
+            
+
+            
             throw new NotImplementedException();
         }
 
@@ -100,7 +111,9 @@ namespace HpTimesStamps
             }
             return TimeSpan.FromTicks((long)nanoseconds);
         }
-        
+
+        private static Int128 StopwatchTicksFromNanoseconds(in Int128 nanoseconds) => nanoseconds * (LocalStopwatchFrequency / NanosecondsFrequency);
+
         private static readonly long LocalStopwatchFrequency = Stopwatch.Frequency;
         [DataMember] private readonly Int128 _dateTimeNanosecondOffsetFromMinValueUtc;
         [DataMember] private readonly Int128 _offsetInNanoseconds;
