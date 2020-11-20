@@ -1,35 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using HpTimesStamps.BigMath;
 
 namespace HpTimesStamps
 {
-    [DataContract]
-    public readonly struct PortableMonotonicStamp : IEquatable<PortableMonotonicStamp>,
-        IComparable<PortableMonotonicStamp>
-    {
-        /// <summary>
-        /// Number of nanoseconds in a second
-        /// </summary>
-        public const long NanosecondsFrequency = 1_000_000_000;
-
-        private static Duration CreateLocalDurationFromNanoseconds(in Int128 nanoseconds)
-        {
-            //Assume that no system has resolution finer than nanoseconds
-            Int128 localTicks = nanoseconds * (NanosecondsFrequency / LocalStopwatchFrequency);
-            return 
-        }
-        private static Int128 CreateNanosecondsFromLocalDuration(in Duration duration);
-        
-        
-        private static readonly long LocalStopwatchFrequency = Stopwatch.Frequency;
-        [DataMember] private readonly DateTime _refLocalDateTime;
-        [DataMember] private readonly Int128 _offsetInNanoSeconds;
-        
-    }
-
     /// <summary>
     /// A monotonic time stamp is a time stamp retrieved from a monotonic clock.
     /// Monotonic clocks have the property that for any two tick queries at T0 and T1

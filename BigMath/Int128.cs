@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
 using HpTimesStamps.BigMath.Utils;
 
@@ -20,12 +21,13 @@ namespace HpTimesStamps.BigMath
     /// </summary>
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [DataContract]
     internal struct Int128 : IComparable<Int128>, IComparable, IEquatable<Int128>, IFormattable
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(0)] private ulong _lo;
+        [FieldOffset(0)] [DataMember] private ulong _lo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(8)] private ulong _hi;
+        [FieldOffset(8)] [DataMember] private ulong _hi;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebuggerDisplay => "0x" + ToString("X1");
@@ -35,17 +37,17 @@ namespace HpTimesStamps.BigMath
         /// <summary>
         ///     Gets a value that represents the number 0 (zero).
         /// </summary>
-        public static Int128 Zero = GetZero();
+        public static readonly Int128 Zero = GetZero();
 
         /// <summary>
         ///     Represents the largest possible value of an Int128.
         /// </summary>
-        public static Int128 MaxValue = GetMaxValue();
+        public static readonly Int128 MaxValue = GetMaxValue();
 
         /// <summary>
         ///     Represents the smallest possible value of an Int128.
         /// </summary>
-        public static Int128 MinValue = GetMinValue();
+        public static readonly Int128 MinValue = GetMinValue();
 
         private static Int128 GetMaxValue() => new Int128(long.MaxValue, ulong.MaxValue);
 
