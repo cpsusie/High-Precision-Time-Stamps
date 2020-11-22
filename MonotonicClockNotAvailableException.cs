@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// If the runtime / hardware does not have a monotonic clock available,  this exception is thrown.

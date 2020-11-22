@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// The monotonic time stamp context should be implemented

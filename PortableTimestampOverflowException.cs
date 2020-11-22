@@ -1,7 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// Indicates that a portable timestamp cannot be converted to a local

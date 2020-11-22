@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using HpTimesStamps.BigMath;
+using HpTimeStamps.BigMath;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// A portable monotonic stamp suitable for use across process boundaries and

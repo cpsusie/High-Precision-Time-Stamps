@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>HpTimesStamps</RootNamespace>
+    <RootNamespace>HpTimeStamps</RootNamespace>
     <AssemblyName>HighPrecisionTimeStamps</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
@@ -49,8 +49,11 @@ TimeStampSource.UtcNow probably does not work and has not been tested.</PackageR
 
   <ItemGroup>
     <Compile Remove="TestApp\**" />
+    <Compile Remove="UnitTests\**" />
     <EmbeddedResource Remove="TestApp\**" />
+    <EmbeddedResource Remove="UnitTests\**" />
     <None Remove="TestApp\**" />
+    <None Remove="UnitTests\**" />
   </ItemGroup>
 
   <ItemGroup>

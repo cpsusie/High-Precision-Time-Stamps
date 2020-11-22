@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// 

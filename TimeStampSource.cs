@@ -1,6 +1,6 @@
 ﻿using System;
-using ConfiguredUtil = HpTimesStamps.TimeStampUtil;
-namespace HpTimesStamps
+using ConfiguredUtil = HpTimeStamps.TimeStampUtil;
+namespace HpTimeStamps
 {
     /// <summary>
     /// Calibration is PER THREAD.  Calls are therefore thread-safe, but calibration may need to be done

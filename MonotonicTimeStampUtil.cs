@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// A utility designed to create monotonic timestamps

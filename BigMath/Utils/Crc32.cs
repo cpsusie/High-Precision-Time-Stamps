@@ -12,7 +12,7 @@
 using System;
 using System.Text;
 
-namespace HpTimesStamps.BigMath.Utils
+namespace HpTimeStamps.BigMath.Utils
 {
     /// <summary>
     ///     Crc32 calculator.

@@ -1,7 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// An exception that is thrown to indicate that a delegate

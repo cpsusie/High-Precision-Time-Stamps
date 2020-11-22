@@ -3,14 +3,15 @@
 //that was licensed to the .NET Foundation by its original author.  In turn, the .NET Foundation licensed this code to CJM Screws, LLC under the MIT 
 //license.  CJM Screws LLC licenses the version as modified to you under the MIT license.  CJM Screws LLC claims copyright to the modifications made 
 //to this class, but makes no claim to the unaltered original.
+
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using TickInt = HpTimesStamps.BigMath.Int128;
+using TickInt = HpTimeStamps.BigMath.Int128;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// Based on <see cref="TimeSpan"/> except <see cref="TicksPerSecond"/> is based on <see cref="Stopwatch.Frequency"/>
@@ -59,7 +60,7 @@ namespace HpTimesStamps
 
         #region Readonly internal static values
         internal static readonly TickInt TicksPerMicrosecond;
-        internal static readonly TickInt TicksPerNanosecond;
+        
         /// <summary>
         /// Longest positive period representable in seconds
         /// </summary>
@@ -196,12 +197,6 @@ namespace HpTimesStamps
         public long Microseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000);
 
         /// <summary>
-        /// Number of whole nanoseconds represented, fractional time remaining discarded
-        /// </summary>
-        /// <exception cref="OverflowException">Nanoseconds will not fit in <see cref="long"/>.</exception>
-        public long Nanoseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000_000);
-
-        /// <summary>
         /// Number of whole minutes represented, fractional time remaining discarded
         /// </summary>
         public int Minutes => (int)((_ticks / TicksPerMinute) % 60);
@@ -225,10 +220,6 @@ namespace HpTimesStamps
         /// Duration represented in microseconds, including fractional parts
         /// </summary>
         public double TotalMicroseconds =>  (double) _ticks / (double) TicksPerMicrosecond;
-        /// <summary>
-        /// Duration represented in nanoseconds, including fractional parts
-        /// </summary>
-        public double TotalNanoseconds => (double) _ticks / (double) TicksPerNanosecond;
 
         /// <summary>
         /// The duration represented in milliseconds, including fractional parts
@@ -313,9 +304,8 @@ namespace HpTimesStamps
         static Duration()
         {
             TicksPerSecond = Stopwatch.Frequency;
-            TicksPerMillisecond = TicksPerSecond * 1_000;
-            TicksPerMicrosecond = (TickInt) TicksPerMillisecond * 1_000;
-            TicksPerNanosecond = TicksPerMicrosecond * 1_000;
+            TicksPerMillisecond = TicksPerSecond / 1_000;
+            TicksPerMicrosecond = (TickInt) TicksPerMillisecond / 1_000;
             TicksPerMinute = TicksPerSecond * 60;
             TicksPerHour = TicksPerMinute * 60;
             TicksPerDay = TicksPerHour * 24;
@@ -606,8 +596,8 @@ namespace HpTimesStamps
             (timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
             MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator;
         internal static long ConvertStopwatchTicksToTimespanTicks(in TickInt stopwatchTicks) =>
-            ((long) stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
-                MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator;
+            (long) (( stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
+                MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator);
 
         private static Duration Interval(double value, double scale)
         {

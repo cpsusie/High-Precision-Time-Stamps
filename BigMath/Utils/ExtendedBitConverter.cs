@@ -12,7 +12,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace HpTimesStamps.BigMath.Utils
+namespace HpTimeStamps.BigMath.Utils
 {
     /// <summary>
     ///     Bit converter methods which support explicit endian.

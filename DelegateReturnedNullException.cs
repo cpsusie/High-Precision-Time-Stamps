@@ -1,7 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// Exception that is thrown to indicate a supplied delegate violated its contract

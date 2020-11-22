@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Runtime.Serialization;
-using HpTimesStamps.BigMath;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// The implementation of <see cref="IMonotonicStampContext"/> this library provides.

@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HpTimesStamps.BigMath;
+using HpTimeStamps.BigMath;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// A monotonic time stamp is a time stamp retrieved from a monotonic clock.

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// Note that the times retrieved are not more accurate in ABSOLUTE terms.

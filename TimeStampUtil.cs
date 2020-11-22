@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     /// <summary>
     /// This struct is used in <see cref="TimeStampSource"/> to provide high precision timestamps on a per thread basis.

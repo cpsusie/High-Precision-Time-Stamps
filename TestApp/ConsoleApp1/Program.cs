@@ -6,9 +6,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using HpTimesStamps;
+using HpTimeStamps;
 using JetBrains.Annotations;
-using MonotonicContext = HpTimesStamps.MonotonicStampContext;
+using MonotonicContext = HpTimeStamps.MonotonicStampContext;
 namespace TestApp
 {
     using MonotonicSource = MonotonicTimeStampUtil<MonotonicContext>;

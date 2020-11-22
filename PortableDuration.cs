@@ -3,15 +3,16 @@
 //that was licensed to the .NET Foundation by its original author.  In turn, the .NET Foundation licensed this code to CJM Screws, LLC under the MIT 
 //license.  CJM Screws LLC licenses the version as modified to you under the MIT license.  CJM Screws LLC claims copyright to the modifications made 
 //to this class, but makes no claim to the unaltered original.
+
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HpTimesStamps.BigMath;
-using TickInt = HpTimesStamps.BigMath.Int128;
-using PdInt = HpTimesStamps.BigMath.Int128;
-namespace HpTimesStamps
+using System.Runtime.Serialization;
+using TickInt = HpTimeStamps.BigMath.Int128;
+using PdInt = HpTimeStamps.BigMath.Int128;
+namespace HpTimeStamps
 {
     /// <summary>
     /// Based on <see cref="TimeSpan"/> and <see cref="Duration"/>except <see cref="TicksPerSecond"/> is always a Nanoseconds frequency ... i.e.
@@ -19,26 +20,32 @@ namespace HpTimesStamps
     /// </summary>
     /// <remarks>Since this type is always represented as nanoseconds regardless of environment it, unlike <see cref="Duration"/> is suitable for use across process boundaries and/or
     /// for serialization.</remarks>
+    [DataContract]
     public readonly struct PortableDuration : IComparable<PortableDuration>, IEquatable<PortableDuration>
     {
         #region Readonly Public Static Values
+
         /// <summary>
         /// Number of ticks in a millisecond
         /// </summary>
         public static readonly long TicksPerMillisecond;
+
         /// <summary>
         /// Number of ticks in a second.  Unlike <see cref="TimeSpan"/>, this will always
         /// be keyed to <see cref="Stopwatch.Frequency"/>.
         /// </summary>
         public static readonly long TicksPerSecond;
+
         /// <summary>
         /// Number of ticks per minute
         /// </summary>
         public static readonly long TicksPerMinute;
+
         /// <summary>
         /// Number of ticks per hour.
         /// </summary>
         public static readonly long TicksPerHour;
+
         /// <summary>
         /// Number of ticks per day 
         /// </summary>
@@ -48,10 +55,12 @@ namespace HpTimesStamps
         /// Zero
         /// </summary>
         public static readonly PortableDuration Zero = new PortableDuration(0);
+
         /// <summary>
         /// Maximum value of a duration
         /// </summary>
         public static readonly PortableDuration MaxValue = new PortableDuration(PdInt.MaxValue);
+
         /// <summary>
         /// Minimum value of a duration
         /// </summary>
@@ -59,36 +68,45 @@ namespace HpTimesStamps
 
         internal static readonly PdInt TicksPerMicrosecond;
         internal static readonly PdInt TicksPerNanosecond;
+
         #endregion
 
         #region Readonly internal static values
+
         /// <summary>
         /// Longest positive period representable in seconds
         /// </summary>
-        internal static readonly PdInt MaxSeconds = PdInt.MaxValue / TicksPerSecond;
+        internal static readonly PdInt MaxSeconds;
+
         /// <summary>
         /// Longest negative period representable in seconds
         /// </summary>
-        internal static readonly PdInt MinSeconds = PdInt.MinValue / TicksPerSecond;
+        internal static readonly PdInt MinSeconds;
+
         /// <summary>
         /// Longest positive period represented in milliseconds
         /// </summary>
-        internal static readonly PdInt MaxMilliseconds = PdInt.MaxValue / TicksPerMillisecond;
+        internal static readonly PdInt MaxMilliseconds;
+
         /// <summary>
         /// Longest negative period represented in millisecond
         /// </summary>
-        internal static readonly PdInt MinMilliseconds = PdInt.MinValue / TicksPerMillisecond;
+        internal static readonly PdInt MinMilliseconds;
+
         /// <summary>
         /// Number of ticks in a tenth of a second
         /// </summary>
-        internal static readonly PdInt TicksPerTenthSecond = TicksPerMillisecond * 100;
+        internal static readonly PdInt TicksPerTenthSecond;
+
         /// <summary>
         /// Amount to shift a <see cref="PdInt"/> right to get its sign bit.
         /// </summary>
-        internal const int TickIntRightShiftGetSignBitAmount = 127;
+        internal const int PdIntRightShiftGetSignBitAmount = 127;
+
         #endregion
 
         #region Conversion Operators
+
         /// <summary>
         /// Convert a timespan into a duration
         /// </summary>
@@ -105,7 +123,7 @@ namespace HpTimesStamps
         /// <param name="d">The duration to convert to a portable duration</param>
         [SuppressMessage("ReSharper", "RedundantCast")]
         public static implicit operator PortableDuration(in Duration d) =>
-            new PortableDuration((PdInt) d._ticks * (PdInt) Duration.TicksPerSecond / TicksPerSecond);
+            new PortableDuration(((PdInt) d._ticks) * ((PdInt)TicksPerSecond) / Duration.TicksPerSecond );
 
         /// <summary>
         /// Convert a portable duration into a duration
@@ -114,8 +132,9 @@ namespace HpTimesStamps
         /// <returns>the portable duration</returns>
         /// <exception cref="OverflowException">Cannot fit in Duration/</exception>
         [SuppressMessage("ReSharper", "RedundantCast")]
-        public static explicit operator Duration(in PortableDuration d) => new Duration((TickInt) d._ticks * TicksPerSecond / (PdInt) Duration.TicksPerSecond );
-        
+        public static explicit operator Duration(in PortableDuration d) =>
+            new Duration( ((TickInt) d._ticks) * ((TickInt)Duration.TicksPerSecond) / TicksPerSecond );
+
         /// <summary>
         /// Convert a duration into a timespan
         /// </summary>
@@ -126,9 +145,11 @@ namespace HpTimesStamps
             long timeSpanTicks = ConvertPortableDurationTicksToTimespanTicks(convertMe._ticks);
             return TimeSpan.FromTicks(timeSpanTicks);
         }
+
         #endregion
 
         #region Factory Methods
+
         /// <summary>
         /// Convert timespan ticks into a duration
         /// </summary>
@@ -139,6 +160,7 @@ namespace HpTimesStamps
             PdInt swTicks = ConvertTimespanTicksToPortableDurationTicks(timespanTicks);
             return new PortableDuration(in swTicks);
         }
+
         /// <summary>
         /// Compute a duration from a value representing days
         /// </summary>
@@ -146,6 +168,7 @@ namespace HpTimesStamps
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromDays(double value) => Interval(value, TicksPerDay);
+
         /// <summary>
         /// Compute a duration from a value representing hours
         /// </summary>
@@ -153,6 +176,7 @@ namespace HpTimesStamps
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromHours(double value) => Interval(value, TicksPerHour);
+
         /// <summary>
         /// Compute a duration from a value representing milliseconds
         /// </summary>
@@ -160,6 +184,7 @@ namespace HpTimesStamps
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromMilliseconds(double value) => Interval(value, TicksPerMillisecond);
+
         /// <summary>
         /// Compute a duration from a value representing minutes
         /// </summary>
@@ -167,6 +192,7 @@ namespace HpTimesStamps
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromMinutes(double value) => Interval(value, TicksPerMinute);
+
         /// <summary>
         /// Compute a duration from a value representing seconds
         /// </summary>
@@ -174,15 +200,18 @@ namespace HpTimesStamps
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromSeconds(double value) => Interval(value, TicksPerSecond);
+
         /// <summary>
         /// Create a duration from ticks
         /// </summary>
         /// <param name="value">ticks</param>
         /// <returns>the value</returns>
-        internal static PortableDuration FromStopwatchTicks(in Int128 value) => new PortableDuration(in value);
+        internal static PortableDuration FromStopwatchTicks(in TickInt value) => new PortableDuration(in value);
+
         #endregion
 
         #region Public Properties
+
         /// <summary>
         /// portable duration ticks
         /// </summary>
@@ -191,57 +220,58 @@ namespace HpTimesStamps
         /// <summary>
         /// Number of whole days represented, fractional time remaining discarded.
         /// </summary>
-        public int Days => (int)(_ticks / TicksPerDay);
+        public int Days => (int) (_ticks / TicksPerDay);
 
         /// <summary>
         /// Number of whole hours represented, fractional time remaining discarded
         /// </summary>
-        public int Hours => (int)((_ticks / TicksPerHour) % 24);
+        public int Hours => (int) ((_ticks / TicksPerHour) % 24);
 
         /// <summary>
         /// Number of whole milliseconds represented, fractional time remaining discarded
         /// </summary>
-        public int Milliseconds => (int)((_ticks / TicksPerMillisecond) % 1_000);
+        public int Milliseconds => (int) ((_ticks / TicksPerMillisecond) % 1_000);
 
         /// <summary>
         /// Number of whole microseconds represented, fractional time remaining discarded
         /// </summary>
-        public long Microseconds => (long)((_ticks / TicksPerMicrosecond) % 1_000_000);
+        public long Microseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000);
 
         /// <summary>
         /// Number of whole nanoseconds represented, fractional time remaining discarded
         /// </summary>
         /// <exception cref="OverflowException">Nanoseconds will not fit in <see cref="long"/>.</exception>
-        public long Nanoseconds => (long)((_ticks / TicksPerMicrosecond) % 1_000_000_000);
+        public long Nanoseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000_000);
 
         /// <summary>
         /// Number of whole minutes represented, fractional time remaining discarded
         /// </summary>
-        public int Minutes => (int)((_ticks / TicksPerMinute) % 60);
+        public int Minutes => (int) ((_ticks / TicksPerMinute) % 60);
 
         /// <summary>
         /// Number of whole seconds represented, fractional time remaining discarded
         /// </summary>
-        public int Seconds => (int)((_ticks / TicksPerSecond) % 60);
+        public int Seconds => (int) ((_ticks / TicksPerSecond) % 60);
 
         /// <summary>
         /// The duration represented in days, including fractional parts
         /// </summary>
-        public double TotalDays => ((double)_ticks) / TicksPerDay;
+        public double TotalDays => ((double) _ticks) / TicksPerDay;
 
         /// <summary>
         /// The duration represented in hours, including fractional parts
         /// </summary>
-        public double TotalHours => (double)_ticks / TicksPerHour;
+        public double TotalHours => (double) _ticks / TicksPerHour;
 
         /// <summary>
         /// PortableDuration represented in microseconds, including fractional parts
         /// </summary>
-        public double TotalMicroseconds => (double)_ticks / (double)TicksPerMicrosecond;
+        public double TotalMicroseconds => (double) _ticks / (double) TicksPerMicrosecond;
+
         /// <summary>
         /// PortableDuration represented in nanoseconds, including fractional parts
         /// </summary>
-        public double TotalNanoseconds => (double)_ticks / (double)TicksPerNanosecond;
+        public double TotalNanoseconds => (double) _ticks / (double) TicksPerNanosecond;
 
         /// <summary>
         /// The duration represented in milliseconds, including fractional parts
@@ -251,12 +281,12 @@ namespace HpTimesStamps
         {
             get
             {
-                double temp = (double)_ticks / TicksPerMillisecond;
-                if (temp > (double)MaxMilliseconds)
-                    return (double)MaxMilliseconds;
+                double temp = (double) _ticks / TicksPerMillisecond;
+                if (temp > (double) MaxMilliseconds)
+                    return (double) MaxMilliseconds;
 
-                if (temp < (double)MinMilliseconds)
-                    return (double)MinMilliseconds;
+                if (temp < (double) MinMilliseconds)
+                    return (double) MinMilliseconds;
 
                 return temp;
             }
@@ -265,14 +295,17 @@ namespace HpTimesStamps
         /// <summary>
         /// The duration represented in minutes, including fractional parts
         /// </summary>
-        public double TotalMinutes => (double)_ticks / TicksPerMinute;
+        public double TotalMinutes => (double) _ticks / TicksPerMinute;
+
         /// <summary>
         /// The duration represented in seconds, including fractional parts
         /// </summary>
-        public double TotalSeconds => (double)_ticks / TicksPerSecond;
+        public double TotalSeconds => (double) _ticks / TicksPerSecond;
+
         #endregion
 
         #region CTORS
+
         /// <summary>
         /// CTOR
         /// </summary>
@@ -303,7 +336,9 @@ namespace HpTimesStamps
         /// <param name="seconds">seconds</param>
         /// <exception cref="ArgumentException">Period too long to fit</exception>
         public PortableDuration(int days, int hours, int minutes, int seconds)
-            : this(days, hours, minutes, seconds, 0) { }
+            : this(days, hours, minutes, seconds, 0)
+        {
+        }
 
         /// <summary>
         /// CTOR
@@ -317,22 +352,32 @@ namespace HpTimesStamps
         [SuppressMessage("ReSharper", "RedundantCast")]
         public PortableDuration(int days, int hours, int minutes, int seconds, int milliseconds)
         {
-            long totalMilliSeconds = ((long)days * 3_600 * 24 + (long)hours * 3_600 + (long)minutes * 60 + seconds) * 1_000 + milliseconds;
+            long totalMilliSeconds =
+                ((long) days * 3_600 * 24 + (long) hours * 3_600 + (long) minutes * 60 + seconds) * 1_000 +
+                milliseconds;
             if (totalMilliSeconds > MaxMilliseconds || totalMilliSeconds < MinMilliseconds)
                 throw new ArgumentException("Period specified will not fit in a timespan.");
-            _ticks = (Int128)totalMilliSeconds * TicksPerMillisecond;
+            _ticks = (TickInt) totalMilliSeconds * TicksPerMillisecond;
         }
 
         static PortableDuration()
         {
             TicksPerSecond = 1_000_000_000;
-            TicksPerMillisecond = TicksPerSecond * 1_000;
-            TicksPerMicrosecond = (Int128)TicksPerMillisecond * 1_000;
-            TicksPerNanosecond = TicksPerMicrosecond * 1_000;
+            TicksPerMillisecond = TicksPerSecond / 1_000;
+            TicksPerMicrosecond = (TickInt) TicksPerMillisecond / 1_000;
+            TicksPerNanosecond = 1;
             TicksPerMinute = TicksPerSecond * 60;
             TicksPerHour = TicksPerMinute * 60;
             TicksPerDay = TicksPerHour * 24;
+            MaxSeconds = PdInt.MaxValue / TicksPerSecond;
+            MinSeconds = PdInt.MinValue / TicksPerSecond;
+            MaxMilliseconds = PdInt.MaxValue / TicksPerMillisecond;
+            MinMilliseconds = PdInt.MinValue / TicksPerMillisecond;
+            TicksPerTenthSecond = TicksPerMillisecond * 100;
+            TicksPerNanosecond = 1;
+            TicksPerMicrosecond = 1_000;
         }
+
         #endregion
 
         #region ToString Methods
@@ -539,12 +584,12 @@ namespace HpTimesStamps
         [Pure]
         public PortableDuration Add(in PortableDuration ts)
         {
-            Int128 result = _ticks + ts._ticks;
+            TickInt result = _ticks + ts._ticks;
             // Overflow if signs of operands was identical and result's
             // sign was opposite.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit (either 64 1's or 64 0's).
-            if ((_ticks >> TickIntRightShiftGetSignBitAmount == ts._ticks >> TickIntRightShiftGetSignBitAmount) &&
-                (_ticks >> TickIntRightShiftGetSignBitAmount != result >> TickIntRightShiftGetSignBitAmount))
+            if ((_ticks >> PdIntRightShiftGetSignBitAmount == ts._ticks >> PdIntRightShiftGetSignBitAmount) &&
+                (_ticks >> PdIntRightShiftGetSignBitAmount != result >> PdIntRightShiftGetSignBitAmount))
                 throw new OverflowException("The addition resulted in overflow.");
             return new PortableDuration(result);
         }
@@ -559,14 +604,14 @@ namespace HpTimesStamps
         [Pure]
         public PortableDuration Subtract(in PortableDuration ts)
         {
-            Int128 result = _ticks - ts._ticks;
+            TickInt result = _ticks - ts._ticks;
             // Overflow if signs of operands was different and result's
             // sign was opposite from the first argument's sign.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit 
-            if ((_ticks >> TickIntRightShiftGetSignBitAmount != ts._ticks >>
-                    TickIntRightShiftGetSignBitAmount) &&
-                (_ticks >> TickIntRightShiftGetSignBitAmount != result
-                    >> TickIntRightShiftGetSignBitAmount))
+            if ((_ticks >> PdIntRightShiftGetSignBitAmount != ts._ticks >>
+                    PdIntRightShiftGetSignBitAmount) &&
+                (_ticks >> PdIntRightShiftGetSignBitAmount != result
+                    >> PdIntRightShiftGetSignBitAmount))
                 throw new OverflowException();
             return new PortableDuration(result);
         }
@@ -611,13 +656,13 @@ namespace HpTimesStamps
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static PdInt ConvertTimespanTicksToPortableDurationTicks(long timespanTicks) =>
-            timespanTicks * TicksPerSecond / TimeSpan.TicksPerSecond;
+            (PdInt) timespanTicks * TicksPerSecond / TimeSpan.TicksPerSecond;
         internal static long ConvertPortableDurationTicksToTimespanTicks(in PdInt stopwatchTicks) =>
             (long) (stopwatchTicks * TimeSpan.TicksPerSecond / TicksPerNanosecond);
         internal static TickInt ConvertPortableDurationTicksToDurationTicks(in PdInt portableDurationTicks) =>
             portableDurationTicks * Duration.TicksPerSecond / TicksPerSecond;
 
-        internal static Int128 ConvertDurationTicksToPortableDurationTicks(in TickInt durationTicks) =>
+        internal static TickInt ConvertDurationTicksToPortableDurationTicks(in TickInt durationTicks) =>
             durationTicks * TicksPerSecond / Duration.TicksPerSecond;
         
         private static PortableDuration Interval(double value, double scale)
@@ -639,11 +684,11 @@ namespace HpTimesStamps
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [SuppressMessage("ReSharper", "RedundantCast")]
-        internal static Int128 TimeToTicks(int hour, int minute, int second)
+        internal static TickInt TimeToTicks(int hour, int minute, int second)
         {
             // totalSeconds is bounded by 2^31 * 2^12 + 2^31 * 2^8 + 2^31,
             // which is less than 2^44, meaning we won't overflow totalSeconds.
-            Int128 totalSeconds = (PdInt)hour * 3_600 + (PdInt)minute * 60 + (PdInt)second;
+            TickInt totalSeconds = (PdInt)hour * 3_600 + (PdInt)minute * 60 + (PdInt)second;
             if (totalSeconds > MaxSeconds || totalSeconds < MinSeconds)
                 throw new ArgumentException("One or more of the values was too long to fit in a PortableDuration");
             return totalSeconds * TicksPerSecond;
@@ -655,7 +700,7 @@ namespace HpTimesStamps
         /// Internal to allow fast direct access by other in this library.
         /// </summary>
         [SuppressMessage("ReSharper", "InconsistentNaming")] //only internal by special dispensation
-        internal readonly PdInt _ticks;
+        [DataMember] internal readonly PdInt _ticks;
         #endregion
     }
 }

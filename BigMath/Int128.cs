@@ -12,9 +12,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
-using HpTimesStamps.BigMath.Utils;
+using HpTimeStamps.BigMath.Utils;
 
-namespace HpTimesStamps.BigMath
+namespace HpTimeStamps.BigMath
 {
     /// <summary>
     ///     Represents a 128-bit signed integer.

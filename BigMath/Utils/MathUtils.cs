@@ -6,7 +6,7 @@
 
 using System;
 
-namespace HpTimesStamps.BigMath.Utils
+namespace HpTimeStamps.BigMath.Utils
 {
     /// <summary>
     ///     Math utils.

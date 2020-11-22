@@ -12,7 +12,7 @@
 using System;
 using System.Linq;
 
-namespace HpTimesStamps.BigMath.Utils
+namespace HpTimeStamps.BigMath.Utils
 {
     /// <summary>
     ///     Utils for the <see cref="Array" /> class.

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using JetBrains.Annotations;
 
-namespace HpTimesStamps
+namespace HpTimeStamps
 {
     internal class LocklessLazyWriteOnce<T> where T : class
     {
