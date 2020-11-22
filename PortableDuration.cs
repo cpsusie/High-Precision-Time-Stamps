@@ -8,17 +8,18 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HpTimesStamps.BigMath;
 using TickInt = HpTimesStamps.BigMath.Int128;
-
+using PdInt = HpTimesStamps.BigMath.Int128;
 namespace HpTimesStamps
 {
     /// <summary>
-    /// Based on <see cref="TimeSpan"/> except <see cref="TicksPerSecond"/> is based on <see cref="Stopwatch.Frequency"/>
-    /// rather than TimeSpan's.
+    /// Based on <see cref="TimeSpan"/> and <see cref="Duration"/>except <see cref="TicksPerSecond"/> is always a Nanoseconds frequency ... i.e.
+    /// 1_000_000_000 rather than <see cref="TimeSpan"/>'s which is variable based on .NET implementation or <see cref="Duration"/> which is tied to <see cref="Stopwatch.Frequency"/>.
     /// </summary>
-    /// <remarks>Because <see cref="Stopwatch.Frequency"/> is different in different environments, this duration should not be considered
-    /// portable or usable across process boundaries.  DO NOT SERIALIZE OR USE ACROSS PROCESS BOUNDARIES.  Use </remarks>
-    public readonly struct Duration : IComparable<Duration>, IEquatable<Duration>
+    /// <remarks>Since this type is always represented as nanoseconds regardless of environment it, unlike <see cref="Duration"/> is suitable for use across process boundaries and/or
+    /// for serialization.</remarks>
+    public readonly struct PortableDuration : IComparable<PortableDuration>, IEquatable<PortableDuration>
     {
         #region Readonly Public Static Values
         /// <summary>
@@ -42,46 +43,47 @@ namespace HpTimesStamps
         /// Number of ticks per day 
         /// </summary>
         public static readonly long TicksPerDay;
-        
+
         /// <summary>
         /// Zero
         /// </summary>
-        public static readonly Duration Zero = new Duration(0);
+        public static readonly PortableDuration Zero = new PortableDuration(0);
         /// <summary>
         /// Maximum value of a duration
         /// </summary>
-        public static readonly Duration MaxValue = new Duration(TickInt.MaxValue);
+        public static readonly PortableDuration MaxValue = new PortableDuration(PdInt.MaxValue);
         /// <summary>
         /// Minimum value of a duration
         /// </summary>
-        public static readonly Duration MinValue = new Duration(TickInt.MinValue);
+        public static readonly PortableDuration MinValue = new PortableDuration(PdInt.MinValue);
+
+        internal static readonly PdInt TicksPerMicrosecond;
+        internal static readonly PdInt TicksPerNanosecond;
         #endregion
 
         #region Readonly internal static values
-        internal static readonly TickInt TicksPerMicrosecond;
-        internal static readonly TickInt TicksPerNanosecond;
         /// <summary>
         /// Longest positive period representable in seconds
         /// </summary>
-        internal static readonly TickInt MaxSeconds;
+        internal static readonly PdInt MaxSeconds = PdInt.MaxValue / TicksPerSecond;
         /// <summary>
         /// Longest negative period representable in seconds
         /// </summary>
-        internal static readonly TickInt MinSeconds;
+        internal static readonly PdInt MinSeconds = PdInt.MinValue / TicksPerSecond;
         /// <summary>
         /// Longest positive period represented in milliseconds
         /// </summary>
-        internal static readonly TickInt MaxMilliseconds;
+        internal static readonly PdInt MaxMilliseconds = PdInt.MaxValue / TicksPerMillisecond;
         /// <summary>
         /// Longest negative period represented in millisecond
         /// </summary>
-        internal static readonly TickInt MinMilliseconds;
+        internal static readonly PdInt MinMilliseconds = PdInt.MinValue / TicksPerMillisecond;
         /// <summary>
         /// Number of ticks in a tenth of a second
         /// </summary>
-        internal static readonly TickInt TicksPerTenthSecond;
+        internal static readonly PdInt TicksPerTenthSecond = TicksPerMillisecond * 100;
         /// <summary>
-        /// Amount to shift a <see cref="TickInt"/> right to get its sign bit.
+        /// Amount to shift a <see cref="PdInt"/> right to get its sign bit.
         /// </summary>
         internal const int TickIntRightShiftGetSignBitAmount = 127;
         #endregion
@@ -91,20 +93,37 @@ namespace HpTimesStamps
         /// Convert a timespan into a duration
         /// </summary>
         /// <param name="convertMe">value to convert</param>
-        public static implicit operator Duration(TimeSpan convertMe)
+        public static implicit operator PortableDuration(TimeSpan convertMe)
         {
-            TickInt swTicks = ConvertTimespanTicksToStopwatchTicks(convertMe.Ticks);
-            return new Duration(in swTicks);
+            PdInt pdTicks = ConvertTimespanTicksToPortableDurationTicks(convertMe.Ticks);
+            return new PortableDuration(in pdTicks);
         }
 
+        /// <summary>
+        /// Convert a duration to a portable duration
+        /// </summary>
+        /// <param name="d">The duration to convert to a portable duration</param>
+        [SuppressMessage("ReSharper", "RedundantCast")]
+        public static implicit operator PortableDuration(in Duration d) =>
+            new PortableDuration((PdInt) d._ticks * (PdInt) Duration.TicksPerSecond / TicksPerSecond);
+
+        /// <summary>
+        /// Convert a portable duration into a duration
+        /// </summary>
+        /// <param name="d">the portable duration to convert</param>
+        /// <returns>the portable duration</returns>
+        /// <exception cref="OverflowException">Cannot fit in Duration/</exception>
+        [SuppressMessage("ReSharper", "RedundantCast")]
+        public static explicit operator Duration(in PortableDuration d) => new Duration((TickInt) d._ticks * TicksPerSecond / (PdInt) Duration.TicksPerSecond );
+        
         /// <summary>
         /// Convert a duration into a timespan
         /// </summary>
         /// <param name="convertMe">value to convert</param>
         /// <exception cref="OverflowException">Can't fit.</exception>
-        public static explicit operator TimeSpan(in Duration convertMe)
+        public static explicit operator TimeSpan(in PortableDuration convertMe)
         {
-            long timeSpanTicks = ConvertStopwatchTicksToTimespanTicks(in convertMe._ticks);
+            long timeSpanTicks = ConvertPortableDurationTicksToTimespanTicks(convertMe._ticks);
             return TimeSpan.FromTicks(timeSpanTicks);
         }
         #endregion
@@ -115,65 +134,59 @@ namespace HpTimesStamps
         /// </summary>
         /// <param name="timespanTicks">the timespan ticks</param>
         /// <returns>a duration</returns>
-        public static Duration FromTimespanTicks(long timespanTicks)
+        public static PortableDuration FromTimespanTicks(long timespanTicks)
         {
-            TickInt swTicks = ConvertTimespanTicksToStopwatchTicks(timespanTicks);
-            return new Duration(in swTicks);
+            PdInt swTicks = ConvertTimespanTicksToPortableDurationTicks(timespanTicks);
+            return new PortableDuration(in swTicks);
         }
         /// <summary>
         /// Compute a duration from a value representing days
         /// </summary>
         /// <param name="value">Value representing days</param>
         /// <returns>A duration</returns>
-        /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromDays(double value) => Interval(value, TicksPerDay);
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromDays(double value) => Interval(value, TicksPerDay);
         /// <summary>
         /// Compute a duration from a value representing hours
         /// </summary>
         /// <param name="value">Value representing days</param>
         /// <returns>A duration</returns>
-        /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromHours(double value) => Interval(value, TicksPerHour);
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromHours(double value) => Interval(value, TicksPerHour);
         /// <summary>
         /// Compute a duration from a value representing milliseconds
         /// </summary>
         /// <param name="value">Value representing milliseconds</param>
         /// <returns>A duration</returns>
-        /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromMilliseconds(double value) => Interval(value, TicksPerMillisecond);
-        /// <summary>
-        /// Get a Duration from microseconds
-        /// </summary>
-        /// <param name="value">Microseconds</param>
-        /// <returns>A duration consisting of <paramref name="value"/> microseconds.</returns>
-        public static Duration FromMicroseconds(double value) => Interval(value, (double) TicksPerMicrosecond);
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromMilliseconds(double value) => Interval(value, TicksPerMillisecond);
         /// <summary>
         /// Compute a duration from a value representing minutes
         /// </summary>
         /// <param name="value">Value representing minutes</param>
         /// <returns>A duration</returns>
-        /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromMinutes(double value) => Interval(value, TicksPerMinute);
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromMinutes(double value) => Interval(value, TicksPerMinute);
         /// <summary>
         /// Compute a duration from a value representing seconds
         /// </summary>
         /// <param name="value">Value representing seconds</param>
         /// <returns>A duration</returns>
-        /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromSeconds(double value) => Interval(value, TicksPerSecond);
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromSeconds(double value) => Interval(value, TicksPerSecond);
         /// <summary>
         /// Create a duration from ticks
         /// </summary>
         /// <param name="value">ticks</param>
         /// <returns>the value</returns>
-        internal static Duration FromStopwatchTicks(in TickInt value) => new Duration(in value);
+        internal static PortableDuration FromStopwatchTicks(in Int128 value) => new PortableDuration(in value);
         #endregion
 
         #region Public Properties
         /// <summary>
-        /// Stopwatch ticks
+        /// portable duration ticks
         /// </summary>
-        internal TickInt Ticks => _ticks;
+        internal PdInt Ticks => _ticks;
 
         /// <summary>
         /// Number of whole days represented, fractional time remaining discarded.
@@ -193,13 +206,13 @@ namespace HpTimesStamps
         /// <summary>
         /// Number of whole microseconds represented, fractional time remaining discarded
         /// </summary>
-        public long Microseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000);
+        public long Microseconds => (long)((_ticks / TicksPerMicrosecond) % 1_000_000);
 
         /// <summary>
         /// Number of whole nanoseconds represented, fractional time remaining discarded
         /// </summary>
         /// <exception cref="OverflowException">Nanoseconds will not fit in <see cref="long"/>.</exception>
-        public long Nanoseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000_000);
+        public long Nanoseconds => (long)((_ticks / TicksPerMicrosecond) % 1_000_000_000);
 
         /// <summary>
         /// Number of whole minutes represented, fractional time remaining discarded
@@ -222,13 +235,13 @@ namespace HpTimesStamps
         public double TotalHours => (double)_ticks / TicksPerHour;
 
         /// <summary>
-        /// Duration represented in microseconds, including fractional parts
+        /// PortableDuration represented in microseconds, including fractional parts
         /// </summary>
-        public double TotalMicroseconds =>  (double) _ticks / (double) TicksPerMicrosecond;
+        public double TotalMicroseconds => (double)_ticks / (double)TicksPerMicrosecond;
         /// <summary>
-        /// Duration represented in nanoseconds, including fractional parts
+        /// PortableDuration represented in nanoseconds, including fractional parts
         /// </summary>
-        public double TotalNanoseconds => (double) _ticks / (double) TicksPerNanosecond;
+        public double TotalNanoseconds => (double)_ticks / (double)TicksPerNanosecond;
 
         /// <summary>
         /// The duration represented in milliseconds, including fractional parts
@@ -239,10 +252,10 @@ namespace HpTimesStamps
             get
             {
                 double temp = (double)_ticks / TicksPerMillisecond;
-                if (temp > (double) MaxMilliseconds)
+                if (temp > (double)MaxMilliseconds)
                     return (double)MaxMilliseconds;
 
-                if (temp < (double) MinMilliseconds)
+                if (temp < (double)MinMilliseconds)
                     return (double)MinMilliseconds;
 
                 return temp;
@@ -263,14 +276,14 @@ namespace HpTimesStamps
         /// <summary>
         /// CTOR
         /// </summary>
-        /// <param name="ticks">stopwatch ticks</param>
-        internal Duration(in TickInt ticks) => _ticks = ticks;
+        /// <param name="nanoseconds"># of nanoseconds</param>
+        internal PortableDuration(in PdInt nanoseconds) => _ticks = nanoseconds;
 
         /// <summary>
         /// Create a duration from stopwatch ticks
         /// </summary>
-        /// <param name="stopwatchTicks">the ticks</param>
-        public Duration(long stopwatchTicks) => _ticks = stopwatchTicks; 
+        /// <param name="nanoseconds">number of nanoseconds</param>
+        public PortableDuration(long nanoseconds) => _ticks = nanoseconds;
 
         /// <summary>
         /// CTOR
@@ -279,7 +292,7 @@ namespace HpTimesStamps
         /// <param name="minutes">Minutes</param>
         /// <param name="seconds">Seconds</param>
         /// <exception cref="ArgumentException">Period too long to fit.</exception>
-        public Duration(int hours, int minutes, int seconds) => _ticks = TimeToTicks(hours, minutes, seconds);
+        public PortableDuration(int hours, int minutes, int seconds) => _ticks = TimeToTicks(hours, minutes, seconds);
 
         /// <summary>
         /// CTOR
@@ -289,7 +302,7 @@ namespace HpTimesStamps
         /// <param name="minutes">minutes</param>
         /// <param name="seconds">seconds</param>
         /// <exception cref="ArgumentException">Period too long to fit</exception>
-        public Duration(int days, int hours, int minutes, int seconds)
+        public PortableDuration(int days, int hours, int minutes, int seconds)
             : this(days, hours, minutes, seconds, 0) { }
 
         /// <summary>
@@ -302,30 +315,24 @@ namespace HpTimesStamps
         /// <param name="milliseconds">milliseconds</param>
         /// <exception cref="ArgumentException">Period too long to fit.</exception>
         [SuppressMessage("ReSharper", "RedundantCast")]
-        public Duration(int days, int hours, int minutes, int seconds, int milliseconds)
+        public PortableDuration(int days, int hours, int minutes, int seconds, int milliseconds)
         {
             long totalMilliSeconds = ((long)days * 3_600 * 24 + (long)hours * 3_600 + (long)minutes * 60 + seconds) * 1_000 + milliseconds;
             if (totalMilliSeconds > MaxMilliseconds || totalMilliSeconds < MinMilliseconds)
                 throw new ArgumentException("Period specified will not fit in a timespan.");
-            _ticks = (TickInt)totalMilliSeconds * TicksPerMillisecond;
+            _ticks = (Int128)totalMilliSeconds * TicksPerMillisecond;
         }
 
-        static Duration()
+        static PortableDuration()
         {
-            TicksPerSecond = Stopwatch.Frequency;
+            TicksPerSecond = 1_000_000_000;
             TicksPerMillisecond = TicksPerSecond * 1_000;
-            TicksPerMicrosecond = (TickInt) TicksPerMillisecond * 1_000;
+            TicksPerMicrosecond = (Int128)TicksPerMillisecond * 1_000;
             TicksPerNanosecond = TicksPerMicrosecond * 1_000;
             TicksPerMinute = TicksPerSecond * 60;
             TicksPerHour = TicksPerMinute * 60;
             TicksPerDay = TicksPerHour * 24;
-            MaxSeconds = TickInt.MaxValue / TicksPerSecond;
-            MinSeconds = TickInt.MinValue / TicksPerSecond;
-            MaxMilliseconds = TickInt.MaxValue / TicksPerMillisecond;
-            MinMilliseconds = TickInt.MinValue / TicksPerMillisecond;
-            TicksPerTenthSecond = TicksPerMillisecond * 100;
         }
-
         #endregion
 
         #region ToString Methods
@@ -343,35 +350,35 @@ namespace HpTimesStamps
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if equal false otherwise</returns>
-        public static bool operator ==(in Duration t1, in Duration t2) => t1._ticks == t2._ticks;
+        public static bool operator ==(in PortableDuration t1, in PortableDuration t2) => t1._ticks == t2._ticks;
         /// <summary>
         /// Test two durations for inequality
         /// </summary>
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if not equal false otherwise</returns>
-        public static bool operator !=(in Duration t1, in Duration t2) => t1._ticks != t2._ticks;
+        public static bool operator !=(in PortableDuration t1, in PortableDuration t2) => t1._ticks != t2._ticks;
         /// <summary>
         /// Test two durations for to see if <paramref name="t1"/> is less than <paramref name="t2"/>
         /// </summary>
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if <paramref name="t1"/> is less than <paramref name="t2"/>, false otherwise</returns>
-        public static bool operator <(in Duration t1, in Duration t2) => t1._ticks < t2._ticks;
+        public static bool operator <(in PortableDuration t1, in PortableDuration t2) => t1._ticks < t2._ticks;
         /// <summary>
         /// Test two durations for to see if <paramref name="t1"/> is less than or equal to <paramref name="t2"/>
         /// </summary>
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if <paramref name="t1"/> is less than or equal to <paramref name="t2"/>, false otherwise</returns>
-        public static bool operator <=(in Duration t1, in Duration t2) => t1._ticks <= t2._ticks;
+        public static bool operator <=(in PortableDuration t1, in PortableDuration t2) => t1._ticks <= t2._ticks;
         /// <summary>
         /// Test two durations for to see if <paramref name="t1"/> is greater than <paramref name="t2"/>
         /// </summary>
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if <paramref name="t1"/> is greater than <paramref name="t2"/>, false otherwise</returns>
-        public static bool operator >(in Duration t1, in Duration t2) => t1._ticks > t2._ticks;
+        public static bool operator >(in PortableDuration t1, in PortableDuration t2) => t1._ticks > t2._ticks;
 
         /// <summary>
         /// Test two durations for to see if <paramref name="t1"/> is greater than or equal to <paramref name="t2"/>
@@ -379,11 +386,11 @@ namespace HpTimesStamps
         /// <param name="t1">left hand operand</param>
         /// <param name="t2">right hand operand</param>
         /// <returns>true if <paramref name="t1"/> is greater than or equal to <paramref name="t2"/>, false otherwise</returns>
-        public static bool operator >=(in Duration t1, in Duration t2) => t1._ticks >= t2._ticks;
+        public static bool operator >=(in PortableDuration t1, in PortableDuration t2) => t1._ticks >= t2._ticks;
         /// <inheritdoc />
-        public override bool Equals(object value) => value is Duration d && d == this;
+        public override bool Equals(object value) => value is PortableDuration d && d == this;
         /// <inheritdoc />
-        public bool Equals(Duration obj) => obj == this;
+        public bool Equals(PortableDuration obj) => obj == this;
         /// <inheritdoc />
         public override int GetHashCode() => _ticks.GetHashCode();
         /// <summary>
@@ -395,7 +402,7 @@ namespace HpTimesStamps
         /// Zero if this value has the same position in the sort order as <paramref name="otherValue"/>.
         /// A negative number if this value precedes <paramref name="otherValue"/> in sort order.
         /// </returns>
-        public int CompareTo(Duration otherValue) => Compare(in this, in otherValue);
+        public int CompareTo(PortableDuration otherValue) => Compare(in this, in otherValue);
         /// <summary>
         /// Compare two durations
         /// </summary>
@@ -406,7 +413,7 @@ namespace HpTimesStamps
         /// Zero if <paramref name="lhs"/> has the same position in the sort order as <paramref name="rhs"/>.
         /// A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in sort order.
         /// </returns>
-        public static int Compare(in Duration lhs, in Duration rhs)
+        public static int Compare(in PortableDuration lhs, in PortableDuration rhs)
         {
             if (lhs._ticks > rhs._ticks) return 1;
             if (lhs._ticks < rhs._ticks) return -1;
@@ -421,21 +428,21 @@ namespace HpTimesStamps
         /// <param name="factor">the factor</param>
         /// <returns>the product</returns>
         [Pure]
-        public Duration Multiply(double factor) => this * factor;
+        public PortableDuration Multiply(double factor) => this * factor;
         /// <summary>
         /// Divide this value by a specified divisor
         /// </summary>
         /// <param name="divisor">the divisor</param>
         /// <returns>the product</returns>
         [Pure]
-        public Duration Divide(double divisor) => this / divisor;
+        public PortableDuration Divide(double divisor) => this / divisor;
         /// <summary>
         /// Divide this value by another duration
         /// </summary>
         /// <param name="ts">the divisor</param>
         /// <returns>the quotient</returns>
         [Pure]
-        public double Divide(Duration ts) => this / ts;
+        public double Divide(PortableDuration ts) => this / ts;
         /// <summary>
         /// Subtract two durations
         /// </summary>
@@ -443,13 +450,13 @@ namespace HpTimesStamps
         /// <param name="t2">subtrahend</param>
         /// <returns>difference</returns>
         /// <exception cref="OverflowException">Operation overflow</exception>
-        public static Duration operator -(in Duration t1, in Duration t2) => t1.Subtract(in t2);
+        public static PortableDuration operator -(in PortableDuration t1, in PortableDuration t2) => t1.Subtract(in t2);
         /// <summary>
         /// Apply unary + operator
         /// </summary>
         /// <param name="t">operand</param>
         /// <returns>a value equal to <paramref name="t"/>/</returns>
-        public static Duration operator +(in Duration t) => t;
+        public static PortableDuration operator +(in PortableDuration t) => t;
         /// <summary>
         /// Add two addends
         /// </summary>
@@ -457,7 +464,7 @@ namespace HpTimesStamps
         /// <param name="t2">second addend</param>
         /// <returns>sum</returns>
         /// <exception cref="OverflowException">Operation resulted in overflow</exception>
-        public static Duration operator +(in Duration t1, in Duration t2) => t1.Add(t2);
+        public static PortableDuration operator +(in PortableDuration t1, in PortableDuration t2) => t1.Add(t2);
         /// <summary>
         /// Multiply a duration by a factor
         /// </summary>
@@ -465,7 +472,7 @@ namespace HpTimesStamps
         /// <param name="timeSpan">the duration</param>
         /// <returns>the product</returns>
         /// <exception cref="OverflowException">Operation resulted in overflow.</exception>
-        public static Duration operator *(double factor, in Duration timeSpan) => timeSpan * factor;
+        public static PortableDuration operator *(double factor, in PortableDuration timeSpan) => timeSpan * factor;
         // Using floating-point arithmetic directly means that infinities can be returned, which is reasonable
         // if we consider TimeSpan.FromHours(1) / TimeSpan.Zero asks how many zero-second intervals there are in
         // an hour for which infinity is the mathematic correct answer. Having TimeSpan.Zero / TimeSpan.Zero return NaN
@@ -476,17 +483,17 @@ namespace HpTimesStamps
         /// <param name="t1">dividend</param>
         /// <param name="t2">divisor</param>
         /// <returns>quotient</returns>
-        public static double operator /(in Duration t1, in Duration t2) => (double) t1.Ticks / (double)t2.Ticks;
+        public static double operator /(in PortableDuration t1, in PortableDuration t2) => (double)t1.Ticks / (double)t2.Ticks;
 
         /// <summary>
         /// Multiply a duration 
         /// </summary>
-        /// <param name="timeSpan">Duration factor</param>
+        /// <param name="timeSpan">PortableDuration factor</param>
         /// <param name="factor">factor</param>
         /// <returns>product</returns>
         /// <exception cref="ArgumentException"><paramref name="factor"/> was nan</exception>
         /// <exception cref="OverflowException">operation resulted in overflow</exception>
-        public static Duration operator *(in Duration timeSpan, double factor)
+        public static PortableDuration operator *(in PortableDuration timeSpan, double factor)
         {
             if (double.IsNaN(factor))
             {
@@ -495,19 +502,19 @@ namespace HpTimesStamps
 
             // Rounding to the nearest tick is as close to the result we would have with unlimited
             // precision as possible, and so likely to have the least potential to surprise.
-            double ticks = Math.Round((double) timeSpan.Ticks * factor);
+            double ticks = Math.Round((double)timeSpan.Ticks * factor);
             return IntervalFromDoubleTicks(ticks);
         }
 
         /// <summary>
-        /// Get the absolute value of this Duration
+        /// Get the absolute value of this PortableDuration
         /// </summary>
         /// <returns>the absolute value</returns>
-        public Duration AbsoluteValue()
+        public PortableDuration AbsoluteValue()
         {
             if (Ticks == MinValue.Ticks)
                 throw new OverflowException("This value is the most negative value and has no positive 2's complement counterpart.");
-            return new Duration(_ticks >= 0 ? _ticks : -_ticks);
+            return new PortableDuration(_ticks >= 0 ? _ticks : -_ticks);
         }
 
         /// <summary>
@@ -515,12 +522,12 @@ namespace HpTimesStamps
         /// </summary>
         /// <returns>The additive inverse</returns>
         [Pure]
-        public Duration Negate()
+        public PortableDuration Negate()
         {
             if (Ticks == MinValue.Ticks)
                 throw new OverflowException("This value is the most negative value " +
                                             "possible and has no positive counterpart in a 2's complement representation.");
-            return new Duration(-_ticks);
+            return new PortableDuration(-_ticks);
         }
 
         /// <summary>
@@ -530,16 +537,16 @@ namespace HpTimesStamps
         /// <returns>sum</returns>
         /// <exception cref="OverflowException">addition caused overflow</exception>
         [Pure]
-        public Duration Add(in Duration ts)
+        public PortableDuration Add(in PortableDuration ts)
         {
-            TickInt result = _ticks + ts._ticks;
+            Int128 result = _ticks + ts._ticks;
             // Overflow if signs of operands was identical and result's
             // sign was opposite.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit (either 64 1's or 64 0's).
             if ((_ticks >> TickIntRightShiftGetSignBitAmount == ts._ticks >> TickIntRightShiftGetSignBitAmount) &&
                 (_ticks >> TickIntRightShiftGetSignBitAmount != result >> TickIntRightShiftGetSignBitAmount))
                 throw new OverflowException("The addition resulted in overflow.");
-            return new Duration(result);
+            return new PortableDuration(result);
         }
 
 
@@ -550,9 +557,9 @@ namespace HpTimesStamps
         /// <returns>the difference</returns>
         /// <exception cref="OverflowException">Result caused overflow.</exception>
         [Pure]
-        public Duration Subtract(in Duration ts)
+        public PortableDuration Subtract(in PortableDuration ts)
         {
-            TickInt result = _ticks - ts._ticks;
+            Int128 result = _ticks - ts._ticks;
             // Overflow if signs of operands was different and result's
             // sign was opposite from the first argument's sign.
             // >> TickIntRightShiftGetSignBitAmount gives the sign bit 
@@ -561,7 +568,7 @@ namespace HpTimesStamps
                 (_ticks >> TickIntRightShiftGetSignBitAmount != result
                     >> TickIntRightShiftGetSignBitAmount))
                 throw new OverflowException();
-            return new Duration(result);
+            return new PortableDuration(result);
         }
 
         /// <summary>
@@ -569,11 +576,11 @@ namespace HpTimesStamps
         /// </summary>
         /// <param name="t">The duration to negate</param>
         /// <returns>the additive inverse</returns>
-        public static Duration operator -(in Duration t)
+        public static PortableDuration operator -(in PortableDuration t)
         {
             if (t._ticks == MinValue._ticks)
                 throw new OverflowException("The duration supplied has no positive 2's complement counterpart.");
-            return new Duration(-t._ticks);
+            return new PortableDuration(-t._ticks);
         }
 
         /// <summary>
@@ -583,33 +590,37 @@ namespace HpTimesStamps
         /// <param name="divisor">divisor</param>
         /// <returns>quotient</returns>
         /// <exception cref="ArgumentException"><paramref name="divisor"/> was <see cref="double.NaN"/>.</exception>
-        public static Duration operator /(in Duration timeSpan, double divisor)
+        public static PortableDuration operator /(in PortableDuration timeSpan, double divisor)
         {
             if (double.IsNaN(divisor))
             {
                 throw new ArgumentException("NaN is not a valid value for parameter", nameof(divisor));
             }
 
-            double ticks = Math.Round((double) timeSpan.Ticks / divisor);
+            double ticks = Math.Round((double)timeSpan.Ticks / divisor);
             return IntervalFromDoubleTicks(ticks);
         }
         #endregion
 
         #region Private and Internal Helper Methods
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static long ConvertStopwatchTicksToTimespanTicks(long stopwatchTicks) =>
             (stopwatchTicks * MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
             MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static long ConvertTimespanTicksToStopwatchTicks(long timespanTicks) =>
-            (timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
-            MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator;
-        internal static long ConvertStopwatchTicksToTimespanTicks(in TickInt stopwatchTicks) =>
-            ((long) stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
-                MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator;
 
-        private static Duration Interval(double value, double scale)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static PdInt ConvertTimespanTicksToPortableDurationTicks(long timespanTicks) =>
+            timespanTicks * TicksPerSecond / TimeSpan.TicksPerSecond;
+        internal static long ConvertPortableDurationTicksToTimespanTicks(in PdInt stopwatchTicks) =>
+            (long) (stopwatchTicks * TimeSpan.TicksPerSecond / TicksPerNanosecond);
+        internal static TickInt ConvertPortableDurationTicksToDurationTicks(in PdInt portableDurationTicks) =>
+            portableDurationTicks * Duration.TicksPerSecond / TicksPerSecond;
+
+        internal static Int128 ConvertDurationTicksToPortableDurationTicks(in TickInt durationTicks) =>
+            durationTicks * TicksPerSecond / Duration.TicksPerSecond;
+        
+        private static PortableDuration Interval(double value, double scale)
         {
             if (double.IsNaN(value))
                 throw new ArgumentException("Parameter is NaN.", nameof(value));
@@ -617,24 +628,24 @@ namespace HpTimesStamps
             return IntervalFromDoubleTicks(ticks);
         }
 
-        private static Duration IntervalFromDoubleTicks(double ticks)
+        private static PortableDuration IntervalFromDoubleTicks(double ticks)
         {
-            if ((ticks > (double) TickInt.MaxValue) || (ticks < (double) TickInt.MinValue) || double.IsNaN(ticks))
+            if ((ticks > (double)PdInt.MaxValue) || (ticks < (double)PdInt.MinValue) || double.IsNaN(ticks))
                 throw new OverflowException("Value cannot fit in a TimeSpan.");
             if (ticks >= long.MaxValue)
                 return MaxValue;
-            return new Duration((long)ticks);
+            return new PortableDuration((long)ticks);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [SuppressMessage("ReSharper", "RedundantCast")]
-        internal static TickInt TimeToTicks(int hour, int minute, int second)
+        internal static Int128 TimeToTicks(int hour, int minute, int second)
         {
             // totalSeconds is bounded by 2^31 * 2^12 + 2^31 * 2^8 + 2^31,
             // which is less than 2^44, meaning we won't overflow totalSeconds.
-            TickInt totalSeconds = (TickInt)hour * 3_600 + (TickInt)minute * 60 + (TickInt)second;
+            Int128 totalSeconds = (PdInt)hour * 3_600 + (PdInt)minute * 60 + (PdInt)second;
             if (totalSeconds > MaxSeconds || totalSeconds < MinSeconds)
-                throw new ArgumentException("One or more of the values was too long to fit in a Duration");
+                throw new ArgumentException("One or more of the values was too long to fit in a PortableDuration");
             return totalSeconds * TicksPerSecond;
         }
         #endregion
@@ -644,7 +655,7 @@ namespace HpTimesStamps
         /// Internal to allow fast direct access by other in this library.
         /// </summary>
         [SuppressMessage("ReSharper", "InconsistentNaming")] //only internal by special dispensation
-        internal readonly TickInt _ticks;  
+        internal readonly PdInt _ticks;
         #endregion
     }
 }

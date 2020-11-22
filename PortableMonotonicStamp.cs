@@ -23,11 +23,9 @@ namespace HpTimesStamps
         /// </summary>
         public const long NanosecondsFrequency = 1_000_000_000;
 
-        internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch)
-        {
+        internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch) =>
             _dateTimeNanosecondOffsetFromMinValueUtc = nanosecondSinceDtUtcEpoch;
-        }
-        
+
         /// <summary>
         /// Convert this to a datetime in the local datetime timezone.
         /// </summary>

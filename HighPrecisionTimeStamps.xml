@@ -1128,6 +1128,492 @@
             <param name="shift">Shift amount in bits.</param>
             <returns>Shifted values.</returns>
         </member>
+        <member name="T:HpTimesStamps.PortableDuration">
+            <summary>
+            Based on <see cref="T:System.TimeSpan"/> and <see cref="T:HpTimesStamps.Duration"/>except <see cref="F:HpTimesStamps.PortableDuration.TicksPerSecond"/> is always a Nanoseconds frequency ... i.e.
+            1_000_000_000 rather than <see cref="T:System.TimeSpan"/>'s which is variable based on .NET implementation or <see cref="T:HpTimesStamps.Duration"/> which is tied to <see cref="F:System.Diagnostics.Stopwatch.Frequency"/>.
+            </summary>
+            <remarks>Since this type is always represented as nanoseconds regardless of environment it, unlike <see cref="T:HpTimesStamps.Duration"/> is suitable for use across process boundaries and/or
+            for serialization.</remarks>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerMillisecond">
+            <summary>
+            Number of ticks in a millisecond
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerSecond">
+            <summary>
+            Number of ticks in a second.  Unlike <see cref="T:System.TimeSpan"/>, this will always
+            be keyed to <see cref="F:System.Diagnostics.Stopwatch.Frequency"/>.
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerMinute">
+            <summary>
+            Number of ticks per minute
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerHour">
+            <summary>
+            Number of ticks per hour.
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerDay">
+            <summary>
+            Number of ticks per day 
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.Zero">
+            <summary>
+            Zero
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MaxValue">
+            <summary>
+            Maximum value of a duration
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MinValue">
+            <summary>
+            Minimum value of a duration
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MaxSeconds">
+            <summary>
+            Longest positive period representable in seconds
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MinSeconds">
+            <summary>
+            Longest negative period representable in seconds
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MaxMilliseconds">
+            <summary>
+            Longest positive period represented in milliseconds
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.MinMilliseconds">
+            <summary>
+            Longest negative period represented in millisecond
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TicksPerTenthSecond">
+            <summary>
+            Number of ticks in a tenth of a second
+            </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration.TickIntRightShiftGetSignBitAmount">
+            <summary>
+            Amount to shift a <see cref="T:HpTimesStamps.BigMath.Int128"/> right to get its sign bit.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Implicit(System.TimeSpan)~HpTimesStamps.PortableDuration">
+            <summary>
+            Convert a timespan into a duration
+            </summary>
+            <param name="convertMe">value to convert</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Implicit(HpTimesStamps.Duration@)~HpTimesStamps.PortableDuration">
+            <summary>
+            Convert a duration to a portable duration
+            </summary>
+            <param name="d">The duration to convert to a portable duration</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Explicit(HpTimesStamps.PortableDuration@)~HpTimesStamps.Duration">
+            <summary>
+            Convert a portable duration into a duration
+            </summary>
+            <param name="d">the portable duration to convert</param>
+            <returns>the portable duration</returns>
+            <exception cref="T:System.OverflowException">Cannot fit in Duration/</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Explicit(HpTimesStamps.PortableDuration@)~System.TimeSpan">
+            <summary>
+            Convert a duration into a timespan
+            </summary>
+            <param name="convertMe">value to convert</param>
+            <exception cref="T:System.OverflowException">Can't fit.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromTimespanTicks(System.Int64)">
+            <summary>
+            Convert timespan ticks into a duration
+            </summary>
+            <param name="timespanTicks">the timespan ticks</param>
+            <returns>a duration</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromDays(System.Double)">
+            <summary>
+            Compute a duration from a value representing days
+            </summary>
+            <param name="value">Value representing days</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromHours(System.Double)">
+            <summary>
+            Compute a duration from a value representing hours
+            </summary>
+            <param name="value">Value representing days</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromMilliseconds(System.Double)">
+            <summary>
+            Compute a duration from a value representing milliseconds
+            </summary>
+            <param name="value">Value representing milliseconds</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromMinutes(System.Double)">
+            <summary>
+            Compute a duration from a value representing minutes
+            </summary>
+            <param name="value">Value representing minutes</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromSeconds(System.Double)">
+            <summary>
+            Compute a duration from a value representing seconds
+            </summary>
+            <param name="value">Value representing seconds</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.FromStopwatchTicks(HpTimesStamps.BigMath.Int128@)">
+            <summary>
+            Create a duration from ticks
+            </summary>
+            <param name="value">ticks</param>
+            <returns>the value</returns>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Ticks">
+            <summary>
+            portable duration ticks
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Days">
+            <summary>
+            Number of whole days represented, fractional time remaining discarded.
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Hours">
+            <summary>
+            Number of whole hours represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Milliseconds">
+            <summary>
+            Number of whole milliseconds represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Microseconds">
+            <summary>
+            Number of whole microseconds represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Nanoseconds">
+            <summary>
+            Number of whole nanoseconds represented, fractional time remaining discarded
+            </summary>
+            <exception cref="T:System.OverflowException">Nanoseconds will not fit in <see cref="T:System.Int64"/>.</exception>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Minutes">
+            <summary>
+            Number of whole minutes represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.Seconds">
+            <summary>
+            Number of whole seconds represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalDays">
+            <summary>
+            The duration represented in days, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalHours">
+            <summary>
+            The duration represented in hours, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalMicroseconds">
+            <summary>
+            PortableDuration represented in microseconds, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalNanoseconds">
+            <summary>
+            PortableDuration represented in nanoseconds, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalMilliseconds">
+            <summary>
+            The duration represented in milliseconds, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalMinutes">
+            <summary>
+            The duration represented in minutes, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.PortableDuration.TotalSeconds">
+            <summary>
+            The duration represented in seconds, including fractional parts
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.#ctor(HpTimesStamps.BigMath.Int128@)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="nanoseconds"># of nanoseconds</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.#ctor(System.Int64)">
+            <summary>
+            Create a duration from stopwatch ticks
+            </summary>
+            <param name="nanoseconds">number of nanoseconds</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="hours">Hours</param>
+            <param name="minutes">Minutes</param>
+            <param name="seconds">Seconds</param>
+            <exception cref="T:System.ArgumentException">Period too long to fit.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="days">days</param>
+            <param name="hours">hours</param>
+            <param name="minutes">minutes</param>
+            <param name="seconds">seconds</param>
+            <exception cref="T:System.ArgumentException">Period too long to fit</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.#ctor(System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="days">days</param>
+            <param name="hours">hours</param>
+            <param name="minutes">minutes</param>
+            <param name="seconds">seconds</param>
+            <param name="milliseconds">milliseconds</param>
+            <exception cref="T:System.ArgumentException">Period too long to fit.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.ToString">
+            <summary>
+            Get a string representation
+            </summary>
+            <returns>a string representation</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Equality(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for equality
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if equal false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Inequality(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for inequality
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if not equal false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_LessThan(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for to see if <paramref name="t1"/> is less than <paramref name="t2"/>
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if <paramref name="t1"/> is less than <paramref name="t2"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_LessThanOrEqual(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for to see if <paramref name="t1"/> is less than or equal to <paramref name="t2"/>
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if <paramref name="t1"/> is less than or equal to <paramref name="t2"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_GreaterThan(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for to see if <paramref name="t1"/> is greater than <paramref name="t2"/>
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if <paramref name="t1"/> is greater than <paramref name="t2"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_GreaterThanOrEqual(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Test two durations for to see if <paramref name="t1"/> is greater than or equal to <paramref name="t2"/>
+            </summary>
+            <param name="t1">left hand operand</param>
+            <param name="t2">right hand operand</param>
+            <returns>true if <paramref name="t1"/> is greater than or equal to <paramref name="t2"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Equals(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Equals(HpTimesStamps.PortableDuration)">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.GetHashCode">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.CompareTo(HpTimesStamps.PortableDuration)">
+            <summary>
+            Compare this duration to another to establish the order between them
+            </summary>
+            <param name="otherValue">value to compare</param>
+            <returns>
+            A positive number if this value succeeds <paramref name="otherValue"/> in sort order.
+            Zero if this value has the same position in the sort order as <paramref name="otherValue"/>.
+            A negative number if this value precedes <paramref name="otherValue"/> in sort order.
+            </returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Compare(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Compare two durations
+            </summary>
+            <param name="lhs">left hand comparand</param>
+            <param name="rhs">right hand comparand</param>
+            <returns>
+            A positive number if <paramref name="lhs"/> succeeds <paramref name="rhs"/> in sort order.
+            Zero if <paramref name="lhs"/> has the same position in the sort order as <paramref name="rhs"/>.
+            A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in sort order.
+            </returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Multiply(System.Double)">
+            <summary>
+            Multiply this value by a specified factor
+            </summary>
+            <param name="factor">the factor</param>
+            <returns>the product</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Divide(System.Double)">
+            <summary>
+            Divide this value by a specified divisor
+            </summary>
+            <param name="divisor">the divisor</param>
+            <returns>the product</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Divide(HpTimesStamps.PortableDuration)">
+            <summary>
+            Divide this value by another duration
+            </summary>
+            <param name="ts">the divisor</param>
+            <returns>the quotient</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Subtraction(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Subtract two durations
+            </summary>
+            <param name="t1">minuend</param>
+            <param name="t2">subtrahend</param>
+            <returns>difference</returns>
+            <exception cref="T:System.OverflowException">Operation overflow</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_UnaryPlus(HpTimesStamps.PortableDuration@)">
+            <summary>
+            Apply unary + operator
+            </summary>
+            <param name="t">operand</param>
+            <returns>a value equal to <paramref name="t"/>/</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Addition(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Add two addends
+            </summary>
+            <param name="t1">first addend</param>
+            <param name="t2">second addend</param>
+            <returns>sum</returns>
+            <exception cref="T:System.OverflowException">Operation resulted in overflow</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Multiply(System.Double,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Multiply a duration by a factor
+            </summary>
+            <param name="factor">the factor</param>
+            <param name="timeSpan">the duration</param>
+            <returns>the product</returns>
+            <exception cref="T:System.OverflowException">Operation resulted in overflow.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Division(HpTimesStamps.PortableDuration@,HpTimesStamps.PortableDuration@)">
+            <summary>
+            Divide two durations
+            </summary>
+            <param name="t1">dividend</param>
+            <param name="t2">divisor</param>
+            <returns>quotient</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Multiply(HpTimesStamps.PortableDuration@,System.Double)">
+            <summary>
+            Multiply a duration 
+            </summary>
+            <param name="timeSpan">PortableDuration factor</param>
+            <param name="factor">factor</param>
+            <returns>product</returns>
+            <exception cref="T:System.ArgumentException"><paramref name="factor"/> was nan</exception>
+            <exception cref="T:System.OverflowException">operation resulted in overflow</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.AbsoluteValue">
+            <summary>
+            Get the absolute value of this PortableDuration
+            </summary>
+            <returns>the absolute value</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Negate">
+            <summary>
+            Return the additive inverse of this value
+            </summary>
+            <returns>The additive inverse</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Add(HpTimesStamps.PortableDuration@)">
+            <summary>
+            Add another value to this one
+            </summary>
+            <param name="ts">value to add to this one</param>
+            <returns>sum</returns>
+            <exception cref="T:System.OverflowException">addition caused overflow</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.Subtract(HpTimesStamps.PortableDuration@)">
+            <summary>
+            Subtract another value from this one
+            </summary>
+            <param name="ts">the subtrahend</param>
+            <returns>the difference</returns>
+            <exception cref="T:System.OverflowException">Result caused overflow.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_UnaryNegation(HpTimesStamps.PortableDuration@)">
+            <summary>
+            Negate the duration
+            </summary>
+            <param name="t">The duration to negate</param>
+            <returns>the additive inverse</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableDuration.op_Division(HpTimesStamps.PortableDuration@,System.Double)">
+            <summary>
+            Divide a duration by a divisor
+            </summary>
+            <param name="timeSpan">the dividend</param>
+            <param name="divisor">divisor</param>
+            <returns>quotient</returns>
+            <exception cref="T:System.ArgumentException"><paramref name="divisor"/> was <see cref="F:System.Double.NaN"/>.</exception>
+        </member>
+        <member name="F:HpTimesStamps.PortableDuration._ticks">
+            <summary>
+            Internal to allow fast direct access by other in this library.
+            </summary>
+        </member>
         <member name="T:HpTimesStamps.DelegateException">
             <summary>
             Exception that is thrown to indicate a supplied
@@ -1191,6 +1677,8 @@
             Based on <see cref="T:System.TimeSpan"/> except <see cref="F:HpTimesStamps.Duration.TicksPerSecond"/> is based on <see cref="F:System.Diagnostics.Stopwatch.Frequency"/>
             rather than TimeSpan's.
             </summary>
+            <remarks>Because <see cref="F:System.Diagnostics.Stopwatch.Frequency"/> is different in different environments, this duration should not be considered
+            portable or usable across process boundaries.  DO NOT SERIALIZE OR USE ACROSS PROCESS BOUNDARIES.  Use </remarks>
         </member>
         <member name="F:HpTimesStamps.Duration.TicksPerMillisecond">
             <summary>
@@ -1307,6 +1795,13 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a Duration.</exception>
         </member>
+        <member name="M:HpTimesStamps.Duration.FromMicroseconds(System.Double)">
+            <summary>
+            Get a Duration from microseconds
+            </summary>
+            <param name="value">Microseconds</param>
+            <returns>A duration consisting of <paramref name="value"/> microseconds.</returns>
+        </member>
         <member name="M:HpTimesStamps.Duration.FromMinutes(System.Double)">
             <summary>
             Compute a duration from a value representing minutes
@@ -1350,6 +1845,17 @@
             Number of whole milliseconds represented, fractional time remaining discarded
             </summary>
         </member>
+        <member name="P:HpTimesStamps.Duration.Microseconds">
+            <summary>
+            Number of whole microseconds represented, fractional time remaining discarded
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.Duration.Nanoseconds">
+            <summary>
+            Number of whole nanoseconds represented, fractional time remaining discarded
+            </summary>
+            <exception cref="T:System.OverflowException">Nanoseconds will not fit in <see cref="T:System.Int64"/>.</exception>
+        </member>
         <member name="P:HpTimesStamps.Duration.Minutes">
             <summary>
             Number of whole minutes represented, fractional time remaining discarded
@@ -1368,6 +1874,16 @@
         <member name="P:HpTimesStamps.Duration.TotalHours">
             <summary>
             The duration represented in hours, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.Duration.TotalMicroseconds">
+            <summary>
+            Duration represented in microseconds, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.Duration.TotalNanoseconds">
+            <summary>
+            Duration represented in nanoseconds, including fractional parts
             </summary>
         </member>
         <member name="P:HpTimesStamps.Duration.TotalMilliseconds">
