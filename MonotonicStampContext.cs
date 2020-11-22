@@ -35,7 +35,16 @@ namespace HpTimeStamps
         /// number of nanoseconds in a second
         /// </summary>
         public long NanosecondsFrequency => NanosecondsPerSecond;
-        
+
+        /// <inheritdoc />
+        public bool EasyConversionAllWays => EasyConversionToAndFromNanoseconds && EasyConversionToAndFromTimespanTicks;
+
+        /// <inheritdoc />
+        public bool EasyConversionToAndFromTimespanTicks { get; }
+
+        /// <inheritdoc />
+        public bool EasyConversionToAndFromNanoseconds { get; }
+
         /// <inheritdoc />
         public bool IsInvalid => ContextId == default;
         /// <inheritdoc />
@@ -67,6 +76,18 @@ namespace HpTimeStamps
             UtcDateTimeBeginReference = utcBeginRef;
             UtcLocalTimeOffset = localTimeRef - UtcDateTimeBeginReference;
             TicksPerSecond = ticksPerSecond;
+            EasyConversionToAndFromTimespanTicks = DetermineIsEasyConversion(TicksPerSecond, TimeSpan.TicksPerSecond);
+            EasyConversionToAndFromNanoseconds = DetermineIsEasyConversion(TicksPerSecond, NanosecondsPerSecond);
+
+            static bool DetermineIsEasyConversion(long frequencyOne, long frequencyTwo)
+            {
+                if (frequencyOne == frequencyTwo) return true;
+                long bigger = Math.Max(frequencyOne, frequencyTwo);
+                long smaller = Math.Min(frequencyOne, frequencyTwo);
+                long tsConvertRem = bigger % smaller;
+                long tsConvertQuot = bigger / smaller;
+                return tsConvertRem == 0 && (tsConvertQuot == 1 || tsConvertQuot % 10 == 0);
+            }
         } 
         #endregion
 

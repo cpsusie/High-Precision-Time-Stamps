@@ -593,8 +593,8 @@ namespace HpTimeStamps
             MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static long ConvertTimespanTicksToStopwatchTicks(long timespanTicks) =>
-            (timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
-            MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator;
+            (long) (( (TickInt) timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
+            MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator);
         internal static long ConvertStopwatchTicksToTimespanTicks(in TickInt stopwatchTicks) =>
             (long) (( stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
                 MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator);

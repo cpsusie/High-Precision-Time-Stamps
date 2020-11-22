@@ -1660,6 +1660,21 @@
             as a readonly struct
             </summary>
         </member>
+        <member name="P:HpTimeStamps.IMonotonicStampContext.EasyConversionAllWays">
+            <summary>
+            True if both <see cref="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromTimespanTicks"/> AND <see cref="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromNanoseconds"/> are true.
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromTimespanTicks">
+            <summary>
+            True if the conversion factor between timespan ticks and Monotonic stamp ticks is a power of 10
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromNanoseconds">
+            <summary>
+            True if the conversion factor between monotonic stamp ticks and nanoseconds is a power of 10
+            </summary>
+        </member>
         <member name="P:HpTimeStamps.IMonotonicStampContext.IsInvalid">
             <summary>
             True if the struct implementing this interface
@@ -1818,6 +1833,15 @@
             <summary>
             number of nanoseconds in a second
             </summary>
+        </member>
+        <member name="P:HpTimeStamps.MonotonicStampContext.EasyConversionAllWays">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimeStamps.MonotonicStampContext.EasyConversionToAndFromTimespanTicks">
+            <inheritdoc />
+        </member>
+        <member name="P:HpTimeStamps.MonotonicStampContext.EasyConversionToAndFromNanoseconds">
+            <inheritdoc />
         </member>
         <member name="P:HpTimeStamps.MonotonicStampContext.IsInvalid">
             <inheritdoc />

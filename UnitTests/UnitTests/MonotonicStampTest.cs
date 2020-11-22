@@ -31,6 +31,9 @@ namespace UnitTests
             Helper.WriteLine("Local utc offset: [{0:N3}] hours.", MonotonicStampFixture.UtcLocalOffset.TotalHours);
             Helper.WriteLine("Stopwatch tick equivalent to local time: [{0:N}]",
                 MonotonicStampFixture.StopwatchTickEquivalentToRefTime);
+            Helper.WriteLine("Easy conversion all around: [{0}]", MonotonicStampFixture.StampContext.EasyConversionAllWays);
+            Helper.WriteLine("Easy conversions between stopwatch ticks and timespan ticks: [{0}]", MonotonicStampFixture.StampContext.EasyConversionToAndFromTimespanTicks);
+            Helper.WriteLine("Easy conversions between stopwatch ticks and nanoseconds: [{0}]", MonotonicStampFixture.StampContext.EasyConversionToAndFromNanoseconds);
 
             MonotonicStamp now = Fixture.StampNow;
             Helper.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());

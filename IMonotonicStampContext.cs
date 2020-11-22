@@ -9,6 +9,18 @@ namespace HpTimeStamps
     public interface IMonotonicStampContext
     {
         /// <summary>
+        /// True if both <see cref="EasyConversionToAndFromTimespanTicks"/> AND <see cref="EasyConversionToAndFromNanoseconds"/> are true.
+        /// </summary>
+        bool EasyConversionAllWays { get; }
+        /// <summary>
+        /// True if the conversion factor between timespan ticks and Monotonic stamp ticks is a power of 10
+        /// </summary>
+        bool EasyConversionToAndFromTimespanTicks { get; }
+        /// <summary>
+        /// True if the conversion factor between monotonic stamp ticks and nanoseconds is a power of 10
+        /// </summary>
+        bool EasyConversionToAndFromNanoseconds { get; }
+        /// <summary>
         /// True if the struct implementing this interface
         /// was not properly initialized.  Usually
         /// testing <see cref="ContextId"/> against
