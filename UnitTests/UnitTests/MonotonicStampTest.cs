@@ -189,7 +189,7 @@ namespace UnitTests
         private void AssertPortableDoubleCloseEnough(double portable, double notPortable)
         {
             double epsilon = PortableDuration.TicksPerSecond == MonotonicStampFixture.StampContext.TicksPerSecond
-                ? 0.05
+                ? 0.25
                 : ((double) MonotonicStampFixture.StampContext.TicksPerSecond / PortableDuration.TicksPerSecond * 50.0) ;
             Assert.False(double.IsNaN(portable));
             Assert.False(double.IsNaN(notPortable));
