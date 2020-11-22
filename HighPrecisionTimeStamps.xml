@@ -1688,6 +1688,11 @@
             Difference between <see cref="P:HpTimesStamps.IMonotonicStampContext.UtcDateTimeBeginReference"/> and <see cref="P:HpTimesStamps.IMonotonicStampContext.LocalTimeBeginReference"/>.
             </summary>
         </member>
+        <member name="P:HpTimesStamps.IMonotonicStampContext.NanosecondsFrequency">
+            <summary>
+            Number of nanoseconds per seconds
+            </summary>
+        </member>
         <member name="T:HpTimesStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -1784,6 +1789,16 @@
             Create a stamp context to serve as reference point for monotonic timestamps
             </summary>
             <returns>context value</returns>
+        </member>
+        <member name="F:HpTimesStamps.MonotonicStampContext.NanosecondsPerSecond">
+            <summary>
+            # nano seconds in a second
+            </summary>
+        </member>
+        <member name="P:HpTimesStamps.MonotonicStampContext.NanosecondsFrequency">
+            <summary>
+            number of nanoseconds in a second
+            </summary>
         </member>
         <member name="P:HpTimesStamps.MonotonicStampContext.IsInvalid">
             <inheritdoc />
@@ -1939,6 +1954,29 @@
              </summary>
              <typeparam name="TStampContext">The common context used by all stamps parameterized with this type</typeparam>
              <remarks>DO NOT USE ACROSS PROCESSES!  DO NOT SERIALIZE!  NOT FOR ARCHIVE!</remarks>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Implicit(HpTimesStamps.MonotonicTimeStamp{`0}@)~HpTimesStamps.PortableMonotonicStamp">
+             <summary>
+             Converts a monotonic timestamp into a format suitable for use across
+             process boundaries or to be serialized and deserialized in a different process.
+            
+             This is a completely roundtrippable conversion if and only if it is converted back IN-PROCESS.
+            
+             If loaded into a different process, time zone offset will be lost.
+             </summary>
+             <param name="timestamp">the stamp to convert</param>
+             <returns>a portable monotonic timestamp</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.op_Explicit(HpTimesStamps.PortableMonotonicStamp@)~HpTimesStamps.MonotonicTimeStamp{`0}">
+            <summary>
+            Convert a portable timestamp to a local timestamp
+            </summary>
+            <param name="ts">the portable timestamp to convert</param>
+            <returns>The portable timestamp expressed in terms of the local in-process <typeparamref name="TStampContext"/>.</returns>
+            <exception cref="T:System.Exception">The portable stamp cannot be expressed in terms of the local monotonic <typeparamref name="TStampContext"/>.
+            This is likely because it refers to a date time outside the range of <see cref="T:System.DateTime"/> or is too far from the <typeparamref name="TStampContext"/>
+            reference time to store the offset in a <see cref="T:System.Int64"/>.
+            </exception>
         </member>
         <member name="M:HpTimesStamps.MonotonicTimeStamp`1.CreateFromRefTicks(System.Int64)">
             <summary>
@@ -2112,6 +2150,35 @@
             or if the system clock has changed due to user adjustments, synchro with clock server,
             daylight savings time, leap seconds ... may be inaccurate or misleading.</remarks>
         </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ToPortableStamp">
+            <summary>
+            Convert this value to a portable timestamp suitable
+            for serialization / using across process boundaries
+            </summary>
+            <returns>A portable timestamp.</returns>
+        </member>
+        <member name="M:HpTimesStamps.MonotonicTimeStamp`1.ImportPortableTimestamp(HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Convert 
+            </summary>
+            <param name="stamp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:HpTimesStamps.TimeSpanExtensions.TotalWholeNanoseconds(System.TimeSpan)">
+            <summary>
+            Convert a timespan into whole nanoseconds (discarding any fractional part left over)
+            </summary>
+            <param name="t">The timespan</param>
+            <returns>A 128-bit integer representing the number of whole nanoseconds (discarding leftover)
+            represented by <paramref name="t"/>.</returns>
+        </member>
+        <member name="M:HpTimesStamps.TimeSpanExtensions.ConvertForeignNanosecondsToLocalDuration(HpTimesStamps.BigMath.Int128@)">
+            <summary>
+            Convert foreign nanoseconds to a local duration
+            </summary>
+            <param name="convertMe">the foreign nanoseconds to convert</param>
+            <returns>the local duration.</returns>
+        </member>
         <member name="T:HpTimesStamps.MonotonicTimeStampUtil`1">
             <summary>
             A utility designed to create monotonic timestamps
@@ -2179,6 +2246,176 @@
             <param name="context">the non-default context</param>
             <exception cref="T:System.ArgumentException">The supplied context is invalid.</exception>
             <exception cref="T:System.InvalidOperationException">The context has already been set.</exception>
+        </member>
+        <member name="T:HpTimesStamps.PortableMonotonicStamp">
+             <summary>
+             A portable monotonic stamp suitable for use across process boundaries and
+             for serialization.  Time is stored in UTC so any information about local time zone will
+             be lost.
+            
+              Represented internally as a 128 bit signed integer that represents nanoseconds elapsed
+              since <see cref="F:System.DateTime.MinValue"/>, which is January 1, 0001 AD (UTC).
+             </summary>
+        </member>
+        <member name="F:HpTimesStamps.PortableMonotonicStamp.NanosecondsFrequency">
+            <summary>
+            Number of nanoseconds in a second
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.ToLocalDateTime">
+            <summary>
+            Convert this to a datetime in the local datetime timezone.
+            </summary>
+            <returns>A local datetime</returns>
+            <exception cref="T:HpTimesStamps.PortableTimestampOverflowException"></exception>
+            <exception cref="T:HpTimesStamps.PortableTimestampOverflowException">Cannot be converted to
+            DateTime because of overflow.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.ToUtcDateTime">
+            <summary>
+            Convert this into a utc datetime
+            </summary>
+            <returns>a utc datetime</returns>
+            <exception cref="T:HpTimesStamps.PortableTimestampOverflowException">Cannot be converted to
+            DateTime because of overflow.</exception>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.ToString">
+            <summary>
+            Get a string representation of this value
+            </summary>
+            <returns>A string representation.</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_Equality(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps for value equality
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if they have the same value, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_Inequality(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps for value inequality
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if they have different values, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_GreaterThan(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps to see if <paramref name="lhs"/> is greater than
+            <paramref name="rhs"/>.
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if <paramref name="lhs"/> is greater than
+            <paramref name="rhs"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_LessThan(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps to see if <paramref name="lhs"/> is less than
+            <paramref name="rhs"/>.
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if <paramref name="lhs"/> is less than
+            <paramref name="rhs"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_GreaterThanOrEqual(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps to see if <paramref name="lhs"/> is greater or equal to than
+            <paramref name="rhs"/>.
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if <paramref name="lhs"/> is greater than
+            <paramref name="rhs"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.op_LessThanOrEqual(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Test two portable monotonic stamps to see if <paramref name="lhs"/> is less or equal to than
+            <paramref name="rhs"/>.
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>true if <paramref name="lhs"/> is less than or equal to
+            <paramref name="rhs"/>, false otherwise</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.GetHashCode">
+            <summary>
+            A value based hash code for this value
+            </summary>
+            <returns>a hash code</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.Equals(System.Object)">
+            <summary>
+            Check to see if this value has the same value as another object
+            </summary>
+            <param name="obj">the other object</param>
+            <returns>True if the other object is a <see cref="T:HpTimesStamps.PortableMonotonicStamp"/>
+            that has the same value as this one.  False otherwise
+            </returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.Equals(HpTimesStamps.PortableMonotonicStamp)">
+            <summary>
+            Test to see whether this value is the same as another value
+            of the same type.
+            </summary>
+            <param name="other">the other value</param>
+            <returns>True if the other value has the same value as this one, false otherwise.</returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.CompareTo(HpTimesStamps.PortableMonotonicStamp)">
+            <summary>
+            Compare this value to another value of the same type to establish the ordering relation between them.
+            </summary>
+            <param name="other">the other object</param>
+            <returns>
+            Zero if this value and <paramref name="other"/> have identical position within sort order.
+            A positive number if this value succeeds <paramref name="other"/> in the sort order.
+            A negative number if this value precedes <paramref name="other"/> in the sort order.
+            </returns>
+        </member>
+        <member name="M:HpTimesStamps.PortableMonotonicStamp.Compare(HpTimesStamps.PortableMonotonicStamp@,HpTimesStamps.PortableMonotonicStamp@)">
+            <summary>
+            Compare two <see cref="T:HpTimesStamps.PortableMonotonicStamp"/> values to establish the ordering between them.
+            </summary>
+            <param name="lhs">Left hand operand</param>
+            <param name="rhs">Right hand operand</param>
+            <returns>
+            Zero if <paramref name="lhs"/> and <paramref name="rhs"/> have identical position within sort order.
+            A positive number if <paramref name="lhs"/> succeeds <paramref name="rhs"/> in the sort order.
+            A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in the sort order.
+            </returns>
+        </member>
+        <member name="T:HpTimesStamps.PortableTimestampOverflowException">
+            <summary>
+            Indicates that a portable timestamp cannot be converted to a local
+            monotonic stamp or a local datetime or timespan because of overflow.
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.PortableTimestampOverflowException.#ctor">
+            <summary>
+            Create an exception
+            </summary>
+        </member>
+        <member name="M:HpTimesStamps.PortableTimestampOverflowException.#ctor(System.Exception)">
+            <summary>
+            Create an exception
+            </summary>
+            <param name="inner">inner exception, if applicable</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableTimestampOverflowException.#ctor(System.String)">
+            <summary>
+            Create an exception
+            </summary>
+            <param name="msg">extra info to go in exception message, if applicable.</param>
+        </member>
+        <member name="M:HpTimesStamps.PortableTimestampOverflowException.#ctor(System.String,System.Exception)">
+            <summary>
+            Create an exception
+            </summary>
+            <param name="msg">Extra info that should go in message, if applicable</param>
+            <param name="inner">Inner exception if applicable</param>
         </member>
         <member name="T:HpTimesStamps.TimeStampSource">
             <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HpTimesStamps.BigMath;
 
@@ -43,6 +44,31 @@ namespace HpTimesStamps
     public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<MonotonicTimeStamp<TStampContext>>, IComparable<MonotonicTimeStamp<TStampContext>> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         /// <summary>
+        /// Converts a monotonic timestamp into a format suitable for use across
+        /// process boundaries or to be serialized and deserialized in a different process.
+        ///
+        /// This is a completely roundtrippable conversion if and only if it is converted back IN-PROCESS.
+        ///
+        /// If loaded into a different process, time zone offset will be lost.
+        /// </summary>
+        /// <param name="timestamp">the stamp to convert</param>
+        /// <returns>a portable monotonic timestamp</returns>
+        public static implicit operator PortableMonotonicStamp(in MonotonicTimeStamp<TStampContext> timestamp) =>
+            timestamp.ToPortableStamp();
+
+        /// <summary>
+        /// Convert a portable timestamp to a local timestamp
+        /// </summary>
+        /// <param name="ts">the portable timestamp to convert</param>
+        /// <returns>The portable timestamp expressed in terms of the local in-process <typeparamref name="TStampContext"/>.</returns>
+        /// <exception cref="Exception">The portable stamp cannot be expressed in terms of the local monotonic <typeparamref name="TStampContext"/>.
+        /// This is likely because it refers to a date time outside the range of <see cref="DateTime"/> or is too far from the <typeparamref name="TStampContext"/>
+        /// reference time to store the offset in a <see cref="Int64"/>.
+        /// </exception>
+        public static explicit operator MonotonicTimeStamp<TStampContext>(in PortableMonotonicStamp ts) =>
+            ImportPortableTimestamp(in ts);
+        
+        /// <summary>
         /// Create a monotonic timestamp from a tick count retrieved from the reference clock.
         /// </summary>
         /// <param name="referenceTicks">the tick count</param>
@@ -53,6 +79,12 @@ namespace HpTimesStamps
         /// The stamp context shared by all timestamps parameterized by <typeparamref name="TStampContext"/>.
         /// </summary>
         public ref readonly TStampContext Context
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ref MonotonicTimeStampUtil<TStampContext>.StampContext;
+        }
+
+        private static ref readonly TStampContext StatContext
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref MonotonicTimeStampUtil<TStampContext>.StampContext;
@@ -305,6 +337,104 @@ namespace HpTimesStamps
             return a | b;
         }
 
+        /// <summary>
+        /// Convert this value to a portable timestamp suitable
+        /// for serialization / using across process boundaries
+        /// </summary>
+        /// <returns>A portable timestamp.</returns>
+        [Pure]
+        public PortableMonotonicStamp ToPortableStamp()
+        {
+            long tsTicksSinceUtcEpoch = (Context.UtcDateTimeBeginReference.ToUniversalTime() -
+                                        DateTime.MinValue.ToUniversalTime()).Ticks;
+            Int128 stopwatchTicksSinceUtcEpoch = ConvertTimeSpanTicksToStopwatchTicks(tsTicksSinceUtcEpoch);
+            stopwatchTicksSinceUtcEpoch += _stopWatchTicks;
+            return new PortableMonotonicStamp(stopwatchTicksSinceUtcEpoch);
+        }
+
+        /// <summary>
+        /// Convert 
+        /// </summary>
+        /// <param name="stamp"></param>
+        /// <returns></returns>
+        public static MonotonicTimeStamp<TStampContext> ImportPortableTimestamp(in PortableMonotonicStamp stamp)
+        {
+            Int128 nanosecondsSinceUtcEpoch =
+                ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
+            Int128 refTimeAsUtcNanosecondsSinceEpoch =
+                ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
+            Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
+            Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
+            Duration timeSinceLocalTime = Duration.FromStopwatchTicks(in stopwatchTicksSinceReferenceTimeUtc) - StatContext.UtcLocalTimeOffset;
+            return CreateFromRefTicks((long) timeSinceLocalTime._ticks);
+        }
+        
+         internal static Duration ConvertNanosecondsToDuration(in Int128 nanoSeconds)
+        {
+            Int128 stopwatchTicks = nanoSeconds * (StatContext.NanosecondsFrequency / StatContext.TicksPerSecond);
+            return new Duration(in stopwatchTicks);
+        }
+
+         internal static Int128 ConvertDateTimeToNanosecondsSinceUtcEpoch(DateTime dt)
+         {
+             Int128 stopwatchTicks = ConvertDateTimeToStopwatchTicksSinceEpoch(dt.ToUniversalTime());
+             return stopwatchTicks * StatContext.NanosecondsFrequency / StatContext.TicksPerSecond;
+         }
+        internal static Int128 ConvertDateTimeToStopwatchTicksSinceEpoch(DateTime dt)
+        {
+            dt = dt.ToUniversalTime();
+            long tsTicks = (dt - DateTime.MinValue.ToUniversalTime()).Ticks;
+            return ConvertTimeSpanTicksToStopwatchTicks(tsTicks);
+        }
+
+        internal DateTime ConvertStopwatchTicksToDateTime(in Int128 stopwatchTicksSinceDtEpochUtc)
+        {
+            long timespanTicksSinceEpoch = (long) ConvertStopwatchTicksToTimespanTicks(stopwatchTicksSinceDtEpochUtc);
+            TimeSpan ts = TimeSpan.FromTicks(timespanTicksSinceEpoch);
+            return (DateTime.MinValue.ToUniversalTime() + ts);
+        }
+
+        internal static Int128 ConvertStopwatchTicksToTimespanTicks(in Int128 stopwatchTicks) =>
+            stopwatchTicks * (TimeSpan.TicksPerSecond / StatContext.TicksPerSecond);
+        
+        internal static Int128 ConvertTimeSpanTicksToStopwatchTicks(in Int128 timespanTicks) =>
+            timespanTicks * (StatContext.TicksPerSecond / TimeSpan.TicksPerSecond);
+        
+        internal static Int128 ConvertNanosecondsToStopwatchTicks(in Int128 nanoseconds)
+        {
+            Int128 stopwatchTicks = nanoseconds * (StatContext.TicksPerSecond / StatContext.NanosecondsFrequency);
+            return stopwatchTicks;
+        }
+        
+        internal TimeSpan ConvertNanosecondsToTimespan(in Int128 nanoseconds)
+        {
+            Int128 timespanTicks = ConvertNanosecondsToTimespanTicks(nanoseconds);
+            if (timespanTicks > long.MaxValue || timespanTicks < long.MinValue)
+                throw new ArgumentOutOfRangeException(nameof(nanoseconds), nanoseconds,
+                    ($"Nanoseconds specified  will not fit in a {nameof(TimeSpan)}."));
+            return TimeSpan.FromTicks((long) timespanTicks);
+        }
+        
+        internal Int128 ConvertNanosecondsToTimespanTicks(in Int128 nanoseconds)
+        {
+            return nanoseconds * (TimeSpan.TicksPerSecond / Context.NanosecondsFrequency);
+        }
+        
+        internal Int128 ConvertTimeSpanTicksToNanoSeconds(in Int128 timespanTicks)
+        {
+            return timespanTicks * ((Int128) Context.NanosecondsFrequency) / TimeSpan.TicksPerSecond;
+        }
+
+        internal Int128 ConvertStopwatchTicksToNanoseconds(in Int128 stopwatchTicks)
+        {
+            return stopwatchTicks * ((Int128) Context.NanosecondsFrequency) / Context.TicksPerSecond;
+        }
+
+        internal Int128 ConvertDurationToNanoseconds(in Duration d)
+        {
+            return ConvertStopwatchTicksToNanoseconds(in d._ticks);
+        }
+        
         // ReSharper disable StaticMemberInGenericType -- intentional and necessary
         private static readonly Duration ReferenceTicksAsDuration; 
         private static readonly DateTime UtcReference;

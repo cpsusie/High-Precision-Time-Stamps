@@ -47,6 +47,11 @@ namespace HpTimesStamps
         /// Difference between <see cref="UtcDateTimeBeginReference"/> and <see cref="LocalTimeBeginReference"/>.
         /// </summary>
         TimeSpan UtcLocalTimeOffset { get; }
+        
+        /// <summary>
+        /// Number of nanoseconds per seconds
+        /// </summary>
+        long NanosecondsFrequency { get; }
     }
 
     

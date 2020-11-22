@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.Serialization;
+using HpTimesStamps.BigMath;
 
 namespace HpTimesStamps
 {
@@ -25,6 +27,17 @@ namespace HpTimesStamps
         }
 
         #region Properties
+
+        /// <summary>
+        /// # nano seconds in a second
+        /// </summary>
+        public const long NanosecondsPerSecond = 1_000_000_000;
+        
+        /// <summary>
+        /// number of nanoseconds in a second
+        /// </summary>
+        public long NanosecondsFrequency => NanosecondsPerSecond;
+        
         /// <inheritdoc />
         public bool IsInvalid => ContextId == default;
         /// <inheritdoc />
@@ -136,6 +149,10 @@ namespace HpTimesStamps
         public static bool operator <=(in MonotonicStampContext lhs, in MonotonicStampContext rhs) =>
             !(lhs > rhs);
 
+        
+        
+       
+        
         /// <summary>
         /// Compare this context with another to establish the ordering between them
         /// </summary>
