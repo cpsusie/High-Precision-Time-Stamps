@@ -62,6 +62,7 @@ TimeStampSource.UtcNow probably does not work and has not been tested.</PackageR
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
 </Project>
