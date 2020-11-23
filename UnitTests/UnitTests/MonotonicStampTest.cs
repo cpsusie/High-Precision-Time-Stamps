@@ -97,14 +97,17 @@ namespace UnitTests
         {
             const int numTests = 10_000_000;
             const int updateEveryXTests = 500_000;
+            Span<byte> bytes = stackalloc byte[8];
             for (int i = 1; i <= numTests; ++i)
             {
                 if (i % updateEveryXTests == 0)
                     Helper.WriteLine("On test {0:N0} of {1:N0}.", i, numTests);
-                byte[] bytes = new byte[8];
-                RGen.NextBytes(bytes);
-                long tsTicks = BitConverter.ToInt64(bytes, 0);
-                TestTimeSpanDurationConversions(tsTicks);
+                {
+                    RGen.NextBytes(bytes);
+                    ReadOnlySpan<byte> roBytes = bytes;
+                    long tsTicks = BitConverter.ToInt64(roBytes);
+                    TestTimeSpanDurationConversions(tsTicks);
+                }
             }
             Helper.WriteLine("All {0:N0} tests PASSED.", numTests);
         }
@@ -122,9 +125,10 @@ namespace UnitTests
         {
             get
             {
-                byte[] bytes = new byte[8];
+                Span<byte> bytes =  stackalloc byte[8];
                 RGen.NextBytes(bytes);
-                long tsTicks = BitConverter.ToInt64(bytes, 0);
+                ReadOnlySpan<byte> roBytes = bytes;
+                long tsTicks = BitConverter.ToInt64(roBytes);
                 return TimeSpan.FromTicks(tsTicks);
             }
         }
