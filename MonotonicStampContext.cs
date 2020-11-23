@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.Serialization;
+using HpTimeStamps.BigMath;
+using JetBrains.Annotations;
 
 namespace HpTimeStamps
 {
@@ -60,6 +62,42 @@ namespace HpTimeStamps
         [DataMember] public long TicksPerSecond { get; }
         /// <inheritdoc />
         [DataMember] public TimeSpan UtcLocalTimeOffset { get; }
+        
+        /// <summary>
+        /// The utc local offset expressed as a duration
+        /// </summary>
+        public ref readonly Duration UtcLocalTimeOffsetAsDuration
+        {
+            get
+            {
+                ref readonly Duration ret = ref Duration.Zero;
+                switch (_utcOffsetAsDuration?.IsSet)
+                {
+                    case true:
+                        ret = ref _utcOffsetAsDuration.Value;
+                        break;
+                    case null:
+                        break;
+                    case false:
+                        CalculateValue();
+                        Debug.Assert(_utcOffsetAsDuration.IsSet, "Calculate value should guarantee it is set.");
+                        ret = ref _utcOffsetAsDuration.Value;
+                        break;
+                }
+                return ref ret;
+            }
+        }
+
+        private void CalculateValue()
+        {
+            Debug.Assert(_utcOffsetAsDuration != null, "Do not call if null.");
+            _utcOffsetAsDuration.TrySetValue(Duration.FromStopwatchTicks(((Int128) UtcLocalTimeOffset.Ticks) *
+                TicksPerSecond / TimeSpan.TicksPerSecond));
+            Debug.Assert(_utcOffsetAsDuration.IsSet,
+                "Should always be set after call if no except ... whether set occured on this " +
+                "thread with the preceding line or on a prior call on another thread.");
+        }
+
         /// <inheritdoc />
         public bool AllTimestampsUtc => UtcDateTimeBeginReference == LocalTimeBeginReference; 
         #endregion
@@ -78,7 +116,7 @@ namespace HpTimeStamps
             TicksPerSecond = ticksPerSecond;
             EasyConversionToAndFromTimespanTicks = DetermineIsEasyConversion(TicksPerSecond, TimeSpan.TicksPerSecond);
             EasyConversionToAndFromNanoseconds = DetermineIsEasyConversion(TicksPerSecond, NanosecondsPerSecond);
-
+            _utcOffsetAsDuration = new LocklessWriteOnceValue<Duration>();
             static bool DetermineIsEasyConversion(long frequencyOne, long frequencyTwo)
             {
                 if (frequencyOne == frequencyTwo) return true;
@@ -229,5 +267,8 @@ namespace HpTimeStamps
             }
             return ret;
         }
+
+        [DataMember(IsRequired = false, EmitDefaultValue = true)]
+        private readonly LocklessWriteOnceValue<Duration> _utcOffsetAsDuration;
     }
 }

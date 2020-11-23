@@ -41,7 +41,7 @@ namespace HpTimeStamps
     /// </summary>
     /// <typeparam name="TStampContext">The common context used by all stamps parameterized with this type</typeparam>
     /// <remarks>DO NOT USE ACROSS PROCESSES!  DO NOT SERIALIZE!  NOT FOR ARCHIVE!</remarks>
-    public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<MonotonicTimeStamp<TStampContext>>, IComparable<MonotonicTimeStamp<TStampContext>> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
+    public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<MonotonicTimeStamp<TStampContext>>, IComparable<MonotonicTimeStamp<TStampContext>> where TStampContext : struct, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         /// <summary>
         /// Converts a monotonic timestamp into a format suitable for use across
@@ -365,7 +365,7 @@ namespace HpTimeStamps
                 ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
             Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
             Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
-            Duration timeSinceLocalTime = Duration.FromStopwatchTicks(in stopwatchTicksSinceReferenceTimeUtc) - StatContext.UtcLocalTimeOffset;
+            Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
             return CreateFromRefTicks((long) timeSinceLocalTime._ticks);
         }
         

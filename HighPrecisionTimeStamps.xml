@@ -1265,11 +1265,12 @@
             Amount to shift a <see cref="T:HpTimeStamps.BigMath.Int128"/> right to get its sign bit.
             </summary>
         </member>
-        <member name="M:HpTimeStamps.Duration.op_Implicit(System.TimeSpan)~HpTimeStamps.Duration">
+        <member name="M:HpTimeStamps.Duration.op_Explicit(System.TimeSpan)~HpTimeStamps.Duration">
             <summary>
             Convert a timespan into a duration
             </summary>
             <param name="convertMe">value to convert</param>
+            <exception cref="T:System.OverflowException">Can't fit.</exception>
         </member>
         <member name="M:HpTimeStamps.Duration.op_Explicit(HpTimeStamps.Duration@)~System.TimeSpan">
             <summary>
@@ -1727,6 +1728,11 @@
             Number of nanoseconds per seconds
             </summary>
         </member>
+        <member name="P:HpTimeStamps.IMonotonicStampContext.UtcLocalTimeOffsetAsDuration">
+            <summary>
+            Retrieve <see cref="P:HpTimeStamps.IMonotonicStampContext.UtcLocalTimeOffset"/> as a duration.
+            </summary>
+        </member>
         <member name="T:HpTimeStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -1863,6 +1869,11 @@
         </member>
         <member name="P:HpTimeStamps.MonotonicStampContext.UtcLocalTimeOffset">
             <inheritdoc />
+        </member>
+        <member name="P:HpTimeStamps.MonotonicStampContext.UtcLocalTimeOffsetAsDuration">
+            <summary>
+            The utc local offset expressed as a duration
+            </summary>
         </member>
         <member name="P:HpTimeStamps.MonotonicStampContext.AllTimestampsUtc">
             <inheritdoc />
@@ -2369,13 +2380,13 @@
             Amount to shift a <see cref="T:HpTimeStamps.BigMath.Int128"/> right to get its sign bit.
             </summary>
         </member>
-        <member name="M:HpTimeStamps.PortableDuration.op_Implicit(System.TimeSpan)~HpTimeStamps.PortableDuration">
+        <member name="M:HpTimeStamps.PortableDuration.op_Explicit(System.TimeSpan)~HpTimeStamps.PortableDuration">
             <summary>
             Convert a timespan into a duration
             </summary>
             <param name="convertMe">value to convert</param>
         </member>
-        <member name="M:HpTimeStamps.PortableDuration.op_Implicit(HpTimeStamps.Duration@)~HpTimeStamps.PortableDuration">
+        <member name="M:HpTimeStamps.PortableDuration.op_Explicit(HpTimeStamps.Duration@)~HpTimeStamps.PortableDuration">
             <summary>
             Convert a duration to a portable duration
             </summary>

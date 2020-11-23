@@ -8,7 +8,7 @@ namespace HpTimeStamps
     /// A utility designed to create monotonic timestamps
     /// </summary>
     /// <typeparam name="TStampContext">The type of context this utility uses to create timestamps.</typeparam>
-    public static class MonotonicTimeStampUtil<TStampContext> where TStampContext : unmanaged, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
+    public static class MonotonicTimeStampUtil<TStampContext> where TStampContext : struct, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         /// <summary>
         /// Retrieve a monotonic timestamp recorded right now.

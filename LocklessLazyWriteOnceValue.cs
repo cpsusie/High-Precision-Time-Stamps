@@ -1,8 +1,54 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace HpTimeStamps
 {
+    [DataContract]
+    internal sealed class LocklessWriteOnceValue<TValue> where TValue : struct
+    {
+        public bool IsSet => _threeStapFlag.Code == ThreeStepFlagCode.Complete;
+        
+        public ref readonly TValue Value
+        {
+            get
+            {
+                if (_threeStapFlag.Code != ThreeStepFlagCode.Complete)
+                {
+                    throw new InvalidOperationException("The value has not yet been set.");
+                }
+                return ref _value;
+            }
+        }
+
+        public bool TrySetValue(in TValue value)
+        {
+            if (_threeStapFlag.TryBegin())
+            {
+                _value = value;
+                _threeStapFlag.CompleteOrThrow();
+                return true;
+            }
+            return false;
+        }
+
+        public bool TrySetValue(TValue value) => TrySetValue(in value);
+
+        public void SetValueOrThrow(in TValue value)
+        {
+            if (!TrySetValue(in value)) throw new InvalidOperationException("Value has already been set.");
+        }
+
+        public void SetValueOrThrow(TValue value) => SetValueOrThrow(in value);
+
+        public override string ToString() =>
+            IsSet ? $"LocklessWriteOnceValue.  Value: [{_value}]" : $"LocklessWriteOnceValue.  Value NOT SET.";
+        
+
+        private TValue _value;
+        private ReadOnlyThreeStepFlag _threeStapFlag = default;
+    }
+    
     /// <summary>
     /// 
     /// </summary>

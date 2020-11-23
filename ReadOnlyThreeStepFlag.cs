@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Runtime.Serialization;
 using System.Threading;
 
 namespace HpTimeStamps
 {
+    [DataContract]
     internal struct ReadOnlyThreeStepFlag
     {
         public readonly ThreeStepFlagCode Code
@@ -47,7 +49,7 @@ namespace HpTimeStamps
 
         public override readonly string ToString() => "ReadOnlyThreeStepFlag: [" + Code + "].";
 
-        private volatile int _code;
+        [NonSerialized] private volatile int _code;
     }
 
     internal enum ThreeStepFlagCode

@@ -64,6 +64,10 @@ namespace HpTimeStamps
         /// Number of nanoseconds per seconds
         /// </summary>
         long NanosecondsFrequency { get; }
+        /// <summary>
+        /// Retrieve <see cref="UtcLocalTimeOffset"/> as a duration.
+        /// </summary>
+        ref readonly Duration UtcLocalTimeOffsetAsDuration { get; }
     }
 
     

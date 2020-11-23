@@ -92,7 +92,8 @@ namespace HpTimeStamps
         /// Convert a timespan into a duration
         /// </summary>
         /// <param name="convertMe">value to convert</param>
-        public static implicit operator Duration(TimeSpan convertMe)
+        /// <exception cref="OverflowException">Can't fit.</exception>
+        public static explicit operator Duration(TimeSpan convertMe)
         {
             TickInt swTicks = ConvertTimespanTicksToStopwatchTicks(convertMe.Ticks);
             return new Duration(in swTicks);

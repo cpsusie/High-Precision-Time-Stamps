@@ -111,7 +111,7 @@ namespace HpTimeStamps
         /// Convert a timespan into a duration
         /// </summary>
         /// <param name="convertMe">value to convert</param>
-        public static implicit operator PortableDuration(TimeSpan convertMe)
+        public static explicit operator PortableDuration(TimeSpan convertMe)
         {
             PdInt pdTicks = ConvertTimespanTicksToPortableDurationTicks(convertMe.Ticks);
             return new PortableDuration(in pdTicks);
@@ -122,7 +122,7 @@ namespace HpTimeStamps
         /// </summary>
         /// <param name="d">The duration to convert to a portable duration</param>
         [SuppressMessage("ReSharper", "RedundantCast")]
-        public static implicit operator PortableDuration(in Duration d) =>
+        public static explicit operator PortableDuration(in Duration d) =>
             new PortableDuration(((PdInt) d._ticks) * ((PdInt)TicksPerSecond) / Duration.TicksPerSecond );
 
         /// <summary>
