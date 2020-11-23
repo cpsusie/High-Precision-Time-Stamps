@@ -23,6 +23,10 @@ namespace HpTimeStamps
             DateTime localTime = DateTime.Now;
             DateTime utcTime = localTime.ToUniversalTime();
             long ticksPerSecond = Stopwatch.Frequency;
+            if (!Stopwatch.IsHighResolution)
+            {
+                throw new MonotonicClockNotAvailableException();
+            }
             return new MonotonicStampContext(in id, utcTime, localTime, refTicks, ticksPerSecond);
         }
 
@@ -116,6 +120,10 @@ namespace HpTimeStamps
             TicksPerSecond = ticksPerSecond;
             EasyConversionToAndFromTimespanTicks = DetermineIsEasyConversion(TicksPerSecond, TimeSpan.TicksPerSecond);
             EasyConversionToAndFromNanoseconds = DetermineIsEasyConversion(TicksPerSecond, NanosecondsPerSecond);
+            if (TicksPerSecond < Duration.MinimumSupportedStopwatchTicksPerSecond)
+            {
+                throw new UnsupportedStopwatchResolutionException(TicksPerSecond, Duration.MinimumSupportedStopwatchTicksPerSecond);
+            }
             _utcOffsetAsDuration = new LocklessWriteOnceValue<Duration>();
             static bool DetermineIsEasyConversion(long frequencyOne, long frequencyTwo)
             {
@@ -224,6 +232,12 @@ namespace HpTimeStamps
             if (!Stopwatch.IsHighResolution)
             {
                 throw new MonotonicClockNotAvailableException();
+            }
+
+            if (Stopwatch.Frequency < Duration.MinimumSupportedStopwatchTicksPerSecond)
+            {
+                throw new UnsupportedStopwatchResolutionException(Stopwatch.Frequency,
+                    Duration.MinimumSupportedStopwatchTicksPerSecond);
             }
         }
 

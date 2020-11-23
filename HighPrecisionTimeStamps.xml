@@ -1194,6 +1194,11 @@
             <remarks>Because <see cref="F:System.Diagnostics.Stopwatch.Frequency"/> is different in different environments, this duration should not be considered
             portable or usable across process boundaries.  DO NOT SERIALIZE OR USE ACROSS PROCESS BOUNDARIES.  Use </remarks>
         </member>
+        <member name="F:HpTimeStamps.Duration.MinimumSupportedStopwatchTicksPerSecond">
+            <summary>
+            The smallest stopwatch frequency supported by this library.
+            </summary>
+        </member>
         <member name="F:HpTimeStamps.Duration.TicksPerMillisecond">
             <summary>
             Number of ticks in a millisecond
@@ -1654,6 +1659,19 @@
             <summary>
             Internal to allow fast direct access by other in this library.
             </summary>
+        </member>
+        <member name="T:HpTimeStamps.UnsupportedStopwatchException">
+            <summary>
+            Exceptions related to stopwatches this library does not support are derived herefrom.
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.UnsupportedStopwatchException.#ctor(System.String,System.Exception)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="message">A non-null message for the user.</param>
+            <param name="inner">An inner exception, if applicable or null otherwise.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="message"/> was null.</exception>
         </member>
         <member name="T:HpTimeStamps.IMonotonicStampContext">
             <summary>
@@ -2380,7 +2398,7 @@
             Amount to shift a <see cref="T:HpTimeStamps.BigMath.Int128"/> right to get its sign bit.
             </summary>
         </member>
-        <member name="M:HpTimeStamps.PortableDuration.op_Explicit(System.TimeSpan)~HpTimeStamps.PortableDuration">
+        <member name="M:HpTimeStamps.PortableDuration.op_Implicit(System.TimeSpan)~HpTimeStamps.PortableDuration">
             <summary>
             Convert a timespan into a duration
             </summary>
@@ -3120,6 +3138,38 @@
             <param name="other">Another object implementing this interface</param>
             <returns>True if <paramref name="other"/> is a not null and is of type <see cref="T:HpTimeStamps.TimeStampUtil"/>,
             false otherwise.</returns>
+        </member>
+        <member name="T:HpTimeStamps.UnsupportedStopwatchResolutionException">
+            <summary>
+            An exception that is thrown to indicate that the system's stopwatch does not meet minimum resolution requirements
+            for the stopwatch.
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.UnsupportedStopwatchResolutionException.ActualStopwatchFrequency">
+            <summary>
+            The frequency of the current system's stopwatch
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.UnsupportedStopwatchResolutionException.RequiredStopwatchMinimumFrequency">
+            <summary>
+            The minimum supported frequency for this system's stopwatch
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.UnsupportedStopwatchResolutionException.#ctor(System.Int64,System.Int64)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="actualFrequency">actual frequency of this system's stopwatch</param>
+            <param name="minimumRequiredFrequency">the minimum frequency this library supports</param>
+        </member>
+        <member name="M:HpTimeStamps.UnsupportedStopwatchResolutionException.#ctor(System.Int64,System.Int64,System.String,System.Exception)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="actualFrequency">actual frequency of this system's stopwatch</param>
+            <param name="minimumRequiredFrequency">the minimum frequency this library supports</param>
+            <param name="extraInfo">optionally, extra information</param>
+            <param name="inner">optionally, an inner exception that caused this exception.</param>
         </member>
     </members>
 </doc>

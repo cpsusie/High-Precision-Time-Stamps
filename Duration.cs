@@ -7,10 +7,10 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using TickInt = HpTimeStamps.BigMath.Int128;
-
+[assembly: InternalsVisibleTo("UnitTests")]
 namespace HpTimeStamps
 {
     /// <summary>
@@ -22,6 +22,10 @@ namespace HpTimeStamps
     public readonly struct Duration : IComparable<Duration>, IEquatable<Duration>
     {
         #region Readonly Public Static Values
+        /// <summary>
+        /// The smallest stopwatch frequency supported by this library.
+        /// </summary>
+        public const long MinimumSupportedStopwatchTicksPerSecond = 1_000;
         /// <summary>
         /// Number of ticks in a millisecond
         /// </summary>
@@ -305,6 +309,11 @@ namespace HpTimeStamps
         static Duration()
         {
             TicksPerSecond = Stopwatch.Frequency;
+            if (TicksPerSecond < MinimumSupportedStopwatchTicksPerSecond)
+            {
+                throw new UnsupportedStopwatchResolutionException(TicksPerSecond,
+                    MinimumSupportedStopwatchTicksPerSecond);
+            }
             TicksPerMillisecond = TicksPerSecond / 1_000;
             TicksPerMicrosecond = (TickInt) TicksPerMillisecond / 1_000;
             TicksPerMinute = TicksPerSecond * 60;
@@ -411,21 +420,21 @@ namespace HpTimeStamps
         /// </summary>
         /// <param name="factor">the factor</param>
         /// <returns>the product</returns>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Duration Multiply(double factor) => this * factor;
         /// <summary>
         /// Divide this value by a specified divisor
         /// </summary>
         /// <param name="divisor">the divisor</param>
         /// <returns>the product</returns>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Duration Divide(double divisor) => this / divisor;
         /// <summary>
         /// Divide this value by another duration
         /// </summary>
         /// <param name="ts">the divisor</param>
         /// <returns>the quotient</returns>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public double Divide(Duration ts) => this / ts;
         /// <summary>
         /// Subtract two durations
@@ -505,7 +514,7 @@ namespace HpTimeStamps
         /// Return the additive inverse of this value
         /// </summary>
         /// <returns>The additive inverse</returns>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Duration Negate()
         {
             if (Ticks == MinValue.Ticks)
@@ -520,7 +529,7 @@ namespace HpTimeStamps
         /// <param name="ts">value to add to this one</param>
         /// <returns>sum</returns>
         /// <exception cref="OverflowException">addition caused overflow</exception>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Duration Add(in Duration ts)
         {
             TickInt result = _ticks + ts._ticks;
@@ -540,7 +549,7 @@ namespace HpTimeStamps
         /// <param name="ts">the subtrahend</param>
         /// <returns>the difference</returns>
         /// <exception cref="OverflowException">Result caused overflow.</exception>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public Duration Subtract(in Duration ts)
         {
             TickInt result = _ticks - ts._ticks;
@@ -630,12 +639,56 @@ namespace HpTimeStamps
         }
         #endregion
 
+        #region Internal methods used for unit testing
+
+        internal static bool AreValuesCloseEnough(in Duration d, TimeSpan t)
+        {
+            if (ConvertStopwatchTicksToTimespanTicks(d._ticks) == t.Ticks) return true;
+            long wholeMillisecondsDuration = Convert.ToInt64(Math.Truncate(d.TotalMilliseconds));
+            long wholeMillisecondsTimespan = Convert.ToInt64(Math.Truncate(t.TotalMilliseconds));
+            return wholeMillisecondsDuration == wholeMillisecondsTimespan;
+        }
+
+        internal static bool AreValuesCloseEnough(in Duration d, in PortableDuration pd)
+        {
+            if (PortableDuration.ConvertDurationTicksToPortableDurationTicks(in d._ticks) == pd._ticks) return true;
+            long wholeMillisecondsDuration = Convert.ToInt64(Math.Truncate(d.TotalMilliseconds));
+            long wholeMillisecondsPortableDuration = Convert.ToInt64(Math.Truncate(pd.TotalMilliseconds));
+            return wholeMillisecondsDuration == wholeMillisecondsPortableDuration;
+        }
+
+        internal static bool AreValuesCloseEnough(in PortableDuration pd, TimeSpan t)
+        {
+            if (PortableDuration.ConvertPortableDurationTicksToTimespanTicks(pd._ticks) == t.Ticks) return true;
+            long wholeMillisecondsPortableDuration = Convert.ToInt64(Math.Truncate(pd.TotalMilliseconds));
+            long wholeMillisecondsTimeSpan = Convert.ToInt64(Math.Truncate(t.TotalMilliseconds));
+            return wholeMillisecondsPortableDuration == wholeMillisecondsTimeSpan;
+        }
+        
+
+        #endregion
+
         #region Private / Internal data
         /// <summary>
         /// Internal to allow fast direct access by other in this library.
         /// </summary>
         [SuppressMessage("ReSharper", "InconsistentNaming")] //only internal by special dispensation
-        internal readonly TickInt _ticks;  
+        internal readonly TickInt _ticks;
         #endregion
+    }
+
+    /// <summary>
+    /// Exceptions related to stopwatches this library does not support are derived herefrom.
+    /// </summary>
+    public abstract class UnsupportedStopwatchException : ApplicationException
+    {
+        /// <summary>
+        /// CTOR
+        /// </summary>
+        /// <param name="message">A non-null message for the user.</param>
+        /// <param name="inner">An inner exception, if applicable or null otherwise.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="message"/> was null.</exception>
+        protected UnsupportedStopwatchException([NotNull] string message, [CanBeNull] Exception inner) 
+            : base(message ?? throw new ArgumentNullException(nameof(message)), inner) {}
     }
 }

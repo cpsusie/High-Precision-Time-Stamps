@@ -48,7 +48,7 @@ namespace TestApp
             MonotonicStamp nowPlusX = MonotonicSource.StampNow;
             Duration diff = nowPlusX - now;
             Console.WriteLine("difference in milliseconds: [" + diff.TotalMilliseconds.ToString("N6") + "].");
-            Assert(diff > TimeSpan.Zero, "Difference should be positive.");
+            Assert(diff > (Duration) TimeSpan.Zero, "Difference should be positive.");
             Assert(nowPlusX - diff == now, "Subtracting difference should yield original.");
             Assert(nowPlusX + diff == diff + nowPlusX, "Addition should be commutative.");
             DateTime dtLocalNowPlusX = nowPlusX.ToLocalDateTime();

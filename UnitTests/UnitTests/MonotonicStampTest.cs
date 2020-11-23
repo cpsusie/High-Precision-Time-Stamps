@@ -50,8 +50,11 @@ namespace UnitTests
             TimeSpan asTs = (TimeSpan) fiveMilliseconds;
             TimeSpan asTsExpressedMicro = (TimeSpan) fiveThousandMicroseconds;
             AssertDoubleEqual(asTs.TotalMilliseconds, fiveMilliseconds.TotalMilliseconds);
-            Duration roundTripped = asTs;
-            Assert.True(fiveMilliseconds == roundTripped && roundTripped == asTsExpressedMicro && asTsExpressedMicro == fiveThousandMicroseconds && fiveThousandMicroseconds == expectedFiveMilliseconds);
+            Duration roundTripped = (Duration) asTs;
+            Assert.True(fiveMilliseconds == roundTripped &&
+                        Duration.AreValuesCloseEnough(in roundTripped, asTsExpressedMicro) &&
+                        Duration.AreValuesCloseEnough(in fiveThousandMicroseconds, asTsExpressedMicro) &&
+                        Duration.AreValuesCloseEnough(fiveThousandMicroseconds, expectedFiveMilliseconds));
         }
 
         [Fact]
@@ -147,7 +150,7 @@ namespace UnitTests
                 TimeSpan rootTimeSpan = TimeSpan.FromTicks(tsTicks);
                 PortableDuration portableDuration = rootTimeSpan;
                 Duration d = (Duration) portableDuration;
-                PortableDuration pdFromD = d;
+                PortableDuration pdFromD = (PortableDuration) d;
                 TimeSpan fromD = (TimeSpan) d;
 
                 double rootMilliseconds = rootTimeSpan.TotalMilliseconds;
@@ -156,10 +159,9 @@ namespace UnitTests
                 AssertDoubleEqual(rootMilliseconds, dMilliseconds);
                 AssertPortableDoubleCloseEnough(pdMilliseconds, dMilliseconds);
                 AssertPortableDoubleCloseEnough(pdMilliseconds,rootMilliseconds);
-
-                Assert.True(d == portableDuration && portableDuration == rootTimeSpan && rootTimeSpan == pdFromD &&
-                            pdFromD == portableDuration && fromD == d && portableDuration == rootTimeSpan &&
-                            d == portableDuration);
+                Assert.True(Duration.AreValuesCloseEnough(in d, in portableDuration) && Duration.AreValuesCloseEnough(in d,fromD  ) && Duration.AreValuesCloseEnough(in d, in portableDuration));
+                Assert.True(portableDuration == rootTimeSpan && rootTimeSpan == pdFromD &&
+                            pdFromD == portableDuration && portableDuration == rootTimeSpan);
 
             }
             catch (Exception ex)
@@ -176,9 +178,9 @@ namespace UnitTests
             TimeSpan asTs = TimeSpan.FromTicks(tsTicks);
             try
             {
-                Duration d = asTs;
+                Duration d = (Duration) asTs;
                 TimeSpan andBack = (TimeSpan) d;
-                Assert.True(d == asTs && d == andBack && andBack == asTs);
+                Assert.True(Duration.AreValuesCloseEnough(in d, andBack) && andBack == asTs);
             }
             catch (Exception ex)
             {

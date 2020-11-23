@@ -111,7 +111,7 @@ namespace HpTimeStamps
         /// Convert a timespan into a duration
         /// </summary>
         /// <param name="convertMe">value to convert</param>
-        public static explicit operator PortableDuration(TimeSpan convertMe)
+        public static implicit operator PortableDuration(TimeSpan convertMe)
         {
             PdInt pdTicks = ConvertTimespanTicksToPortableDurationTicks(convertMe.Ticks);
             return new PortableDuration(in pdTicks);
