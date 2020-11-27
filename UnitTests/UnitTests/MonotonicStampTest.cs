@@ -112,20 +112,6 @@ namespace UnitTests
             Helper.WriteLine("All {0:N0} tests PASSED.", numTests);
         }
 
-        [Fact]
-        public void TestTimespanConversionFailureTestCaseOne()
-        {
-            const long val = -7_670_048_174_861_859_330;
-            TestTimeSpanDurationConversions(val);
-        }
-
-        [Fact]
-        public void TestTimespanConversionFailureCaseTwo()
-        {
-            const long val = 5_519_003_985_427_299_254;
-            TestTimeSpanDurationConversions(val);
-        }
-
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, "Value may not be negative.");
@@ -198,9 +184,7 @@ namespace UnitTests
             {
                 Duration d = (Duration) asTs;
                 TimeSpan andBack = (TimeSpan) d;
-                Assert.True(Duration.AreValuesCloseEnough(in d, asTs));
-                Assert.True(Duration.AreValuesCloseEnough(in d, andBack)); 
-                AssertTimeSpansCloseEnough(andBack, asTs);
+                Assert.True(Duration.AreValuesCloseEnough(in d, andBack) && andBack == asTs);
             }
             catch (Exception ex)
             {
@@ -252,12 +236,7 @@ namespace UnitTests
             }
         }
 
-        private void AssertTimeSpansCloseEnough(TimeSpan first, TimeSpan second)
-        {
-            const double diffMustBeLessThan = 1.0;
-            double diff = Math.Abs((first.TotalMilliseconds - second.TotalMilliseconds));
-            Assert.True(diff < diffMustBeLessThan);
-        }
+        
 
         private static ThreadLocal<Random> _rgen = new ThreadLocal<Random>(() => new Random(), false);
     }
