@@ -84,7 +84,7 @@ namespace HpTimeStamps
             get => ref MonotonicTimeStampUtil<TStampContext>.StampContext;
         }
 
-        private static ref readonly TStampContext StatContext
+        internal static ref readonly TStampContext StatContext
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref MonotonicTimeStampUtil<TStampContext>.StampContext;

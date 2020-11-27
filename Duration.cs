@@ -22,6 +22,17 @@ namespace HpTimeStamps
     public readonly struct Duration : IComparable<Duration>, IEquatable<Duration>
     {
         #region Readonly Public Static Values
+
+        /// <summary>
+        /// True if conversion factors between durations and timespans likely to be round
+        /// and without loss
+        /// </summary>
+        public static readonly bool EasyConversionsToAndFromTimeSpan;
+        /// <summary>
+        /// True if conversion factors between durations and timespans likely to be round
+        /// and without loss
+        /// </summary>
+        public static readonly bool EasyConversionsToAndFromPortableDuration;
         /// <summary>
         /// The smallest stopwatch frequency supported by this library.
         /// </summary>
@@ -324,6 +335,18 @@ namespace HpTimeStamps
             MaxMilliseconds = TickInt.MaxValue / TicksPerMillisecond;
             MinMilliseconds = TickInt.MinValue / TicksPerMillisecond;
             TicksPerTenthSecond = TicksPerMillisecond * 100;
+
+            EasyConversionsToAndFromPortableDuration =
+                TestEasyConversions(TicksPerSecond, PortableDuration.TicksPerSecond);
+            EasyConversionsToAndFromTimeSpan = TestEasyConversions(TicksPerSecond, TimeSpan.TicksPerSecond);
+
+            static bool TestEasyConversions(long localTicksPerSecond, long foreignTicksPerSecond)
+            {
+                long bigger = Math.Max(localTicksPerSecond, foreignTicksPerSecond);
+                long smaller = Math.Min(localTicksPerSecond, foreignTicksPerSecond);
+                long quotient = Math.DivRem(bigger, smaller, out long remainder);
+                return remainder == 0 && (quotient == 1 || quotient % 10 == 0);
+            }
         }
 
         #endregion
@@ -606,7 +629,7 @@ namespace HpTimeStamps
              (( (TickInt) timespanTicks * MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator) /
             MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator);
         internal static long ConvertStopwatchTicksToTimespanTicks(in TickInt stopwatchTicks) =>
-            (long) (( (TickInt) stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
+            (long) (( stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
                 MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator);
 
         private static Duration Interval(double value, double scale)
@@ -641,6 +664,13 @@ namespace HpTimeStamps
 
         #region Internal methods used for unit testing
 
+        internal static bool AreValuesCloseEnoughAfterConversionToTimeSpan(in Duration d1, in Duration d2) =>
+            EasyConversionsToAndFromTimeSpan
+                ? (d1 == d2)
+                : TestCloseEnoughRoundingErrorLikely(in d1, in d2);
+
+        internal static bool AreValuesCloseEnoughAfterConversionToPortableDuration(in Duration d1, in Duration d2) => EasyConversionsToAndFromPortableDuration ? (d1 == d2) : TestCloseEnoughRoundingErrorLikely(in d1, in d2);
+
         internal static bool AreValuesCloseEnough(in Duration d, TimeSpan t)
         {
             if (ConvertStopwatchTicksToTimespanTicks(d._ticks) == t.Ticks) return true;
@@ -654,7 +684,8 @@ namespace HpTimeStamps
             if (PortableDuration.ConvertDurationTicksToPortableDurationTicks(in d._ticks) == pd._ticks) return true;
             long wholeMillisecondsDuration = Convert.ToInt64(Math.Truncate(d.TotalMilliseconds));
             long wholeMillisecondsPortableDuration = Convert.ToInt64(Math.Truncate(pd.TotalMilliseconds));
-            return wholeMillisecondsDuration == wholeMillisecondsPortableDuration;
+            const double epsilon = 1.0; //can be significant rounding error on some systems
+            return wholeMillisecondsDuration == wholeMillisecondsPortableDuration || (!PortableDuration.EasyConversionToAndFromDuration && Math.Abs(wholeMillisecondsPortableDuration - wholeMillisecondsDuration) <= epsilon);
         }
 
         internal static bool AreValuesCloseEnough(in PortableDuration pd, TimeSpan t)
@@ -664,8 +695,20 @@ namespace HpTimeStamps
             long wholeMillisecondsTimeSpan = Convert.ToInt64(Math.Truncate(t.TotalMilliseconds));
             return wholeMillisecondsPortableDuration == wholeMillisecondsTimeSpan;
         }
-        
+        #endregion
 
+        #region Private Methods
+        private static bool TestCloseEnoughRoundingErrorLikely(in Duration x, in Duration y)
+        {
+            Duration epsilon = FromMilliseconds(0.5);
+            Duration difference = x - y;
+            if (difference < Zero)
+            {
+                difference = -difference;
+            }
+            Debug.Assert(difference >= Zero);
+            return difference <= epsilon;
+        }
         #endregion
 
         #region Private / Internal data

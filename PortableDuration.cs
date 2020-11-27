@@ -24,7 +24,11 @@ namespace HpTimeStamps
     public readonly struct PortableDuration : IComparable<PortableDuration>, IEquatable<PortableDuration>
     {
         #region Readonly Public Static Values
-
+        /// <summary>
+        /// True if conversion to and from <see cref="Duration"/> is easy and not
+        /// likely to have significant rounding errors.
+        /// </summary>
+        public static readonly bool EasyConversionToAndFromDuration;
         /// <summary>
         /// Number of ticks in a millisecond
         /// </summary>
@@ -68,7 +72,7 @@ namespace HpTimeStamps
 
         internal static readonly PdInt TicksPerMicrosecond;
         internal static readonly PdInt TicksPerNanosecond;
-
+        internal static readonly PdInt TicksPerSecondInternal;
         #endregion
 
         #region Readonly internal static values
@@ -376,6 +380,12 @@ namespace HpTimeStamps
             TicksPerTenthSecond = TicksPerMillisecond * 100;
             TicksPerNanosecond = 1;
             TicksPerMicrosecond = 1_000;
+            TicksPerSecondInternal = TicksPerNanosecond * TicksPerSecond;
+
+            long quotient = Math.DivRem(TicksPerSecond, Duration.TicksPerSecond, out long remainder);
+            EasyConversionToAndFromDuration = remainder == 0 && (quotient == 1 || (quotient % 10 == 0));
+
+            Debug.Assert(TicksPerSecondInternal == TicksPerSecond);
         }
 
         #endregion
@@ -656,9 +666,9 @@ namespace HpTimeStamps
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static PdInt ConvertTimespanTicksToPortableDurationTicks(long timespanTicks) =>
-            (PdInt) timespanTicks * TicksPerSecond / TimeSpan.TicksPerSecond;
-        internal static long ConvertPortableDurationTicksToTimespanTicks(in PdInt stopwatchTicks) =>
-            (long) (stopwatchTicks * TimeSpan.TicksPerSecond / TicksPerNanosecond);
+            (PdInt) timespanTicks * TicksPerSecondInternal / TimeSpan.TicksPerSecond;
+        internal static long ConvertPortableDurationTicksToTimespanTicks(in PdInt pdTicks) =>
+            (long) (pdTicks * TimeSpan.TicksPerSecond / TicksPerSecondInternal);
         internal static TickInt ConvertPortableDurationTicksToDurationTicks(in PdInt portableDurationTicks) =>
             portableDurationTicks * Duration.TicksPerSecond / TicksPerSecond;
 
