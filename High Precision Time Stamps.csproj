@@ -8,29 +8,27 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.0.4-beta</Version>
+    <Version>0.0.5-beta</Version>
     <Description>This pre-release alpha package provides timestamps in a similar manner to DateTime.Now except it uses the hardware's high precision event timer, where available.  Time stamps are more precise and, when retrieved on the same thread within a short time of each other, can be expected to be more accurate relative to each other than those retrieved by DateTime.Now.  They may be less accurate in reference to offical UTC time or system time, but, under most circumstances, should remain approximately accurate.
 
 The use-case for this project is when approximately accurate timestamps are needed for purposes of identifying when an event happened, but are also used to measure elapsed time between events that happen on a scale of milliseconds or microseconds.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Duration type is now backed by a 128 bit integer to facilitate entire range of DateTime struct where frequency of stopwatch is 1 tick / nanosecond.
-
-Focus is now on the monotonic stamps.
-
-Added a duration type analogous to TimeSpan but matching the frequency of stopwatch rather than timespan.  This allows computations to be made without rounding errors.  duration's backing field will probably be changed to a Int128 once I find one written in a relatively modernish style of C# that will not require massive importation of dependencies.   The problem was detected when testing on a linux machine where the stopwatch frequency was 1,000,000,000 rather than 10,000,000 as in windows -- adding a timespan to produce new stamp and then subtracting same produced distinct values due to round-off.  
-
-Monotonic Timestamps work both as UTC and Local (by nature).
-
-Test cases added for monotonic stamps.
-TimeStampSource.Now works.  
-
-TimeStampSource.UtcNow probably does not work and has not been tested.</PackageReleaseNotes>
+    <PackageReleaseNotes>
+      This release 0.0.5.0 fixes a misspelled namespace: HpTimesStamps -> HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.  
+      It also adds a unit test project that focuses on conversions.  More tests will be forthcoming.
+      SourceLink support will be attempted.   It may not work correctly on this release but it is a goal.  
+      Also, a dependency to System.Memory Nuget package has been added.  I hope to get rid of dynamic array allocations in the Int128 multiplication, division and modulus operations.
+    </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps</PackageTags>
-    <AssemblyVersion>0.0.4.0</AssemblyVersion>
-    <FileVersion>0.0.4.0</FileVersion>
+    <AssemblyVersion>0.0.5.0</AssemblyVersion>
+    <FileVersion>0.0.5.0</FileVersion>
     <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -63,6 +61,7 @@ TimeStampSource.UtcNow probably does not work and has not been tested.</PackageR
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
 </Project>
