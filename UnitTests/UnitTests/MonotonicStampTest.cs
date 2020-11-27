@@ -16,8 +16,26 @@ namespace UnitTests
     using MonotonicStampSource = MonotonicTimeStampUtil<MonotonicStampContext>;
     public class MonotonicStampTest : OutputHelperAndFixtureHavingTests<MonotonicStampFixture>
     {
-        public MonotonicStampTest([NotNull] ITestOutputHelper helper, [NotNull] MonotonicStampFixture fixture) 
-            : base(helper, fixture) { }
+        public MonotonicStampTest([NotNull] ITestOutputHelper helper, [NotNull] MonotonicStampFixture fixture)
+            : base(helper, fixture)
+        {
+            const long portableDurationTicksPerSecond = 1_000_000_000;
+            const long tsTicksPerSecond = 10_000_000;
+            Helper.WriteLine("Unit test background data.");
+            Assert.Equal(tsTicksPerSecond, TimeSpan.TicksPerSecond );
+            Assert.Equal(portableDurationTicksPerSecond, PortableDuration.TicksPerSecond);
+            Helper.WriteLine("TimeSpan ticks per second: {0:N0}", tsTicksPerSecond );
+            Helper.WriteLine("Duration ticks per second: {0:N0}", Duration.TicksPerSecond);
+            Helper.WriteLine("Portable duration ticks per second: {0:N0}", PortableDuration.TicksPerSecond);
+            Assert.Equal(Duration.EasyConversionsToAndFromTimeSpan, MonotonicStamp.StatContext.EasyConversionToAndFromTimespanTicks);
+            Assert.Equal(Duration.EasyConversionsToAndFromPortableDuration, PortableDuration.EasyConversionToAndFromDuration);
+            Assert.Equal(Duration.EasyConversionsToAndFromPortableDuration, MonotonicStamp.StatContext.EasyConversionToAndFromNanoseconds);
+            Helper.WriteLine("Conversions to and from Timespan: {0}",
+                Duration.EasyConversionsToAndFromTimeSpan ? "EASY" : "HARD");
+            Helper.WriteLine("Conversions to and from portable duration: {0}",
+                PortableDuration.EasyConversionToAndFromDuration ? "EASY" : "HARD");
+
+        }
         internal Random RGen => _rgen.Value;
         
         [Fact]
@@ -51,10 +69,10 @@ namespace UnitTests
             TimeSpan asTsExpressedMicro = (TimeSpan) fiveThousandMicroseconds;
             AssertDoubleEqual(asTs.TotalMilliseconds, fiveMilliseconds.TotalMilliseconds);
             Duration roundTripped = (Duration) asTs;
-            Assert.True(fiveMilliseconds == roundTripped &&
+            Assert.True(Duration.AreValuesCloseEnoughAfterConversionToTimeSpan(in roundTripped, in fiveMilliseconds) && (
                         Duration.AreValuesCloseEnough(in roundTripped, asTsExpressedMicro) &&
                         Duration.AreValuesCloseEnough(in fiveThousandMicroseconds, asTsExpressedMicro) &&
-                        Duration.AreValuesCloseEnough(fiveThousandMicroseconds, expectedFiveMilliseconds));
+                        Duration.AreValuesCloseEnough(fiveThousandMicroseconds, expectedFiveMilliseconds)));
         }
 
         [Fact]
@@ -126,6 +144,40 @@ namespace UnitTests
             TestTimeSpanDurationConversions(val);
         }
 
+
+        [Fact]
+        public void TestPortableDurationConversionFailureCaseOne()
+        {
+            const long failingVal = -8_101_250_228_723_645_404;
+            TestPortableDurationDurationConversions(1, failingVal);
+        }
+
+        [Fact]
+        public void TestPortableDurationConversionFailureCaseTwo()
+        {
+            const long failingVal = -8_356_803_867_519_737_568;
+            TestPortableDurationDurationConversions(1, failingVal);
+        }
+
+        [Fact]
+        public void TestPortableDurationConversionFailureCaseThree()
+        {
+            const long failingVal = 5_571_665_178_173_090_056;
+            TestPortableDurationDurationConversions(1, failingVal);
+        }
+
+        [Fact]
+        public void PortableDurationConversionFailureTwoElaborationOne()
+        {
+            const long timespanTicks = -8_356_803_867_519_737_568;
+            TimeSpan originalTs = TimeSpan.FromTicks(timespanTicks);
+            PortableDuration pd = originalTs;
+            Assert.True(pd.Ticks == (originalTs.Ticks * PortableDuration.TicksPerSecondInternal / TimeSpan.TicksPerSecond));
+            Assert.True(originalTs.Ticks == (pd.Ticks * TimeSpan.TicksPerSecond / PortableDuration.TicksPerSecondInternal   ));
+            TimeSpan roundTripped = (TimeSpan) pd;
+            Assert.True(roundTripped.Ticks == timespanTicks);
+        }
+
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, "Value may not be negative.");
@@ -178,8 +230,8 @@ namespace UnitTests
                 AssertPortableDoubleCloseEnough(pdMilliseconds, dMilliseconds);
                 AssertPortableDoubleCloseEnough(pdMilliseconds,rootMilliseconds);
                 Assert.True(Duration.AreValuesCloseEnough(in d, in portableDuration) && Duration.AreValuesCloseEnough(in d,fromD  ) && Duration.AreValuesCloseEnough(in d, in portableDuration));
-                Assert.True(portableDuration == rootTimeSpan && rootTimeSpan == pdFromD &&
-                            pdFromD == portableDuration && portableDuration == rootTimeSpan);
+                Assert.True(portableDuration == rootTimeSpan && 
+                            portableDuration == rootTimeSpan);
 
             }
             catch (Exception ex)
@@ -215,7 +267,7 @@ namespace UnitTests
         {
             double epsilon = PortableDuration.TicksPerSecond == MonotonicStampFixture.StampContext.TicksPerSecond
                 ? 0.25
-                : ((double) MonotonicStampFixture.StampContext.TicksPerSecond / PortableDuration.TicksPerSecond * 50.0) ;
+                : 1.0 ;
             Assert.False(double.IsNaN(portable));
             Assert.False(double.IsNaN(notPortable));
             Assert.False(double.IsPositiveInfinity(portable) || double.IsNegativeInfinity(portable) || double.IsPositiveInfinity(notPortable) || double.IsNegativeInfinity(notPortable));

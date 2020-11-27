@@ -1194,6 +1194,18 @@
             <remarks>Because <see cref="F:System.Diagnostics.Stopwatch.Frequency"/> is different in different environments, this duration should not be considered
             portable or usable across process boundaries.  DO NOT SERIALIZE OR USE ACROSS PROCESS BOUNDARIES.  Use </remarks>
         </member>
+        <member name="F:HpTimeStamps.Duration.EasyConversionsToAndFromTimeSpan">
+            <summary>
+            True if conversion factors between durations and timespans likely to be round
+            and without loss
+            </summary>
+        </member>
+        <member name="F:HpTimeStamps.Duration.EasyConversionsToAndFromPortableDuration">
+            <summary>
+            True if conversion factors between durations and timespans likely to be round
+            and without loss
+            </summary>
+        </member>
         <member name="F:HpTimeStamps.Duration.MinimumSupportedStopwatchTicksPerSecond">
             <summary>
             The smallest stopwatch frequency supported by this library.
@@ -2326,6 +2338,12 @@
             </summary>
             <remarks>Since this type is always represented as nanoseconds regardless of environment it, unlike <see cref="T:HpTimeStamps.Duration"/> is suitable for use across process boundaries and/or
             for serialization.</remarks>
+        </member>
+        <member name="F:HpTimeStamps.PortableDuration.EasyConversionToAndFromDuration">
+            <summary>
+            True if conversion to and from <see cref="T:HpTimeStamps.Duration"/> is easy and not
+            likely to have significant rounding errors.
+            </summary>
         </member>
         <member name="F:HpTimeStamps.PortableDuration.TicksPerMillisecond">
             <summary>
