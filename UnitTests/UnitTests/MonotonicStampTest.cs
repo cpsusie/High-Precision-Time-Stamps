@@ -177,14 +177,12 @@ namespace UnitTests
             TimeSpan roundTripped = (TimeSpan) pd;
             Assert.True(roundTripped.Ticks == timespanTicks);
         }
-
         [Fact]
         public void TestPortableDurationConversionFailureCaseFour()
         {
             const long failingVal = -6_433_771_731_613_161_268;
             TestPortableDurationDurationConversions(1, failingVal);
         }
-
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, "Value may not be negative.");
@@ -274,7 +272,7 @@ namespace UnitTests
         {
             double epsilon = PortableDuration.TicksPerSecond == MonotonicStampFixture.StampContext.TicksPerSecond
                 ? 0.25
-                : CalculateEpsilon(MonotonicStampFixture.StampContext.TicksPerSecond, PortableDuration.TicksPerSecond);//((double) MonotonicStampFixture.StampContext.TicksPerSecond / PortableDuration.TicksPerSecond * 75.0) ;
+                : 1.0 ;
             Assert.False(double.IsNaN(portable));
             Assert.False(double.IsNaN(notPortable));
             Assert.False(double.IsPositiveInfinity(portable) || double.IsNegativeInfinity(portable) || double.IsPositiveInfinity(notPortable) || double.IsNegativeInfinity(notPortable));
@@ -284,13 +282,6 @@ namespace UnitTests
             {
                 Assert.False(true,
                     $"The absolute distance between {portable:N} and {notPortable:N} is {absVOfDiff:N} which is greater than {epsilon:N}.");
-            }
-
-            double CalculateEpsilon(double monotonicTicksPerSecond, double portableTicksPerSecond)
-            {
-                double greater = Math.Max(monotonicTicksPerSecond, portableTicksPerSecond);
-                double lesser = Math.Min(monotonicTicksPerSecond, portableTicksPerSecond);
-                return (1.0 - (lesser / greater));
             }
         }
 

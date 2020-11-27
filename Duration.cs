@@ -245,7 +245,8 @@ namespace HpTimeStamps
         {
             get
             {
-                double temp = (double)_ticks / TicksPerMillisecond;
+                double temp = (double) _ticks / TicksPerSecond * 1_000;
+                
                 if (temp > (double) MaxMilliseconds)
                     return (double)MaxMilliseconds;
 
@@ -644,9 +645,7 @@ namespace HpTimeStamps
         {
             if ((ticks > (double) TickInt.MaxValue) || (ticks < (double) TickInt.MinValue) || double.IsNaN(ticks))
                 throw new OverflowException("Value cannot fit in a TimeSpan.");
-            if (ticks >= long.MaxValue)
-                return MaxValue;
-            return new Duration((long)ticks);
+            return new Duration((TickInt)ticks);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -673,10 +672,10 @@ namespace HpTimeStamps
 
         internal static bool AreValuesCloseEnough(in Duration d, TimeSpan t)
         {
+            const double diffMustBeLessThan = 1.0;
             if (ConvertStopwatchTicksToTimespanTicks(d._ticks) == t.Ticks) return true;
-            long wholeMillisecondsDuration = Convert.ToInt64(Math.Truncate(d.TotalMilliseconds));
-            long wholeMillisecondsTimespan = Convert.ToInt64(Math.Truncate(t.TotalMilliseconds));
-            return wholeMillisecondsDuration == wholeMillisecondsTimespan;
+            double diff = Math.Abs(d.TotalMilliseconds - t.TotalMilliseconds);
+            return diff < diffMustBeLessThan;
         }
 
         internal static bool AreValuesCloseEnough(in Duration d, in PortableDuration pd)
