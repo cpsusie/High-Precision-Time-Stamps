@@ -8,7 +8,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.0.5-beta</Version>
+    <Version>0.0.5.1-beta</Version>
     <Description>
       This pre-release alpha package provides timestamps in a similar manner to DateTime.Now except it uses the hardware's high precision event timer, where available.  Time stamps are more precise and, when retrieved on the same thread within a short time of each other, can be expected to be more accurate relative to each other than those retrieved by DateTime.Now.  They may be less accurate in reference to offical UTC time or system time, but, under most circumstances, should remain approximately accurate.
 
@@ -16,7 +16,7 @@
     </Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>
-      This release 0.0.5.0 fixes a misspelled namespace: HpTimesStamps -> HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
+      This release 0.0.5.1 fixes a misspelled namespace: HpTimesStamps -> HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
       It also adds a unit test project that focuses on conversions.  More tests will be forthcoming.
       SourceLink support will be attempted.   It may not work correctly on this release but it is a goal.
       Also, a dependency to System.Memory Nuget package has been added.  I hope to get rid of dynamic array allocations in the Int128 multiplication, division and modulus operations.
@@ -24,8 +24,8 @@
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps</PackageTags>
-    <AssemblyVersion>0.0.5.0</AssemblyVersion>
-    <FileVersion>0.0.5.0</FileVersion>
+    <AssemblyVersion>0.0.5.1</AssemblyVersion>
+    <FileVersion>0.0.5.1</FileVersion>
     <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
