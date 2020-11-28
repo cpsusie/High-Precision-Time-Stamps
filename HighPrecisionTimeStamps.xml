@@ -882,6 +882,38 @@
             <param name="hexString">String value.</param>
             <returns>Array of bytes.</returns>
         </member>
+        <member name="M:HpTimeStamps.BigMath.Utils.CjmUtils.Fls128(HpTimeStamps.BigMath.Int128@)">
+            <summary>
+            Return the bitpos of the most significant set bit (i.e. with value == 1).
+            Adapted from Abseil.IO's ABSL_ATTRIBUTE_ALWAYS_INLINE int Fls128(uint128 n) function found at
+            https://raw.githubusercontent.com/abseil/abseil-cpp/master/absl/numeric/int128.cc .
+            Unlike <see cref="M:HpTimeStamps.BigMath.Utils.CjmUtils.CountLeadingZeros(System.UInt64)"/> which I have absolutely no idea how it works, this seems pretty
+            straight forward ... except insofar as it relies on the WTFishness of <see cref="M:HpTimeStamps.BigMath.Utils.CjmUtils.CountLeadingZeros(System.UInt64)"/>.
+            </summary>
+            <param name="testMe">the value to test</param>
+            <returns>the bitpos of the most significant bit whose value is one (0 to 127).</returns>
+            <remarks>DO NOT SEND THIS FUNCTION ZERO AS A VALUE!</remarks>
+        </member>
+        <member name="M:HpTimeStamps.BigMath.Utils.CjmUtils.CountLeadingZeros(System.UInt64)">
+            <summary>
+            I have no idea how or why this works ... I adapted it from abseil.io's
+            function ABSL_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros64Slow(uint64_t n) at
+            https://raw.githubusercontent.com/abseil/abseil-cpp/master/absl/base/internal/bits.h.
+            It comes from google d00dz and passes unit testing, so I'm calling it good.
+            </summary>
+            <param name="n">the ulong you want to get the leading zero count for.</param>
+            <returns>the leading zero count</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Zero is not a permissible value.</exception>
+        </member>
+        <member name="M:HpTimeStamps.BigMath.Utils.CjmUtils.UnsignedShiftRight(HpTimeStamps.BigMath.Int128@,System.Int32)">
+            <summary>
+            Taken from abseil.io's uint128 operator>>(uint128 lhs, int amount)
+            at <see link="https://raw.githubusercontent.com/abseil/abseil-cpp/master/absl/numeric/int128.h"/>
+            </summary>
+            <param name="shiftUs">value to shift</param>
+            <param name="amount">amount to shift</param>
+            <returns>the amount shifted right as if it were unsigned</returns>
+        </member>
         <member name="T:HpTimeStamps.BigMath.Utils.Crc32">
             <summary>
                 Crc32 calculator.

@@ -30,7 +30,7 @@ namespace HpTimeStamps.BigMath.Utils
             return shift < 0 ? ShiftLeft(values, -shift) : ShiftRight(values, shift);
         }
 
-
+        
         /// <summary>
         ///     Bitwise right shift.
         /// </summary>
@@ -68,6 +68,11 @@ namespace HpTimeStamps.BigMath.Utils
             }
 
             return shifted;
+        }
+
+        public static void ShiftRight(Span<ulong> shiftUs)
+        {
+
         }
 
         /// <summary>
