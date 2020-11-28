@@ -115,9 +115,14 @@
             <param name="sign">The sign.</param>
             <param name="ints">The ints.</param>
         </member>
+        <member name="P:HpTimeStamps.BigMath.Int128.HighSigned">
+            <summary>
+            Higher 64 bits expressed as signed integer
+            </summary>
+        </member>
         <member name="P:HpTimeStamps.BigMath.Int128.High">
             <summary>
-                Higher 64 bits.
+                Higher 64 bits (unsigned).
             </summary>
         </member>
         <member name="P:HpTimeStamps.BigMath.Int128.Low">
@@ -1126,37 +1131,32 @@
                 Math utils.
             </summary>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.Shift(System.UInt64[],System.Int32)">
+        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.Shift(System.Span{System.UInt64},System.Span{System.UInt64},System.Int32)">
             <summary>
                 Bitwise shift array of <see cref="T:System.UInt64" />.
             </summary>
             <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+            <param name="shifted">shifted values go here ... must be same length as values, must be 2</param>
             <param name="shift">Shift amount in bits. Negative for left shift, positive for right shift.</param>
             <returns>Shifted values.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.ShiftRight(System.UInt64[],System.Int32)">
+        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.ShiftRightSigned(System.Span{System.UInt64},System.Span{System.UInt64},System.Int32)">
             <summary>
-                Bitwise right shift.
-            </summary>
-            <param name="values">Bits to shift. Lower bits have lower index in array.</param>
-            <param name="shift">Shift amount in bits.</param>
-            <returns>Shifted values.</returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.ShiftRightSigned(System.UInt64[],System.Int32)">
-            <summary>
-                Bitwise right shift.
+                Sign extending right shift
                 
                 Using an array of ulong's, but when called from Int128 and Int256, value is really a signed number, so we need to preserve the sign bits
             </summary>
             <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+            <param name="shifted">shifted values go here.... must have same length (2) for the limited use herein</param>
             <param name="shift">Shift amount in bits.</param>
             <returns>Shifted values.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.ShiftLeft(System.UInt64[],System.Int32)">
+        <member name="M:HpTimeStamps.BigMath.Utils.MathUtils.ShiftLeft(System.Span{System.UInt64},System.Span{System.UInt64},System.Int32)">
             <summary>
-                Bitwise right shift.
+                Bitwise left shift.
             </summary>
             <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+            <param name="shifted">results go in here.... should be </param>
             <param name="shift">Shift amount in bits.</param>
             <returns>Shifted values.</returns>
         </member>

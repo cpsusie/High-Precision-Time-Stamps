@@ -219,6 +219,7 @@ namespace HpTimeStamps.BigMath
                 throw new ArgumentNullException("ints");
             }
 
+            
             var value = new ulong[2];
             for (int i = 0; i < ints.Length && i < 4; i++)
             {
@@ -236,9 +237,13 @@ namespace HpTimeStamps.BigMath
                 _hi |= NegativeSignMask; // Ensure negative sign.
             }
         }
+        /// <summary>
+        /// Higher 64 bits expressed as signed integer
+        /// </summary>
+        internal readonly long HighSigned => unchecked((long) _hi);
 
         /// <summary>
-        ///     Higher 64 bits.
+        ///     Higher 64 bits (unsigned).
         /// </summary>
         public readonly ulong High => _hi;
 
@@ -1537,11 +1542,12 @@ namespace HpTimeStamps.BigMath
                 return value;
             }
 
-            Int128 ret = value;
-
-            ulong[] bits = MathUtils.ShiftRightSigned(value.ToUIn64Array(), shift);
-            ret._hi = bits[1];
-            ret._lo = bits[0];    //lo is stored in array entry 0
+            Span<ulong> src = stackalloc ulong[2] {value._lo, value._hi};
+            Span<ulong> dst = stackalloc ulong[2] {0, 0};
+            MathUtils.ShiftRightSigned(src, dst, shift);
+            Int128 ret = default;
+            ret._hi = dst[1];
+            ret._lo = dst[0];    //lo is stored in array entry 0
 
             return ret;
         }
@@ -1558,10 +1564,13 @@ namespace HpTimeStamps.BigMath
             {
                 return value;
             }
-            Int128 ret = value;
-            ulong[] bits = MathUtils.ShiftLeft(value.ToUIn64Array(), shift);
-            ret._hi = bits[1];
-            ret._lo = bits[0];    //lo is stored in array entry 0
+
+            Span<ulong> src = stackalloc ulong[2] { value._lo, value._hi };
+            Span<ulong> dst = stackalloc ulong[2] { 0, 0 };
+            MathUtils.ShiftLeft(src, dst, shift);
+            Int128 ret = default;
+            ret._hi = dst[1];
+            ret._lo = dst[0];    //lo is stored in array entry 0
 
             return ret;
         }
@@ -1629,5 +1638,59 @@ namespace HpTimeStamps.BigMath
         /// <param name="value">The value.</param>
         /// <returns>The result of the operator.</returns>
         public static Int128 operator --(Int128 value) => value - 1;
+    }
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+    [DataContract]
+    internal struct UInt128 : IEquatable<UInt128>, IComparable<UInt128>
+    {
+        public static readonly UInt128 MaxValue = new UInt128(ulong.MaxValue, ulong.MaxValue);
+        public static readonly UInt128 MinValue = new UInt128(0, 0);
+        public static ref readonly UInt128 Zero => ref MinValue;
+
+        public static explicit operator UInt128(in Int128 convertMe) => new UInt128(convertMe.High, convertMe.Low);
+        public static explicit operator Int128(in UInt128 convertMe) => new Int128(convertMe._hi, convertMe._lo);
+        public readonly int CompareTo(UInt128 other) => Compare(in this, in other);
+        public readonly bool Equals(UInt128 other) => other == this;
+        public static bool operator ==(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi && lhs._lo == rhs._lo;
+        public static bool operator !=(in UInt128 lhs, in UInt128 rhs) => !(lhs == rhs);
+        public static bool operator >(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi ? lhs._lo > rhs._lo : lhs._hi > rhs._hi;
+        public static bool operator <(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi ? lhs._lo < rhs._lo : lhs._hi < rhs._hi;
+        public static bool operator >=(in UInt128 lhs, in UInt128 rhs) => !(lhs < rhs);
+        public static bool operator <=(in UInt128 lhs, in UInt128 rhs) => !(lhs > rhs);
+
+        //public static bool operator <<(in UInt128 lhs, int amount)
+        //{
+
+        //}
+        //public static bool operator >>(in UInt128 lhs, int amount);
+
+        public override readonly bool Equals(object other) => other is UInt128 ui128 && ui128 == this;
+        public static int Compare(in UInt128 lhs, in UInt128 rhs)
+        {
+            if (lhs == rhs) return 0;
+            return lhs > rhs ? 1 : -1;
+        }
+
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+        public override readonly int GetHashCode()
+        {
+            int hash = _hi.GetHashCode();
+            unchecked
+            {
+                hash = (hash * 397) ^ _lo.GetHashCode();
+            }
+            return hash;
+        }
+
+        private UInt128(ulong hi, ulong lo)
+        {
+            _lo = lo;
+            _hi = hi;
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [FieldOffset(0)] [DataMember] private ulong _lo;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [FieldOffset(8)] [DataMember] private ulong _hi;
     }
 }

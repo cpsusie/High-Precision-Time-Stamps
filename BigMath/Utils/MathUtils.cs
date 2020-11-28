@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 
 namespace HpTimeStamps.BigMath.Utils
 {
@@ -19,41 +20,82 @@ namespace HpTimeStamps.BigMath.Utils
         ///     Bitwise shift array of <see cref="ulong" />.
         /// </summary>
         /// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        /// <param name="shifted">shifted values go here ... must be same length as values, must be 2</param>
         /// <param name="shift">Shift amount in bits. Negative for left shift, positive for right shift.</param>
         /// <returns>Shifted values.</returns>
-        public static ulong[] Shift(ulong[] values, int shift)
+        public static void Shift(Span<ulong> values, Span<ulong> shifted, int shift)
         {
+            Debug.Assert(values.Length == 2 && shifted.Length == 2);
             if (shift == 0)
             {
-                return values;
+                for (int i = 0; i < values.Length; ++i)
+                {
+                    shifted[i] = values[i];
+                }
+                return;
             }
-            return shift < 0 ? ShiftLeft(values, -shift) : ShiftRight(values, shift);
+
+            if (shift < 0)
+                ShiftLeft(values, shifted, -shift);
+            else
+                ShiftRight(values, shifted, shift);
         }
 
         
-        /// <summary>
-        ///     Bitwise right shift.
-        /// </summary>
-        /// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
-        /// <param name="shift">Shift amount in bits.</param>
-        /// <returns>Shifted values.</returns>
-        public static ulong[] ShiftRight(ulong[] values, int shift)
+        ///// <summary>
+        /////     Bitwise right shift.
+        ///// </summary>
+        ///// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        ///// <param name="shift">Shift amount in bits.</param>
+        ///// <returns>Shifted values.</returns>
+        //public static ulong[] ShiftRight(ulong[] values, int shift)
+        //{
+        //    if (shift < 0)
+        //    {
+        //        return ShiftLeft(values, -shift);
+        //    }
+
+        //    const int valueLength = sizeof(ulong) * 8;
+        //    int length = values.Length;
+
+        //    shift = shift % (length * valueLength);
+
+        //    int shiftOffset = shift / valueLength;
+        //    int bshift = shift % valueLength;
+
+        //    var shifted = new ulong[length];
+        //    for (int i = 0; i < length; i++)
+        //    {
+        //        int ishift = i - shiftOffset;
+        //        if (ishift < 0)
+        //        {
+        //            continue;
+        //        }
+        //        shifted[ishift] |= values[i] >> bshift;
+        //        if (bshift > 0 && i + 1 < length)
+        //        {
+        //            shifted[ishift] |= values[i + 1] << valueLength - bshift;
+        //        }
+        //    }
+
+        //    return shifted;
+        //}
+
+        public static void ShiftRight(Span<ulong> values, Span<ulong> shifted, int shift)
         {
+            Debug.Assert(values.Length == 2 && shifted.Length == 2);
+            shifted.Fill(0);
             if (shift < 0)
             {
-                return ShiftLeft(values, -shift);
+                ShiftLeft(values, shifted, - shift);
             }
 
             const int valueLength = sizeof(ulong) * 8;
             int length = values.Length;
-
             shift = shift % (length * valueLength);
-
             int shiftOffset = shift / valueLength;
             int bshift = shift % valueLength;
-
-            var shifted = new ulong[length];
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < length; ++i)
             {
                 int ishift = i - shiftOffset;
                 if (ishift < 0)
@@ -66,30 +108,30 @@ namespace HpTimeStamps.BigMath.Utils
                     shifted[ishift] |= values[i + 1] << valueLength - bshift;
                 }
             }
-
-            return shifted;
-        }
-
-        public static void ShiftRight(Span<ulong> shiftUs)
-        {
-
         }
 
         /// <summary>
-        ///     Bitwise right shift.
+        ///     Sign extending right shift
         ///     
         ///     Using an array of ulong's, but when called from Int128 and Int256, value is really a signed number, so we need to preserve the sign bits
         /// </summary>
         /// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        /// <param name="shifted">shifted values go here.... must have same length (2) for the limited use herein</param>
         /// <param name="shift">Shift amount in bits.</param>
         /// <returns>Shifted values.</returns>
-        public static ulong[] ShiftRightSigned(ulong[] values, int shift)
+        public static void ShiftRightSigned(Span<ulong> values, Span<ulong> shifted, int shift)
         {
+            Debug.Assert(values.Length == 2 && 2 == shifted.Length);
             if (shift < 0)
             {
-                return ShiftLeft(values, -shift);
+                ShiftLeft(values, shifted, -shift);
             }
-
+            if (shift == 0)
+            {
+                Copy(values, shifted);
+                return;
+            }
+            
             const int valueLength = sizeof(ulong) * 8;
             int length = values.Length;
 
@@ -113,45 +155,112 @@ namespace HpTimeStamps.BigMath.Utils
             //  Now, we just have a sub-long shift left to do (shift will be < 64 at this point)
             //
             if (shift == 0)
-                return (values);
+            {
+                Copy(values, shifted);
+            }
             int bshift = valueLength - shift;
 
             //
             //  In right shifting, upper val is a special case because we need to preserve the sign bits, and because we don't need to or in
             //  any other values
             //
-            var shifted = new ulong[length];
+           
             shifted[length - 1] = (ulong)((long)values[length - 1] >> shift);    //Preserve sign of upper long
             for (int i = 0; i < length - 1; i++)
             {
                 shifted[i] = values[i] >> shift;                   //Unsigned, so upper bits stay zero
                 shifted[i] |= (values[i + 1] << bshift);
             }
-            return shifted;
+
+            static void Copy(Span<ulong> src, Span<ulong> dst)
+            {
+                for (int i = 0; i < src.Length && i < dst.Length; ++i)
+                {
+                    dst[i] = src[i];
+                }
+            }
         }
 
+        ///// <summary>
+        /////     Bitwise right shift.
+        /////     
+        /////     Using an array of ulong's, but when called from Int128 and Int256, value is really a signed number, so we need to preserve the sign bits
+        ///// </summary>
+        ///// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        ///// <param name="shift">Shift amount in bits.</param>
+        ///// <returns>Shifted values.</returns>
+        //public static ulong[] ShiftRightSigned(ulong[] values, int shift)
+        //{
+        //    if (shift < 0)
+        //    {
+        //        return ShiftLeft(values, -shift);
+        //    }
+
+        //    const int valueLength = sizeof(ulong) * 8;
+        //    int length = values.Length;
+
+        //    shift = shift % (length * valueLength);     //This is the defined behavior of shift. Shifting by greater than the number of bits uses a mod
+
+        //    //
+        //    //  First, shift over by full ulongs. This could be optimized a bit for longer arrays (if shifting by multiple longs, we do more copies 
+        //    //  than needed), but for short arrays this is probably the best way to go
+        //    //
+        //    while (shift >= valueLength)
+        //    {
+        //        for (int i = 0; i < length - 1; i++)
+        //        {
+        //            values[i] = values[i + 1];
+        //        }
+        //        values[length - 1] = (ulong)((long)values[length - 1] >> (valueLength - 1));    //Preserve sign of upper long, will either be 0 or all f's
+        //        shift -= valueLength;
+        //    }
+
+        //    //
+        //    //  Now, we just have a sub-long shift left to do (shift will be < 64 at this point)
+        //    //
+        //    if (shift == 0)
+        //        return (values);
+        //    int bshift = valueLength - shift;
+
+        //    //
+        //    //  In right shifting, upper val is a special case because we need to preserve the sign bits, and because we don't need to or in
+        //    //  any other values
+        //    //
+        //    var shifted = new ulong[length];
+        //    shifted[length - 1] = (ulong)((long)values[length - 1] >> shift);    //Preserve sign of upper long
+        //    for (int i = 0; i < length - 1; i++)
+        //    {
+        //        shifted[i] = values[i] >> shift;                   //Unsigned, so upper bits stay zero
+        //        shifted[i] |= (values[i + 1] << bshift);
+        //    }
+        //    return shifted;
+        //}
+
         /// <summary>
-        ///     Bitwise right shift.
+        ///     Bitwise left shift.
         /// </summary>
         /// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        /// <param name="shifted">results go in here.... should be </param>
         /// <param name="shift">Shift amount in bits.</param>
         /// <returns>Shifted values.</returns>
-        public static ulong[] ShiftLeft(ulong[] values, int shift)
+        public static void ShiftLeft(Span<ulong> values, Span<ulong> shifted, int shift)
         {
+            Debug.Assert(shifted.Length == values.Length && shifted.Length == 2);
             if (shift < 0)
             {
-                return ShiftRight(values, -shift);
+                ShiftRight(values, shifted, -shift);
+                return;
             }
 
-            const int valueLength = sizeof (ulong)*8;
+            const int valueLength = sizeof(ulong) * 8;
             int length = values.Length;
 
-            shift = shift%(length*valueLength);
+            shift = shift % (length * valueLength);
 
-            int shiftOffset = shift/valueLength;
-            int bshift = shift%valueLength;
+            int shiftOffset = shift / valueLength;
+            int bshift = shift % valueLength;
 
-            var shifted = new ulong[length];
+            shifted.Fill(0);
             for (int i = 0; i < length; i++)
             {
                 int ishift = i + shiftOffset;
@@ -165,9 +274,47 @@ namespace HpTimeStamps.BigMath.Utils
                     shifted[ishift] |= values[i - 1] >> valueLength - bshift;
                 }
             }
-
-            return shifted;
         }
+
+
+        ///// <summary>
+        /////     Bitwise left shift.
+        ///// </summary>
+        ///// <param name="values">Bits to shift. Lower bits have lower index in array.</param>
+        ///// <param name="shift">Shift amount in bits.</param>
+        ///// <returns>Shifted values.</returns>
+        //public static ulong[] ShiftLeft(ulong[] values, int shift)
+        //{
+        //    if (shift < 0)
+        //    {
+        //        return ShiftRight(values, -shift);
+        //    }
+
+        //    const int valueLength = sizeof (ulong)*8;
+        //    int length = values.Length;
+
+        //    shift = shift%(length*valueLength);
+
+        //    int shiftOffset = shift/valueLength;
+        //    int bshift = shift%valueLength;
+
+        //    var shifted = new ulong[length];
+        //    for (int i = 0; i < length; i++)
+        //    {
+        //        int ishift = i + shiftOffset;
+        //        if (ishift >= length)
+        //        {
+        //            continue;
+        //        }
+        //        shifted[ishift] |= values[i] << bshift;
+        //        if (bshift > 0 && i - 1 >= 0)
+        //        {
+        //            shifted[ishift] |= values[i - 1] >> valueLength - bshift;
+        //        }
+        //    }
+
+        //    return shifted;
+        //}
 
         private static int GetNormalizeShift(uint value)
         {
@@ -195,6 +342,7 @@ namespace HpTimeStamps.BigMath.Utils
             }
             if ((value & 0x80000000) == 0)
             {
+                // ReSharper disable once RedundantAssignment -- not sure why needed but not my code originally
                 value <<= 1;
                 shift += 1;
             }
@@ -347,7 +495,7 @@ namespace HpTimeStamps.BigMath.Utils
                     //  Multiply and subtract
                     //
                     long b = 0;
-                    long t = 0;
+                    long t;
                     for (i = 0; i < n; i++)
                     {
                         ulong p = vn[i]*qq;
