@@ -920,7 +920,7 @@ namespace HpTimeStamps.BigMath
         /// <param name="dividend">The value to be divided.</param>
         /// <param name="divisor">The value to divide by.</param>
         /// <returns>The quotient of the division.</returns>
-        public static Int128 Divide(in Int128 dividend, in Int128 divisor) => DivRem(dividend, divisor, out _);
+        public static Int128 SlowDivide(in Int128 dividend, in Int128 divisor) => DivRem(dividend, divisor, out _);
 
         /// <summary>
         ///     Divides one Int128 value by another, returns the result, and returns the remainder in an output parameter.
@@ -960,7 +960,7 @@ namespace HpTimeStamps.BigMath
         /// <param name="dividend">The value to be divided.</param>
         /// <param name="divisor">The value to divide by.</param>
         /// <returns>The remainder after dividing dividend by divisor.</returns>
-        public static Int128 Remainder(in Int128 dividend, in Int128 divisor)
+        public static Int128 SlowRemainder(in Int128 dividend, in Int128 divisor)
         {
             Int128 remainder;
             DivRem(in dividend, in divisor, out remainder);
@@ -1547,7 +1547,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator %(in Int128 dividend, in Int128 divisor) => Remainder(in dividend, in divisor);
+        public static Int128 operator %(in Int128 dividend, in Int128 divisor) => SlowRemainder(in dividend, in divisor);
 
         /// <summary>
         ///     Implements the operator /.
@@ -1557,7 +1557,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator /(in Int128 dividend, in Int128 divisor) => Divide(dividend, divisor);
+        public static Int128 operator /(in Int128 dividend, in Int128 divisor) => SlowDivide(in dividend, in divisor);
 
         /// <summary>
         ///     Implements the operator *.
