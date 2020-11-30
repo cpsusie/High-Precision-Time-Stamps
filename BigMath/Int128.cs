@@ -213,23 +213,37 @@ namespace HpTimeStamps.BigMath
         ///     Initializes a new instance of the <see cref="Int128" /> struct.
         /// </summary>
         /// <param name="sign">The sign.</param>
-        /// <param name="ints">The ints.</param>
-        public Int128(int sign, uint[] ints)
+        /// <param name="intsIncoming">The ints.</param>
+        public Int128(int sign, ReadOnlySpan<uint> intsIncoming)
         {
-            if (ints == null)
+            if (intsIncoming == null)
             {
                 throw new ArgumentNullException("ints");
             }
 
             
-            var value = new ulong[2];
-            for (int i = 0; i < ints.Length && i < 4; i++)
+            
+            
+            Span<ulong> values = stackalloc ulong [2];
+            int valuesIndex = 0;
+            for (int intsIncomingIdx = 0; intsIncomingIdx < 4; intsIncomingIdx += 2)
             {
-                Buffer.BlockCopy(ints[i].ToBytes(), 0, value, i*4, 4);
+                int lowIncomeIdx = intsIncomingIdx;
+                int highIncomeIdx = intsIncomingIdx + 1;
+                uint low = lowIncomeIdx > -1 && lowIncomeIdx < intsIncoming.Length
+                    ? intsIncoming[lowIncomeIdx]
+                    : 0;
+                uint high = highIncomeIdx > -1 && highIncomeIdx < intsIncoming.Length
+                    ? intsIncoming[highIncomeIdx]
+                    : 0;
+                values[valuesIndex] = high;
+                values[valuesIndex] <<= 32;
+                values[valuesIndex] |= low;
+                ++valuesIndex;
             }
-
-            _hi = value[1];
-            _lo = value[0];
+            
+            _hi = values[1];
+            _lo = values[0];
 
             if (sign < 0 && (_hi > 0 || _lo > 0))
             {

@@ -108,12 +108,12 @@
             </summary>
             <param name="value">The value.</param>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.#ctor(System.Int32,System.UInt32[])">
+        <member name="M:HpTimeStamps.BigMath.Int128.#ctor(System.Int32,System.ReadOnlySpan{System.UInt32})">
             <summary>
                 Initializes a new instance of the <see cref="T:HpTimeStamps.BigMath.Int128" /> struct.
             </summary>
             <param name="sign">The sign.</param>
-            <param name="ints">The ints.</param>
+            <param name="intsIncoming">The ints.</param>
         </member>
         <member name="P:HpTimeStamps.BigMath.Int128.HighSigned">
             <summary>
