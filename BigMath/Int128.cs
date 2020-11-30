@@ -108,7 +108,7 @@ namespace HpTimeStamps.BigMath
 
             if (isNegative)
             {
-                Negate();
+                TwosComplementNegate();
             }
         }
 
@@ -249,7 +249,7 @@ namespace HpTimeStamps.BigMath
             {
                 // We use here two's complement numbers representation,
                 // hence such operations for negative numbers.
-                Negate();
+                TwosComplementNegate();
                 _hi |= NegativeSignMask; // Ensure negative sign.
             }
         }
@@ -866,7 +866,7 @@ namespace HpTimeStamps.BigMath
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Negate()
+        private void TwosComplementNegate()
         {
             Not();
             this++;
@@ -877,9 +877,9 @@ namespace HpTimeStamps.BigMath
         /// </summary>
         /// <param name="value">The value to negate.</param>
         /// <returns>The result of the value parameter multiplied by negative one (-1).</returns>
-        public static Int128 Negate(Int128 value)
+        public static Int128 TwosComplementNegate(Int128 value)
         {
-            value.Negate();
+            value.TwosComplementNegate();
             return value;
         }
 
@@ -1004,7 +1004,7 @@ namespace HpTimeStamps.BigMath
         /// <param name="left">The first number to multiply.</param>
         /// <param name="right">The second number to multiply.</param>
         /// <returns>The product of the left and right parameters.</returns>
-        public static Int128 SlowMultiply(in Int128 left, in Int128 right)
+        internal static Int128 SlowMultiply(in Int128 left, in Int128 right)
         {
             if (left == 0 || right == 0)
             {
@@ -1506,7 +1506,13 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator -(in Int128 value) => Negate(value);
+        public static Int128 operator -(in Int128 value)
+        {
+            //if (value == Int128.MinValue)
+            //    throw new ArithmeticException(
+            //        "Value received is the MinValue for type: cannot negate a two's complement minimum value because it has no corresponding positive value in range.");
+            return TwosComplementNegate(value);
+        }
 
         /// <summary>
         ///     Implements the operator +.
@@ -1522,7 +1528,7 @@ namespace HpTimeStamps.BigMath
             sum._hi += right._hi;
             sum._lo += right._lo;
 
-            if (left._lo < right._lo)
+            if (sum._lo < right._lo)
             {
                 sum._hi++;
             }

@@ -325,7 +325,7 @@
             <param name="value">An integer to compare.</param>
             <returns>A signed number indicating the relative values of this instance and value.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Negate(HpTimeStamps.BigMath.Int128)">
+        <member name="M:HpTimeStamps.BigMath.Int128.TwosComplementNegate(HpTimeStamps.BigMath.Int128)">
             <summary>
                 Negates a specified Int128 value.
             </summary>
