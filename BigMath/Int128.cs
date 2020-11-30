@@ -1575,7 +1575,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator *(in Int128 left, in Int128 right) => SlowMultiply(left, right);
+        public static Int128 operator *(in Int128 left, in Int128 right) => CjmUtils.SignedMultiply(in left, in right);
 
         /// <summary>
         ///     Implements the operator &gt;&gt;.
