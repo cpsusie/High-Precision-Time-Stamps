@@ -1694,7 +1694,8 @@ namespace HpTimeStamps.BigMath
         public static readonly UInt128 MaxValue = new UInt128(ulong.MaxValue, ulong.MaxValue);
         public static readonly UInt128 MinValue = new UInt128(0, 0);
         public static ref readonly UInt128 Zero => ref MinValue;
-
+        public static implicit operator UInt128(uint val) => new UInt128(0, val);
+        public static implicit operator UInt128(ulong val) => new UInt128(0, val);
         public static explicit operator UInt128(in Int128 convertMe) => new UInt128(convertMe.High, convertMe.Low);
         public static explicit operator Int128(in UInt128 convertMe) => new Int128(convertMe._hi, convertMe._lo);
         public readonly int CompareTo(UInt128 other) => Compare(in this, in other);
@@ -1705,6 +1706,73 @@ namespace HpTimeStamps.BigMath
         public static bool operator <(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi ? lhs._lo < rhs._lo : lhs._hi < rhs._hi;
         public static bool operator >=(in UInt128 lhs, in UInt128 rhs) => !(lhs < rhs);
         public static bool operator <=(in UInt128 lhs, in UInt128 rhs) => !(lhs > rhs);
+        public static UInt128 operator -(in UInt128 minuend, in UInt128 subtrahend) => minuend + (-subtrahend);
+        public static UInt128 operator ++(UInt128 incrementMe) => incrementMe + 1;
+        public static UInt128 operator --(UInt128 decrementMe) => decrementMe - 1;
+        public static UInt128 operator +(in UInt128 value) => value;
+
+        public static UInt128 operator |(in UInt128 lhs, in UInt128 rhs)
+        {
+            UInt128 ret = default;
+            ret._hi = lhs._hi | rhs._hi;
+            ret._lo = lhs._lo | rhs._lo;
+            return ret;
+        }
+
+        public static UInt128 operator &(in UInt128 lhs, in UInt128 rhs)
+        {
+            UInt128 ret = default;
+            ret._hi = lhs._hi & rhs._hi;
+            ret._lo = lhs._lo & rhs._lo;
+            return ret;
+        }
+
+        public static UInt128 operator ^(in UInt128 lhs, in UInt128 rhs)
+        {
+            UInt128 ret = default;
+            ret._hi = lhs._hi ^ rhs._hi;
+            ret._lo = lhs._lo ^ rhs._lo;
+            return ret;
+        }
+
+        public static UInt128 operator -(in UInt128 operand)
+        {
+            UInt128 ret = ~operand;
+            return ret + 1;
+        }
+
+        public static UInt128 operator ~(in UInt128 operand)
+        {
+            UInt128 ret = default;
+            ret._hi = ~operand._hi;
+            ret._lo = ~operand._lo;
+            return ret;
+        }
+
+        public static UInt128 operator +(in UInt128 lhs, in UInt128 rhs)
+        {
+            UInt128 sum = default;
+            sum._lo = lhs._lo + rhs._lo;
+            sum._hi = lhs._hi + rhs._hi;
+            if (sum._lo < lhs._lo || sum._lo < rhs._lo)
+            {
+                ++sum._hi;
+            }
+            return sum;
+        }
+
+        public static (UInt128 sum, bool CarryOut) AddWithCarry(in UInt128 lhs, in UInt128 rhs)
+        {
+            UInt128 sum = default;
+            sum._lo = lhs._lo + rhs._lo;
+            sum._hi = lhs._hi + rhs._hi;
+            if (sum._lo < lhs._lo || sum._lo < rhs._lo)
+            {
+                ++sum._hi;
+            }
+            return (sum, sum._hi < lhs._hi || sum._hi < rhs._hi);
+        }
+
 
         //public static bool operator <<(in UInt128 lhs, int amount)
         //{
