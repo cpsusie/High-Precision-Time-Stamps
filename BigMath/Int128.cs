@@ -1538,26 +1538,59 @@ namespace HpTimeStamps.BigMath
         /// </returns>
         public static Int128 operator -(in Int128 left, in Int128 right) => left + -right;
 
+        ///// <summary>
+        /////     Implements the operator /.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator /(in Int128 dividend, in Int128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(in dividend, in divisor, out Int128 ret, out _);
+            return ret;
+        }
 
-        /// <summary>
-        ///     Implements the operator %.
-        /// </summary>
-        /// <param name="dividend">The dividend.</param>
-        /// <param name="divisor">The divisor.</param>
-        /// <returns>
-        ///     The result of the operator.
-        /// </returns>
-        public static Int128 operator %(in Int128 dividend, in Int128 divisor) => SlowRemainder(in dividend, in divisor);
+        ///// <summary>
+        /////     Implements the operator %.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator %(in Int128 dividend, in Int128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(in dividend, in divisor, out _, out Int128 remainder);
+            return remainder;
+        }
 
-        /// <summary>
-        ///     Implements the operator /.
-        /// </summary>
-        /// <param name="dividend">The dividend.</param>
-        /// <param name="divisor">The divisor.</param>
-        /// <returns>
-        ///     The result of the operator.
-        /// </returns>
-        public static Int128 operator /(in Int128 dividend, in Int128 divisor) => SlowDivide(in dividend, in divisor);
+        ///// <summary>
+        /////     Implements the operator %.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        //public static Int128 operator %(in Int128 dividend, in Int128 divisor) => SlowRemainder(in dividend, in divisor);
+
+        ///// <summary>
+        /////     Implements the operator /.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        //public static Int128 operator /(in Int128 dividend, in Int128 divisor) => SlowDivide(in dividend, in divisor);
 
         /// <summary>
         ///     Implements the operator *.

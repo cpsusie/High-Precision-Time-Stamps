@@ -363,7 +363,7 @@
             <param name="right">The value to subtract (the subtrahend).</param>
             <returns>The result of subtracting right from left.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Divide(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.SlowDivide(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Divides one Int128 value by another and returns the result.
             </summary>
@@ -385,7 +385,7 @@
                 The quotient of the division.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Remainder(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.SlowRemainder(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Performs integer division on two Int128 values and returns the remainder.
             </summary>
@@ -734,26 +734,6 @@
             </summary>
             <param name="left">The x.</param>
             <param name="right">The y.</param>
-            <returns>
-                The result of the operator.
-            </returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.op_Modulus(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Implements the operator %.
-            </summary>
-            <param name="dividend">The dividend.</param>
-            <param name="divisor">The divisor.</param>
-            <returns>
-                The result of the operator.
-            </returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.op_Division(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Implements the operator /.
-            </summary>
-            <param name="dividend">The dividend.</param>
-            <param name="divisor">The divisor.</param>
             <returns>
                 The result of the operator.
             </returns>
