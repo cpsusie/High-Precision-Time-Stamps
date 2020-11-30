@@ -103,8 +103,8 @@ namespace UnitTests
         [Fact]
         public void TestMultiplicationNonEdgeCases()
         {
-            const int numTests = 100_000;
-            const int updateEvery = 10_000;
+            const int numTests = 1_000_000;
+            const int updateEvery = 100_000;
             int testNo = 0;
             Int128 firstTestOperand=default;
             Int128 secondTestOperand=default;

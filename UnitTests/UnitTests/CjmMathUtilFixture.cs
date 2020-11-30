@@ -43,27 +43,9 @@ namespace UnitTests
             }
         }
 
-        internal (Int128 FirstNonProblematicOperand, Int128 SecondNonProblematicOperand) TwoRandomNonProblematicOperands
-        {
-            get
-            {
-                bool makeFirst128 = TheRGen.Value.Next(0, 2) == 1;
-
-                Int128 firstOperand = TheProblematicDivMulOperands.First();
-                Int128 secondOperand = TheProblematicDivMulOperands.First();
-                while (ProblematicOperandsForMultiplicationAndDivision.Contains(firstOperand))
-                {
-                    firstOperand = makeFirst128 ? RandomInt128 : RandomLong;
-                }
-
-                while (ProblematicOperandsForMultiplicationAndDivision.Contains(secondOperand))
-                {
-                    secondOperand = !makeFirst128 ? RandomInt128 : RandomULong; ;
-                }
-
-                return (firstOperand, secondOperand);
-            }
-        }
+        internal (Int128 FirstNonProblematicOperand, Int128 SecondNonProblematicOperand)
+            TwoRandomNonProblematicOperands => (RandomLong, RandomLong);
+        
         
         static CjmMathUtilFixture()
         {
