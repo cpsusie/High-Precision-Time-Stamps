@@ -216,14 +216,6 @@ namespace HpTimeStamps.BigMath
         /// <param name="intsIncoming">The ints.</param>
         public Int128(int sign, ReadOnlySpan<uint> intsIncoming)
         {
-            if (intsIncoming == null)
-            {
-                throw new ArgumentNullException("ints");
-            }
-
-            
-            
-            
             Span<ulong> values = stackalloc ulong [2];
             int valuesIndex = 0;
             for (int intsIncomingIdx = 0; intsIncomingIdx < 4; intsIncomingIdx += 2)
