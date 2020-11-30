@@ -1686,23 +1686,37 @@ namespace HpTimeStamps.BigMath
         public static readonly UInt128 MaxValue = new UInt128(ulong.MaxValue, ulong.MaxValue);
         public static readonly UInt128 MinValue = new UInt128(0, 0);
         public static ref readonly UInt128 Zero => ref MinValue;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator UInt128(uint val) => new UInt128(0, val);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator UInt128(ulong val) => new UInt128(0, val);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator UInt128(in Int128 convertMe) => new UInt128(convertMe.High, convertMe.Low);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static explicit operator Int128(in UInt128 convertMe) => new Int128(convertMe._hi, convertMe._lo);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int CompareTo(UInt128 other) => Compare(in this, in other);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool Equals(UInt128 other) => other == this;
         public static bool operator ==(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi && lhs._lo == rhs._lo;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in UInt128 lhs, in UInt128 rhs) => !(lhs == rhs);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi ? lhs._lo > rhs._lo : lhs._hi > rhs._hi;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(in UInt128 lhs, in UInt128 rhs) => lhs._hi == rhs._hi ? lhs._lo < rhs._lo : lhs._hi < rhs._hi;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >=(in UInt128 lhs, in UInt128 rhs) => !(lhs < rhs);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <=(in UInt128 lhs, in UInt128 rhs) => !(lhs > rhs);
         public static UInt128 operator -(in UInt128 minuend, in UInt128 subtrahend) => minuend + (-subtrahend);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator ++(UInt128 incrementMe) => incrementMe + 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator --(UInt128 decrementMe) => decrementMe - 1;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator +(in UInt128 value) => value;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator |(in UInt128 lhs, in UInt128 rhs)
         {
             UInt128 ret = default;
@@ -1710,7 +1724,7 @@ namespace HpTimeStamps.BigMath
             ret._lo = lhs._lo | rhs._lo;
             return ret;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator &(in UInt128 lhs, in UInt128 rhs)
         {
             UInt128 ret = default;
@@ -1718,7 +1732,7 @@ namespace HpTimeStamps.BigMath
             ret._lo = lhs._lo & rhs._lo;
             return ret;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator ^(in UInt128 lhs, in UInt128 rhs)
         {
             UInt128 ret = default;
@@ -1726,13 +1740,13 @@ namespace HpTimeStamps.BigMath
             ret._lo = lhs._lo ^ rhs._lo;
             return ret;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator -(in UInt128 operand)
         {
             UInt128 ret = ~operand;
             return ret + 1;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator ~(in UInt128 operand)
         {
             UInt128 ret = default;
@@ -1740,7 +1754,7 @@ namespace HpTimeStamps.BigMath
             ret._lo = ~operand._lo;
             return ret;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UInt128 operator +(in UInt128 lhs, in UInt128 rhs)
         {
             UInt128 sum = default;
@@ -1752,7 +1766,7 @@ namespace HpTimeStamps.BigMath
             }
             return sum;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (UInt128 sum, bool CarryOut) AddWithCarry(in UInt128 lhs, in UInt128 rhs)
         {
             UInt128 sum = default;
@@ -1764,6 +1778,84 @@ namespace HpTimeStamps.BigMath
             }
             return (sum, sum._hi < lhs._hi || sum._hi < rhs._hi);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt128 operator *(in UInt128 lhs, in UInt128 rhs) => CjmUtils.UnsignedMultiply(in lhs, in rhs);
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt128 operator <<(in UInt128 lhs, int amount)
+        {
+            // uint64_t shifts of >= 64 are undefined, so we will need some
+            // special-casing.
+            UInt128 ret = lhs;
+            if (amount < 64)
+            {
+                if (amount != 0)
+                {
+                    ulong high = (lhs._hi << amount) | (lhs._lo >> (64 - amount));
+                    ulong low = lhs._lo << amount;
+                    ret._hi = high;
+                    ret._lo = low;
+                    //return MakeUint128(
+                    //    (Uint128High64(lhs) << amount) | (Uint128Low64(lhs) >> (64 - amount)),
+                    //    Uint128Low64(lhs) << amount);
+                }
+                //amount == 0 -> lhs == ret
+            }
+            else
+            {
+                //MakeUint128(Uint128Low64(lhs) << (amount - 64), 0);
+                ulong high = lhs._lo << (amount - 64);
+                ret._hi = high;
+                ret._lo = 0;
+            }
+            return ret;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt128 operator >>(in UInt128 lhs, int amount)
+        {
+            UInt128 ret = lhs;
+            // uint64_t shifts of >= 64 are undefined, so we will need some
+            // special-casing.
+            if (amount < 64)
+            {
+                if (amount != 0)
+                {
+                    ulong high = lhs._hi >> amount;
+                    ulong lo = (lhs._lo >> amount) | (lhs._hi << (64 - amount));
+                    ret._hi = high;
+                    ret._lo = lo;
+                    //return MakeUint128(Uint128High64(lhs) >> amount,
+                    //    (Uint128Low64(lhs) >> amount) |
+                    //    (Uint128High64(lhs) << (64 - amount)));
+                }
+                //amount == 0 -> lhs == ret
+            }
+            else
+            {
+                //return MakeUint128(0, Uint128High64(lhs) >> (amount - 64));
+                ulong low = lhs._hi >> (amount - 64);
+                ret._hi = 0;
+                ret._lo = low;
+            }
+            return ret;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt128 operator /(in UInt128 dividend, in UInt128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(dividend, in divisor, out UInt128 ret, out _);
+            return ret;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt128 operator %(in UInt128 dividend, in UInt128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(dividend, in divisor, out _, out UInt128 remainder);
+            return remainder;
+        }
 
 
         //public static bool operator <<(in UInt128 lhs, int amount)
@@ -1773,12 +1865,13 @@ namespace HpTimeStamps.BigMath
         //public static bool operator >>(in UInt128 lhs, int amount);
 
         public override readonly bool Equals(object other) => other is UInt128 ui128 && ui128 == this;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Compare(in UInt128 lhs, in UInt128 rhs)
         {
             if (lhs == rhs) return 0;
             return lhs > rhs ? 1 : -1;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
         public override readonly int GetHashCode()
         {
@@ -1790,15 +1883,15 @@ namespace HpTimeStamps.BigMath
             return hash;
         }
 
-        private UInt128(ulong hi, ulong lo)
+        internal UInt128(ulong hi, ulong lo)
         {
             _lo = lo;
             _hi = hi;
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(0)] [DataMember] private ulong _lo;
+        [FieldOffset(0)] [DataMember] internal ulong _lo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(8)] [DataMember] private ulong _hi;
+        [FieldOffset(8)] [DataMember] internal ulong _hi;
     }
 }

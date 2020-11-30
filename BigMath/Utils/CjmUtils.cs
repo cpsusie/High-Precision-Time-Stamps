@@ -34,6 +34,30 @@ namespace HpTimeStamps.BigMath.Utils
         }
 
         /// <summary>
+        /// Return the bitpos of the most significant set bit (i.e. with value == 1).
+        /// Adapted from Abseil.IO's ABSL_ATTRIBUTE_ALWAYS_INLINE int Fls128(uint128 n) function found at
+        /// https://raw.githubusercontent.com/abseil/abseil-cpp/master/absl/numeric/int128.cc .
+        /// Unlike <see cref="CountLeadingZeros"/> which I have absolutely no idea how it works, this seems pretty
+        /// straight forward ... except insofar as it relies on the WTFishness of <see cref="CountLeadingZeros"/>.
+        /// </summary>
+        /// <param name="testMe">the value to test</param>
+        /// <returns>the bitpos of the most significant bit whose value is one (0 to 127).</returns>
+        /// <remarks>DO NOT SEND THIS FUNCTION ZERO AS A VALUE!</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int Fls128(in UInt128 testMe)
+        {
+            Debug.Assert(testMe != 0, "Zero is not an acceptable value!");
+            ulong hi = testMe._hi;
+            if (hi != 0)
+            {
+                return 127 - CountLeadingZeros(hi);
+            }
+
+            Debug.Assert(testMe._lo != 0, "Should not be zero!");
+            return 63 - CountLeadingZeros(testMe._lo);
+        }
+
+        /// <summary>
         /// I have no idea how or why this works ... I adapted it from abseil.io's
         /// function ABSL_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros64Slow(uint64_t n) at
         /// https://raw.githubusercontent.com/abseil/abseil-cpp/master/absl/base/internal/bits.h.
@@ -88,6 +112,81 @@ namespace HpTimeStamps.BigMath.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void DivModImpl(in Int128 dividend, in Int128 divisor, out Int128 quotientRet,
+           out Int128 remainderRet)
+        {
+            Debug.Assert(divisor != 0);
+            bool dividendNegative = dividend < 0;
+            bool divisorNegative = divisor < 0;
+
+            DivModImpl((UInt128)dividend, (UInt128)divisor, out UInt128 uQuot, out UInt128 uRem);
+            quotientRet = (Int128)uQuot;
+            if (dividendNegative != divisorNegative && uQuot != 0)
+            {
+                quotientRet = -quotientRet;
+            }
+
+            remainderRet = (Int128)uRem;
+            if (remainderRet < 0)
+            {
+                remainderRet = -remainderRet;
+            }
+        }
+
+        // Long division/modulo for uint128 implemented using the shift-subtract
+        // division algorithm adapted from:
+        // https://stackoverflow.com/questions/5386377/division-without-using
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void DivModImpl(UInt128 dividend, in UInt128 divisor, out UInt128 quotientRet,
+            out UInt128 remainderRet)
+        {
+            Debug.Assert(divisor != 0, "divisor != 0");
+
+            if (divisor > dividend)
+            {
+                quotientRet = 0;
+                remainderRet = dividend;
+                return;
+            }
+
+            if (divisor == dividend)
+            {
+                quotientRet = 1;
+                remainderRet = 0;
+                return;
+            }
+
+            if (dividend == 0)
+            {
+                quotientRet = 0;
+                remainderRet = 0;
+                return;
+            }
+
+            UInt128 denominator = divisor;
+            UInt128 quotient = 0;
+
+            // Left aligns the MSB of the denominator and the dividend.
+            int shift = CjmUtils.Fls128(in dividend) - CjmUtils.Fls128(in denominator);
+            denominator <<= shift;
+
+            // Uses shift-subtract algorithm to divide dividend by denominator. The
+            // remainder will be left in dividend.
+            for (int i = 0; i <= shift; ++i)
+            {
+                quotient <<= 1;
+                if (dividend >= denominator)
+                {
+                    dividend -= denominator;
+                    quotient |= 1;
+                }
+                denominator >>= 1;
+            }
+
+            quotientRet = quotient;
+            remainderRet = dividend;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static Int128 UnsignedMultiply(in Int128 lhs, in Int128 rhs)
         {
             ulong a32 = lhs.Low >> 32;
@@ -117,7 +216,48 @@ namespace HpTimeStamps.BigMath.Utils
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static UInt128 UnsignedMultiply(in UInt128 lhs, in UInt128 rhs)
+        {
+            ulong a32 = lhs._lo >> 32;
+            ulong a00 = lhs._lo & 0xffffffff;
+            ulong b32 = rhs._lo >> 32;
+            ulong b00 = rhs._lo & 0xffffffff;
+
+            ulong lHighTimesRLow = lhs._hi * rhs._lo;
+            ulong lLowTimesRHigh = lhs._lo * rhs._hi;
+            ulong a32TimeB32 = a32 * b32;
+            ulong a0TimesB0 = a00 * b00;
+            ulong a32TimesB0_64 = a32 * b00;
+            ulong a00TimesB32_64 = a00 * b32;
+
+            ulong resHigh = lHighTimesRLow + lLowTimesRHigh + a32TimeB32;
+            ulong resLow = a0TimesB0;
+
+            UInt128 result = new UInt128(resHigh, resLow);
+            UInt128 a32TimesB00 = a32TimesB0_64;
+            UInt128 a00TimesB32 = a00TimesB32_64;
+            UInt128 a32TimesB00LShift32 = a32TimesB00 << 32;
+            UInt128 a00TimesB32LShift32 = a00TimesB32 << 32;
+
+            UnsignedAddAssign(ref result, in a32TimesB00LShift32);
+            UnsignedAddAssign(ref result, in a00TimesB32LShift32);
+
+            return result;
+        }
+
         internal static void UnsignedAddAssign(ref Int128 addToMe, in Int128 addMe)
+        {
+            ulong origLow = addToMe._lo;
+            addToMe._hi += addMe._hi;
+            addToMe._lo += addMe._lo;
+            if (addToMe._lo < origLow) //check for cary
+            {
+                ++addToMe._hi;
+            }
+        }
+
+        internal static void UnsignedAddAssign(ref UInt128 addToMe, in UInt128 addMe)
         {
             ulong origLow = addToMe._lo;
             addToMe._hi += addMe._hi;
