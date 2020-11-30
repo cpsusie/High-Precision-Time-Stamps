@@ -25,9 +25,11 @@ namespace HpTimeStamps.BigMath
     internal struct Int128 : IComparable<Int128>, IComparable, IEquatable<Int128>, IFormattable
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(0)] [DataMember] private ulong _lo;
+        [FieldOffset(0)] [DataMember]
+        internal ulong _lo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        [FieldOffset(8)] [DataMember] private ulong _hi;
+        [FieldOffset(8)] [DataMember]
+        internal ulong _hi;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebuggerDisplay => "0x" + ToString("X1");
@@ -51,7 +53,7 @@ namespace HpTimeStamps.BigMath
 
         private static Int128 GetMaxValue() => new Int128(long.MaxValue, ulong.MaxValue);
 
-        private static Int128 GetMinValue() => -GetMaxValue();
+        private static Int128 GetMinValue() => new Int128(0x8000_0000_0000_0000, 0);
 
         private static Int128 GetZero() => new Int128();
 
@@ -988,9 +990,35 @@ namespace HpTimeStamps.BigMath
         /// <param name="left">The first number to multiply.</param>
         /// <param name="right">The second number to multiply.</param>
         /// <returns>The product of the left and right parameters.</returns>
-        public static Int128 Multiply(in Int128 left, in Int128 right)
+        public static Int128 SlowMultiply(in Int128 left, in Int128 right)
         {
+            if (left == 0 || right == 0)
+            {
+                return 0;
+            }
+
+            if (left == 1)
+            {
+                return right;
+            }
+            if (left == -1)
+            {
+                var temp = ~right;
+                CjmUtils.UnsignedAddAssign(ref temp, 1);
+                return temp;
+            }
+            if (right == 1)
+            {
+                return left;
+            }
+            if (right == -1)
+            {
+                var temp = ~left;
+                CjmUtils.UnsignedAddAssign(ref temp, 1);
+                return temp;
+            }
             
+
             int leftSign = left.Sign;
             Int128 leftCopy = leftSign < 0 ? -left : left;
             int rightSign = right.Sign;
@@ -1527,7 +1555,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator *(in Int128 left, in Int128 right) => Multiply(left, right);
+        public static Int128 operator *(in Int128 left, in Int128 right) => SlowMultiply(left, right);
 
         /// <summary>
         ///     Implements the operator &gt;&gt;.

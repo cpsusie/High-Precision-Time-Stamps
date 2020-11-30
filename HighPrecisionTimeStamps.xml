@@ -407,7 +407,7 @@
             </summary>
             <returns>The value of the current Int128 object converted to an array of unsigned integers.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Multiply(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.SlowMultiply(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Returns the product of two Int128 values.
             </summary>

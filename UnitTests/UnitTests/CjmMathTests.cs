@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ComTypes;
 using HpTimeStamps.BigMath;
 using HpTimeStamps.BigMath.Utils;
 using JetBrains.Annotations;
@@ -100,6 +101,69 @@ namespace UnitTests
         }
 
         [Fact]
+        public void TestMultiplicationNonEdgeCases()
+        {
+            const int numTests = 100_000;
+            const int updateEvery = 10_000;
+            int testNo = 0;
+            Int128 firstTestOperand=default;
+            Int128 secondTestOperand=default;
+            Int128 slowResult = 0;
+            Int128 fastResult = 0;
+            try
+            {
+                for (testNo = 1; testNo <= numTests; ++testNo)
+                {
+                    (firstTestOperand, secondTestOperand) = Fixture.TwoRandomNonProblematicOperands;
+                    if (testNo % updateEvery == 0)
+                        Helper.WriteLine("On test number {0:N0} of {1:N0} tests.\t\t\tLeft Test operand: [0x{2:X32}]\t\t\tRight test operand: [0x{3:X32}].", testNo,
+                            numTests, firstTestOperand, secondTestOperand);
+                    ValidateNonProblematicMultiplication(in firstTestOperand, in secondTestOperand);
+                }
+            }
+            catch (Exception ex)
+            {
+                Helper.WriteLine("Test {0:N0} of {1:N0} FAILED!\n", testNo, numTests);
+                Helper.WriteLine("Left operand: [0x{0:X32}]\t\t\tRight Operand: [0x{1:X32}]", firstTestOperand, secondTestOperand);
+                Helper.WriteLine("Exception message: [{0}].", ex.Message);
+                throw;
+            }
+        }
+
+        [Fact]
+        public void TestMultiplicationEdgeCases()
+        {
+            ReadOnlySpan<Int128> edgeCaseFactors = Fixture.ProblematicOperandsForMultiplicationAndDivision.AsSpan();
+
+            foreach (var item in Permute2Elements(edgeCaseFactors.Length))
+            {
+                ref readonly Int128 lhs = ref edgeCaseFactors[item.FirstElemIdx];
+                ref readonly Int128 rhs = ref edgeCaseFactors[item.SecondElemIdx];
+                (ArithmeticException exception, Int128 slowResult, Int128 fastResult) = TestFasterMultiplication(in lhs, in rhs);
+                //The code the int128 is based on (originally) is buggy as shit on edge cases.
+                Assert.True( 
+                    slowResult == fastResult || (ExpectArithmeticException(in lhs, in rhs) && exception != null) ||
+                    fastResult == Int128.MinValue || (lhs != rhs &&
+                                                      (lhs == Int128.MaxValue || rhs == Int128.MaxValue) &&
+                                                      (lhs == -1 || rhs == -1)),
+                    $"Edge case multiplication test failed.  Factors {lhs} and {rhs} yielded {slowResult} as the slow result and {fastResult} as the fast result.");
+            }
+
+            IEnumerable<(int FirstElemIdx, int SecondElemIdx)> Permute2Elements(int arrayLength)
+            {
+                for (int arrOneIdx = 0; arrOneIdx < arrayLength; ++arrOneIdx)
+                {
+                    for (int arrTwoIdx = 0; arrTwoIdx < arrayLength; ++arrTwoIdx)
+                    {
+                        yield return (arrOneIdx, arrTwoIdx);
+                    }
+                }
+            }
+        }
+
+        private static bool ExpectArithmeticException(in Int128 l, in Int128 r) => (l == Int128.MinValue && r == -1) || (r == Int128.MinValue && l == -1);
+
+        [Fact]
         public void DoFls128TestOnRange1To255()
         {
             Int128 testMe = 0;
@@ -107,6 +171,31 @@ namespace UnitTests
             {
                 ValidateFls128(in testMe);
             }
+        }
+
+        private void ValidateNonProblematicMultiplication(in Int128 l, in Int128 r)
+        {
+            (_, Int128 slowRes, Int128 fastRes) = TestFasterMultiplication(in l, in r);
+            Assert.True(slowRes == fastRes, $"Results are not equal.  SlowRes: [0x{slowRes:X32}]\t\t\tFastRes: [0x{fastRes:X32}].");
+        }
+
+        private (ArithmeticException Error, Int128 SlowResult, Int128 FastResult) TestFasterMultiplication(in Int128 lhs, in Int128 rhs)
+        {
+
+            ArithmeticException ex = null;
+            Int128 slow =
+                Int128.SlowMultiply(in lhs, in rhs);
+            Int128 fast = default;
+            try
+            {
+                fast = CjmUtils.SignedMultiply(in lhs, in rhs);
+            }
+            catch (ArithmeticException error)
+            {
+                ex = error;
+            }
+
+            return (ex, slow, fast);
         }
 
         private void ValidateFls128(in Int128 testOperand)
@@ -171,5 +260,7 @@ namespace UnitTests
             Assert.True(false, "This code should Never execute.");
             return leadingZeroCount;
         }
+
+        
     }
 }

@@ -87,6 +87,88 @@ namespace HpTimeStamps.BigMath.Utils
 
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Int128 UnsignedMultiply(in Int128 lhs, in Int128 rhs)
+        {
+            ulong a32 = lhs.Low >> 32;
+            ulong a00 = lhs.Low & 0xffffffff;
+            ulong b32 = rhs.Low >> 32;
+            ulong b00 = rhs.Low & 0xffffffff;
+
+            ulong lHighTimesRLow = lhs.High * rhs.Low;
+            ulong lLowTimesRHigh = lhs.Low * rhs.High;
+            ulong a32TimeB32 = a32 * b32;
+            ulong a0TimesB0 = a00 * b00;
+            ulong a32TimesB0_64 = a32 * b00;
+            ulong a00TimesB32_64 = a00 * b32;
+
+            ulong resHigh = lHighTimesRLow + lLowTimesRHigh + a32TimeB32;
+            ulong resLow = a0TimesB0;
+
+            Int128 result = new Int128(resHigh, resLow); 
+            Int128 a32TimesB00 = new Int128(a32TimesB0_64);
+            Int128 a00TimesB32 = new Int128(a00TimesB32_64);
+            Int128 a32TimesB00LShift32 = a32TimesB00 << 32;
+            Int128 a00TimesB32LShift32 = a00TimesB32 << 32;
+            
+            UnsignedAddAssign(ref result, in a32TimesB00LShift32);
+            UnsignedAddAssign(ref result, in a00TimesB32LShift32);
+
+            return result;
+        }
+
+        internal static void UnsignedAddAssign(ref Int128 addToMe, in Int128 addMe)
+        {
+            ulong origLow = addToMe._lo;
+            addToMe._hi += addMe._hi;
+            addToMe._lo += addMe._lo;
+            if (addToMe._lo < origLow) //check for cary
+            {
+                ++addToMe._hi;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Int128 SignedMultiply(in Int128 lhs, in Int128 rhs)
+        {
+            if (lhs == 0 || rhs == 0)
+            {
+                return 0;
+            }
+
+            if (lhs == 1 || rhs == 1)
+            {
+                return lhs == 1 ? rhs : lhs;
+            }
+            if (lhs == -1)
+            {
+                if (rhs == Int128.MinValue)
+                    throw new ArithmeticException("Cannot convert min value to a positive value.");
+                var temp = ~rhs;
+                UnsignedAddAssign(ref temp, 1);
+                return temp;
+            }
+
+            if (rhs == -1)
+            {
+                if (lhs == Int128.MinValue)
+                    throw new ArithmeticException("Cannot convert min value to a positive value.");
+                var temp = ~lhs;
+                UnsignedAddAssign(ref temp, 1);
+                return temp;
+            }
+            
+            bool resultShouldBeNegative = (lhs < 0) != (rhs < 0);
+            Int128 result = UnsignedMultiply(in lhs, in rhs);
+            bool resultIsNegative = (result < 0);
+            if (resultIsNegative != resultShouldBeNegative)
+            {
+                Debug.Assert(result != Int128.MinValue, "result != Int128.MinValue");
+                result = -result;
+            }
+            return result;
+        }
+
         internal static int Fls128Verify(in Int128 value)
         {
             if (value == 0 ) throw new ArgumentOutOfRangeException(nameof(value), value, "value may not be zero!");
