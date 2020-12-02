@@ -2,6 +2,7 @@
 #define CJM_HELPER_HPP_
 #include <string_view>
 #include <string>
+#include <limits>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -21,22 +22,30 @@
 #include <chrono>
 #include <mutex>
 #include <cstdint>
+#include <vector>
+#include <utility>
 namespace cjm
 {
+	using namespace std::string_literals;
 	using namespace std::string_view_literals;
 	constexpr auto newl = '\n';
 	constexpr auto w_newl = u'\n';
 
 	using uint128_t = absl::uint128;
 	using int128_t = absl::int128;
-	using fstr_t = std::string;
+	using fchar_t = char;
+	using tchar_t = char16_t;
+	using fstr_t = std::basic_string<fchar_t>;
+	using fstr_stream_t = std::basic_stringstream<fchar_t>;
+	using tstr_t = std::basic_string<tchar_t>;
 	using fstr_arr_t = std::array<fstr_t, 2>;
-	using fsv_t = std::string_view;
-	using tsv_t = std::u16string_view;
-
+	using fsv_t = std::basic_string_view<fchar_t>;
+	using tsv_t = std::basic_string_view<tchar_t>;
+	using tstr_stream_t = std::basic_stringstream<tchar_t>;
 	
 	
-	enum binary_op : int
+	constexpr size_t binary_op_count = 11;
+	enum binary_op : unsigned int
 	{
 		LeftShift = 0,
 		RightShift,
@@ -48,25 +57,39 @@ namespace cjm
 		Modulus,
 		Add,
 		Subtract,
-		Multiply
+		Multiply,
+
+		Compare		
 	};
+
+	template<typename Char, typename CharTraits = std::char_traits<Char>>
+	std::vector<std::basic_string_view<Char, CharTraits>>
+		split(std::basic_string_view<Char, CharTraits> split_me, Char split_on);
+	
+
 	struct binary_operation;
 	class cjm_helper_rgen;
 	struct cmd_args;
+	tstr_t to_tstr_t(fsv_t convert);
+	tstr_t serialize(int128_t value);
 	
+	int128_t deserialize(tsv_t deser_me);
 	std::vector<binary_operation> create_random_ops(size_t count);
 	std::vector<binary_operation> create_random_ops(size_t count, binary_op op_code);
 	int execute(int argc, char* argv[]);
 	cmd_args extract_arr(int argc, char* argv[]);
 	constexpr std::optional<tsv_t> text(binary_op op) noexcept;
-		
-	constexpr std::array<tsv_t, 10> op_name_lookup =
-		std::array<tsv_t, 10>{
+
+	constexpr std::optional<binary_op> parse_op(tsv_t parse_me) noexcept;
+	
+	constexpr std::array<tsv_t, binary_op_count> op_name_lookup =
+		std::array<tsv_t, binary_op_count>{
 		u"LeftShift"sv, u"RightShift"sv,
 			u"And"sv, u"Or"sv,
 			u"Xor"sv, u"Divide"sv,
 			u"Modulus"sv, u"Add"sv,
-			u"Subtract"sv, u"Multiply"sv, };
+			u"Subtract"sv, u"Multiply"sv,
+			u"Compare"sv};
 	
 
 	struct binary_operation
@@ -203,17 +226,77 @@ namespace cjm
 		
 		
 	};
-	
+	template<typename Char, typename CharTraits>
+	std::vector<std::basic_string_view<Char, CharTraits>>
+		split(std::basic_string_view<Char, CharTraits> split_me, Char split_on)
+	{
+		using char_t = Char;
+		using traits_t = CharTraits;
+		using sv_t = std::basic_string_view<char_t, traits_t>;
+		using vec_t = std::vector<sv_t>;
+
+		auto next_split = [](sv_t current, char_t c) -> std::pair<sv_t, sv_t>
+		{
+			auto ret = std::make_pair<sv_t, sv_t>(sv_t{}, sv_t{});
+			if (!current.empty())
+			{
+				size_t idx = 0;
+				bool done = false;
+				while (!done)
+				{
+					if (current[idx++] == c)
+					{
+						sv_t split = current.substr(0, idx-1);
+						sv_t remainder = idx < current.size() ? current.substr(idx) : sv_t{};
+						ret.first = split;
+						ret.second = remainder;
+						done = true;
+					}
+					else
+					{
+						done = idx >= current.size();
+					}					
+				}
+			}
+			return ret;			
+		};
+		
+		vec_t ret;
+		sv_t split_next = split_me;
+		while (!split_next.empty())
+		{
+			auto [split, remainder] = next_split(split_next, split_on);
+			if (!split.empty())
+			{
+				ret.push_back(split);				
+			}
+			split_next = remainder;
+		}
+		return ret;
+	}
 	constexpr std::optional<tsv_t> text(binary_op op) noexcept
 	{
-		size_t x = static_cast<size_t>(op);
+		auto x = static_cast<unsigned int>(op);
 		if (x < op_name_lookup.size())
 		{
 			return op_name_lookup[x];
 		}
 		return std::nullopt;
 	}
-	
+
+	constexpr std::optional<binary_op> parse_op(tsv_t parse_me) noexcept
+	{
+		unsigned int idx = 0;
+		for (const auto item : op_name_lookup)
+		{
+			if (parse_me == item)
+			{
+				return static_cast<binary_op>(idx);
+			}
+			++idx;
+		}
+		return std::nullopt;
+	}
 }
 
 namespace std

@@ -82,9 +82,11 @@
   <ItemGroup>
     <ClCompile Include="helper.cpp" />
     <ClCompile Include="program.cpp" />
+    <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="helper.hpp" />
+    <ClInclude Include="tests.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,10 +1,93 @@
 #include "helper.hpp"
 #include <vector>
 #include <cassert>
+#include <algorithm>
+#include <cstring>
 
 std::unique_ptr<cjm::cjm_helper_rgen> s_ptr = cjm::cjm_helper_rgen::make_rgen();  // NOLINT(clang-diagnostic-exit-time-destructors) YES ... I Know
 
 std::pair<bool, int> parse_int(cjm::fsv_t str) noexcept;
+
+std::uint64_t parse_u(cjm::tsv_t parse);
+
+std::int64_t parse_s(cjm::tsv_t parse);
+
+cjm::fstr_t to_fstr_t(cjm::tsv_t convert);
+
+
+cjm::tstr_t cjm::to_tstr_t(fsv_t convert)
+{
+	tstr_t ret;
+	if (!convert.empty())
+	{
+		ret.reserve(convert.size());
+		std::transform(convert.cbegin(), convert.cend(), std::back_inserter(ret), [](fchar_t c) -> cjm::tchar_t
+		{
+				return static_cast<fchar_t>(c);
+		});
+	}
+	return ret;
+}
+
+cjm::tstr_t cjm::serialize(int128_t value)
+{
+	fstr_stream_t stream;
+	std::int64_t high = absl::Int128High64(value);
+	std::uint64_t low = absl::Int128Low64(value);
+	stream << std::hex << std::setw(sizeof(int64_t) * 2) << std::setfill('0')
+		<< low << '\t'
+		<< std::hex << std::setw(sizeof(int64_t) * 2) << std::setfill('0')
+		<< high << '\t';
+	auto temp = stream.str();
+	return to_tstr_t(temp);
+}
+
+cjm::int128_t cjm::deserialize(tsv_t deser_me)
+{
+	auto split = cjm::split(deser_me, u'\t');
+	if (split.empty())
+	{
+		throw std::invalid_argument{ "string does not contain any text." };
+	}
+	tsv_t low;
+	tsv_t high;
+	size_t found = 0;
+	for (auto sv : split)
+	{
+		if (!sv.empty())
+		{
+			switch (found)
+			{
+			case 0:
+				low = sv;
+				++found;
+				break;
+			case 1:
+				high = sv;
+				++found;
+				break;
+			default:
+				throw std::invalid_argument{ "Too much data in string." };
+			}			
+		}
+		if (found >= 2)
+			break;
+	}
+	if (found < 2)
+	{
+		throw std::invalid_argument{ "Not enough data in string." };
+	}
+	try
+	{
+		std::uint64_t low_v = parse_u(low);
+		std::int64_t high_v = parse_s(high);
+		return absl::MakeInt128(high_v, low_v);
+	}
+	catch (const std::exception& ex)
+	{
+		throw std::invalid_argument{ "Unable to parse supplied text as int128: "s + fstr_t{ex.what()} };
+	}
+}
 
 std::vector<cjm::binary_operation> cjm::create_random_ops(size_t count)
 {
@@ -91,6 +174,17 @@ cjm::int128_t cjm::binary_operation::perform_calculate_result(int128_t lhs, int1
 	case Multiply:
 		ret = lhs * rhs;
 		break;
+	case Compare: 
+		if (lhs == rhs)
+		{
+			ret = 0;
+		}
+		else
+		{
+			ret = lhs > rhs ? 1 : -1;
+		}
+		break;
+	
 	}
 	return ret;
 }
@@ -188,7 +282,8 @@ cjm::binary_operation cjm::cjm_helper_rgen::random_operation(binary_op op)
 	case RightShift:
 		l_op = m_operand_distrib(m_twister);
 		r_op = m_shift_distrib(m_twister);
-		break;		
+		break;
+	case Compare:
 	case Add:
 	case Subtract:
 	case And: 
@@ -229,7 +324,7 @@ cjm::binary_operation cjm::cjm_helper_rgen::random_operation()
 
 cjm::cjm_helper_rgen::cjm_helper_rgen() :  m_seed{ static_cast<std::mt19937_64::result_type>(std::chrono::duration_cast<std::chrono::microseconds>(
 	                                           std::chrono::system_clock::now().time_since_epoch()
-                                           ).count()) }, m_twister{ m_seed }, m_op_distrib{ std::uniform_int_distribution<int>(std::int64_t{0}, op_name_lookup.size() - std::int64_t{1}) },
+                                           ).count()) }, m_twister{ m_seed }, m_op_distrib{ std::uniform_int_distribution<int>(std::int64_t{0}, static_cast<std::int64_t>(op_name_lookup.size()) - std::int64_t{1}) },
                                            m_shift_distrib{ std::uniform_int_distribution<int>(0, 127)},
                                            m_operand_distrib{ std::uniform_int_distribution<std::int64_t>(std::numeric_limits<std::int64_t>::min() + std::int64_t{1},
 	                                           std::numeric_limits<std::int64_t>::max()) } { }
@@ -361,4 +456,94 @@ std::pair<bool, int> parse_int(cjm::fsv_t str) noexcept
 	{
 		return std::make_pair(false, 0);
 	}	
+}
+
+std::uint64_t parse_u(cjm::tsv_t parse)
+{
+	std::uint64_t ret = 0;
+	cjm::fstr_t converted = to_fstr_t(parse);
+	cjm::fstr_stream_t stream;
+	stream.exceptions(std::ios::failbit | std::ios::badbit);
+	stream << std::hex << converted;
+	stream >> ret;
+	return ret;
+}
+
+std::int64_t parse_s(cjm::tsv_t parse)
+{
+	std::int64_t ret = 0;
+	std::uint64_t temp = 0;
+	cjm::fstr_t converted = to_fstr_t(parse);
+	cjm::fstr_stream_t stream;
+	stream.exceptions(std::ios::failbit | std::ios::badbit);
+	stream << std::hex << converted;
+	stream >> temp;
+	std::memcpy(&ret, &temp, sizeof(uint64_t));
+	return ret;
+}
+
+cjm::fstr_t to_fstr_t(cjm::tsv_t convert)
+{
+	constexpr auto f_size = sizeof(cjm::fchar_t);
+	constexpr auto t_size = sizeof(cjm::tchar_t);
+	constexpr bool is_fsigned = std::numeric_limits<cjm::fchar_t>::is_signed;
+	constexpr bool is_tsigned = std::numeric_limits<cjm::tchar_t>::is_signed;
+	static_assert(f_size <= t_size, "fchar must be less than tchar");
+
+	if constexpr (is_fsigned == is_tsigned)
+	{
+		constexpr cjm::tchar_t max_fchar = static_cast<cjm::tchar_t>(std::numeric_limits<cjm::fchar_t>::max());
+		constexpr cjm::tchar_t min_fchar = static_cast<cjm::tchar_t>(std::numeric_limits<cjm::fchar_t>::min());
+		cjm::fstr_t ret;
+		if (!convert.empty())
+		{
+			ret.reserve(convert.size());
+			std::transform(convert.cbegin(), convert.cend(), std::back_inserter(ret), [=](cjm::tchar_t c) -> cjm::fchar_t
+				{
+					if (c > max_fchar || c < min_fchar) throw std::invalid_argument{ "character out of range for conversion." };  // NOLINT(misc-redundant-expression) -- only redundant with current aliases
+					return static_cast<cjm::fchar_t>(c);
+				});
+		}
+		return ret;
+	}
+	else if constexpr (is_fsigned)
+	{
+		using ufchar_t = typename std::make_unsigned_t<cjm::fchar_t>;
+
+		constexpr auto umax = static_cast<ufchar_t>(std::numeric_limits<cjm::fchar_t>::max());
+		constexpr auto umin = static_cast<ufchar_t>(std::numeric_limits<cjm::fchar_t>::min());
+		constexpr auto max_fchar = static_cast<std::int32_t>(umax);
+		constexpr auto min_fchar = -static_cast<std::int32_t>(umin);
+		cjm::fstr_t ret;
+		if (!convert.empty())
+		{
+			ret.reserve(convert.size());
+			std::transform(convert.cbegin(), convert.cend(), std::back_inserter(ret), [=](cjm::tchar_t c) -> cjm::fchar_t
+				{
+					if (static_cast<std::int32_t>(c) > max_fchar || static_cast<std::int32_t>(c) < min_fchar) throw std::invalid_argument{ "character out of range for conversion." };  // NOLINT(misc-redundant-expression) -- only redundant with current aliases
+					return static_cast<cjm::fchar_t>(c);
+				});
+		}
+		return ret;
+	}
+	else
+	{
+		constexpr auto max_fchar = static_cast<std::uint32_t>(static_cast<cjm::tchar_t>(std::numeric_limits<cjm::fchar_t>::max()));
+		constexpr auto min_fchar = static_cast<std::uint32_t>(static_cast<cjm::tchar_t>(std::numeric_limits<cjm::fchar_t>::min()));
+		cjm::fstr_t ret;
+		if (!convert.empty())
+		{
+			ret.reserve(convert.size());
+			std::transform(convert.cbegin(), convert.cend(), std::back_inserter(ret), [=](cjm::tchar_t c) -> cjm::fchar_t
+				{
+					if (static_cast<uint32_t>(c) > max_fchar || static_cast<uint32_t>(c) < min_fchar) throw std::invalid_argument{ "character out of range for conversion." };  // NOLINT(misc-redundant-expression) -- only redundant with current aliases
+					return static_cast<cjm::fchar_t>(c);
+				});
+		}
+		return ret;
+	}
+
+	
+	
+	
 }
