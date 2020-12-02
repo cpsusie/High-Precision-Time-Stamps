@@ -111,15 +111,22 @@ std::vector<cjm::binary_operation> cjm::create_random_ops(size_t count, binary_o
 	}
 	return ret;
 }
-cjm::binary_operation::binary_operation() noexcept : m_op{ binary_op::LeftShift }, m_rhs{}, m_lhs{} {}
+cjm::binary_operation::binary_operation() noexcept : m_op{ binary_op::left_shift }, m_rhs{}, m_lhs{} {}
 
-cjm::binary_operation::binary_operation(binary_op op, int128_t first_operand, int128_t second_operand):
-	m_op{op}, m_rhs{first_operand}, m_lhs{second_operand}, m_result{}
+cjm::binary_operation::binary_operation(binary_op op, int128_t first_operand, int128_t second_operand,
+	bool calculate_now) : m_op{op}, m_rhs{first_operand}, m_lhs{second_operand}, m_result{}
 {
 	size_t op_code = static_cast<size_t>(op);
 	if (op_code >= op_name_lookup.size())
-		throw std::invalid_argument{"The op code is not recognized."};
+		throw std::invalid_argument{ "The op code is not recognized." };
+	if (calculate_now)
+	{
+		this->calculate_result();
+	}
 }
+
+cjm::binary_operation::binary_operation(binary_op op, int128_t first_operand, int128_t second_operand)
+	: binary_operation{op, first_operand, second_operand, false}{}
 
 cjm::binary_operation::
 binary_operation(binary_op op, int128_t first_operand, int128_t second_operand, int128_t result):
@@ -144,37 +151,37 @@ cjm::int128_t cjm::binary_operation::perform_calculate_result(int128_t lhs, int1
 	int128_t ret = 0;
 	switch (op)
 	{
-	case LeftShift:
+	case binary_op::left_shift:
 		ret = lhs << static_cast<int>(rhs);
 		break;
-	case RightShift:
+	case binary_op::right_shift:
 		ret = lhs >> static_cast<int>(rhs);
 		break;
-	case And:
+	case binary_op::bw_and:
 		ret = lhs & rhs;
 		break;
-	case Or:
+	case binary_op::bw_or:
 		ret = lhs | rhs;
 		break;
-	case Xor:
+	case binary_op::bw_xor:
 		ret = lhs ^ rhs;
 		break;
-	case Divide:
+	case binary_op::divide:
 		ret = lhs / rhs;
 		break;
-	case Modulus:
+	case binary_op::modulus:
 		ret = lhs % rhs;
 		break;
-	case Add:
+	case binary_op::add:
 		ret = lhs + rhs;
 		break;
-	case Subtract:
+	case binary_op::subtract:
 		ret = lhs - rhs;
 		break;
-	case Multiply:
+	case binary_op::multiply:
 		ret = lhs * rhs;
 		break;
-	case Compare: 
+	case binary_op::compare: 
 		if (lhs == rhs)
 		{
 			ret = 0;
@@ -278,22 +285,22 @@ cjm::binary_operation cjm::cjm_helper_rgen::random_operation(binary_op op)
 	
 	switch (op)
 	{
-	case LeftShift: 		
-	case RightShift:
+	case binary_op::left_shift: 		
+	case binary_op::right_shift:
 		l_op = m_operand_distrib(m_twister);
 		r_op = m_shift_distrib(m_twister);
 		break;
-	case Compare:
-	case Add:
-	case Subtract:
-	case And: 
-	case Or: 
-	case Xor: 
+	case binary_op::compare:
+	case binary_op::add:
+	case binary_op::subtract:
+	case binary_op::bw_and:
+	case binary_op::bw_or:
+	case binary_op::bw_xor:
 		l_op = make_full_range();
 		r_op = make_full_range();
 		break;
-	case Modulus:
-	case Divide:
+	case binary_op::modulus:
+	case binary_op::divide:
 		//std::uint64_t high = m_operand_distrib(m_twister);
 		//std::uint64_t low = m_operand_distrib(m_twister);
 		//uint128_t temp = high;
@@ -302,7 +309,7 @@ cjm::binary_operation cjm::cjm_helper_rgen::random_operation(binary_op op)
 		l_op = make_full_range();
 		r_op = m_operand_distrib(m_twister);		
 		break;
-	case Multiply:
+	case binary_op::multiply:
 		l_op = m_operand_distrib(m_twister);
 		r_op = m_operand_distrib(m_twister);
 		break;

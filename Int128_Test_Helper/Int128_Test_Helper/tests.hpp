@@ -68,5 +68,6 @@ namespace cjm::tests
 {
 	void run_tests();
 	void test_serialize(int128_t serialize_me);
+	void test_edge_case_comparisons();
 }
 #endif // CJM_TESTS_HPP_

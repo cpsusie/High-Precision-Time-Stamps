@@ -43,23 +43,24 @@ namespace cjm
 	using tsv_t = std::basic_string_view<tchar_t>;
 	using tstr_stream_t = std::basic_stringstream<tchar_t>;
 	
+
 	
 	constexpr size_t binary_op_count = 11;
-	enum binary_op : unsigned int
+	enum class binary_op : unsigned int
 	{
-		LeftShift = 0,
-		RightShift,
-		And,
-		Or,
-		Xor,
+		left_shift = 0,
+		right_shift,
+		bw_and,
+		bw_or,
+		bw_xor,
 		
-		Divide,
-		Modulus,
-		Add,
-		Subtract,
-		Multiply,
+		divide,
+		modulus,
+		add,
+		subtract,
+		multiply,
 
-		Compare		
+		compare		
 	};
 
 	template<typename Char, typename CharTraits = std::char_traits<Char>>
@@ -79,8 +80,11 @@ namespace cjm
 	int execute(int argc, char* argv[]);
 	cmd_args extract_arr(int argc, char* argv[]);
 	constexpr std::optional<tsv_t> text(binary_op op) noexcept;
-
 	constexpr std::optional<binary_op> parse_op(tsv_t parse_me) noexcept;
+
+	static std::vector<binary_operation> init_edge_comparisons();
+	inline const std::vector<binary_operation> edge_tests_comparison_v = init_edge_comparisons();
+
 	
 	constexpr std::array<tsv_t, binary_op_count> op_name_lookup =
 		std::array<tsv_t, binary_op_count>{
@@ -143,6 +147,7 @@ namespace cjm
 		}
 		
 		binary_operation() noexcept;
+		binary_operation(binary_op op, int128_t first_operand, int128_t second_operand, bool calculate_now);
 		binary_operation(binary_op op, int128_t first_operand, int128_t second_operand);
 		binary_operation(binary_op op, int128_t first_operand, int128_t second_operand, int128_t result);
 		binary_operation(const binary_operation& other) noexcept= default;
@@ -296,6 +301,30 @@ namespace cjm
 			++idx;
 		}
 		return std::nullopt;
+	}
+
+	
+	static std::vector<binary_operation> init_edge_comparisons()
+	{
+		auto temp = std::array<int128_t, 11> 
+			{	std::numeric_limits<int128_t>::max(),					std::numeric_limits<int128_t>::max() - 1,
+				std::numeric_limits<int128_t>::min(),					std::numeric_limits<int128_t>::min() + 1,
+				int128_t{std::numeric_limits<std::int64_t>::max()},	int128_t{std::numeric_limits<std::int64_t>::max() - 1},
+				int128_t{std::numeric_limits<std::int64_t>::min()},	int128_t{std::numeric_limits<std::int64_t>::min() + 1},
+				int128_t{0}, int128_t{1},
+				int128_t{-1} };
+		std::vector<binary_operation> store_permutations;
+		store_permutations.reserve(11 * 11);
+		for (size_t left_idx = 0; left_idx < temp.size(); ++left_idx)
+		{
+			for (size_t right_idx = 0; right_idx < temp.size(); ++right_idx)
+			{
+				auto op = binary_operation{ binary_op::compare, temp[left_idx], temp[right_idx], true };
+				op.calculate_result();
+				store_permutations.emplace_back(op);
+			}
+		}
+		return store_permutations;
 	}
 }
 
