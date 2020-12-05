@@ -111,7 +111,7 @@ namespace cjm
 			u"Compare"sv};
 	
 
-	struct binary_operation
+	struct binary_operation final
 	{
 		friend std::size_t hash_value(const binary_operation& obj)
 		{
@@ -185,7 +185,7 @@ namespace cjm
 		
 	};
 	
-	struct binary_operation_serdeser
+	struct binary_operation_serdeser final
 	{
 		static constexpr tsv_t item_delimiter = u"\n"sv;
 		static constexpr tchar_t item_field_delimiter = u';';
@@ -214,7 +214,7 @@ namespace cjm
 	};
 	
 	
-	struct cmd_args
+	struct cmd_args final
 	{
 		friend bool operator==(const cmd_args& lhs, const cmd_args& rhs)
 		{
