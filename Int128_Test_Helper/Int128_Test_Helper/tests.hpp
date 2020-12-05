@@ -66,8 +66,16 @@ namespace cjm::test
 
 namespace cjm::tests
 {
+
+	binary_operation produce_mult1_tc1_binary_op();
+	binary_operation produce_div1_tc1_binary_op();
+	binary_operation produce_mult1_tc1_rev_binary_op();
+	binary_operation produce_div1_tc1_rev_binary_op();
+
+	void run_mult_div_test_case_1();
 	void run_tests();
 	void test_serialize(int128_t serialize_me);
+	void execute_test_case_one();
 	void test_edge_case_comparisons();
 }
 #endif // CJM_TESTS_HPP_

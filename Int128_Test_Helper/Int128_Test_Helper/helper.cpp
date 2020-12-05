@@ -42,6 +42,54 @@ cjm::tstr_t cjm::serialize(int128_t value)
 	return to_tstr_t(temp);
 }
 
+void cjm::serialize(tostrm_t& ostr, int128_t value)
+{
+	std::int64_t high = absl::Int128High64(value);
+	std::uint64_t low = absl::Int128Low64(value);
+	ostr << std::hex << std::setw(sizeof(int64_t) * 2) << std::setfill(u'0')
+		<< low << u'\t'
+		<< std::hex << std::setw(sizeof(int64_t) * 2) << std::setfill(u'0')
+		<< high << u'\t';
+}
+
+bool cjm::operator==(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept
+{
+	return lhs.m_op_view == rhs.m_op_view;
+}
+
+bool cjm::operator!=(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept
+{
+	return !(lhs == rhs);
+}
+
+cjm::binary_operation_serdeser& cjm::operator<<(binary_operation_serdeser& bosds, const binary_operation& bin_op)
+{
+	bosds.m_op_view = &bin_op;
+	return bosds;
+}
+
+cjm::tostrm_t& cjm::operator<<(tostrm_t& ostr, const binary_operation_serdeser& other)
+{
+	constexpr auto field_delim = binary_operation_serdeser::item_field_delimiter;
+	if (other.has_value())
+	{
+		auto x = *other;
+		ostr << text(x.op_code()).value() << field_delim;
+		serialize(ostr, x.left_operand());
+		ostr << field_delim;
+		serialize(ostr, x.right_operand());
+		ostr << field_delim;
+		if (!x.has_correct_result())
+		{
+			x.calculate_result();
+			assert(x.has_correct_result());			
+		}
+		serialize(ostr, x.result().value());
+		ostr << field_delim;		
+	}
+	return ostr;
+}
+
 cjm::int128_t cjm::deserialize(tsv_t deser_me)
 {
 	auto split = cjm::split(deser_me, u'\t');
@@ -111,10 +159,10 @@ std::vector<cjm::binary_operation> cjm::create_random_ops(size_t count, binary_o
 	}
 	return ret;
 }
-cjm::binary_operation::binary_operation() noexcept : m_op{ binary_op::left_shift }, m_rhs{}, m_lhs{} {}
+cjm::binary_operation::binary_operation() noexcept : m_op{ binary_op::left_shift }, m_lhs{}, m_rhs{} {}
 
 cjm::binary_operation::binary_operation(binary_op op, int128_t first_operand, int128_t second_operand,
-	bool calculate_now) : m_op{op}, m_rhs{first_operand}, m_lhs{second_operand}, m_result{}
+	bool calculate_now) : m_op{op}, m_lhs{first_operand}, m_rhs{ second_operand}, m_result{}
 {
 	size_t op_code = static_cast<size_t>(op);
 	if (op_code >= op_name_lookup.size())
@@ -130,7 +178,7 @@ cjm::binary_operation::binary_operation(binary_op op, int128_t first_operand, in
 
 cjm::binary_operation::
 binary_operation(binary_op op, int128_t first_operand, int128_t second_operand, int128_t result):
-	m_op{op}, m_rhs{first_operand}, m_lhs{second_operand}, m_result{result}
+	m_op{ op }, m_lhs{ first_operand }, m_rhs{ second_operand },  m_result{result}
 {
 	size_t op_code = static_cast<size_t>(op);
 	if (op_code >= op_name_lookup.size())
@@ -194,6 +242,49 @@ cjm::int128_t cjm::binary_operation::perform_calculate_result(int128_t lhs, int1
 	
 	}
 	return ret;
+}
+
+bool cjm::binary_operation_serdeser::has_value() const noexcept
+{
+	return m_op_view != nullptr;
+}
+
+cjm::binary_operation cjm::binary_operation_serdeser::value() const
+{
+	if (has_value())
+	{
+		return *m_op_view;
+	}
+	throw bad_value_access{};
+}
+
+cjm::binary_operation cjm::binary_operation_serdeser::value_or_default() const noexcept
+{
+	if (has_value())
+	{
+		return *m_op_view;
+	}
+	return cjm::binary_operation{};
+}
+
+const cjm::binary_operation& cjm::binary_operation_serdeser::operator*() const noexcept
+{
+	return *m_op_view;
+}
+
+const cjm::binary_operation* cjm::binary_operation_serdeser::operator->() const noexcept
+{
+	return m_op_view;
+}
+
+cjm::binary_operation_serdeser::operator bool() const noexcept
+{
+	return m_op_view != nullptr;
+}
+
+bool cjm::binary_operation_serdeser::operator!() const noexcept
+{
+	return m_op_view == nullptr;
 }
 
 cjm::fsv_t cjm::cmd_args::first_file() const noexcept
@@ -334,7 +425,10 @@ cjm::cjm_helper_rgen::cjm_helper_rgen() :  m_seed{ static_cast<std::mt19937_64::
                                            ).count()) }, m_twister{ m_seed }, m_op_distrib{ std::uniform_int_distribution<int>(std::int64_t{0}, static_cast<std::int64_t>(op_name_lookup.size()) - std::int64_t{1}) },
                                            m_shift_distrib{ std::uniform_int_distribution<int>(0, 127)},
                                            m_operand_distrib{ std::uniform_int_distribution<std::int64_t>(std::numeric_limits<std::int64_t>::min() + std::int64_t{1},
-	                                           std::numeric_limits<std::int64_t>::max()) } { }
+	                                           std::numeric_limits<std::int64_t>::max()) }
+{
+	std::cout << "Hi mom!" << newl;
+}
 
 int cjm::execute(int argc, char* argv[])
 {

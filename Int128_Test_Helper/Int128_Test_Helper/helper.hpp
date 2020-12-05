@@ -42,8 +42,10 @@ namespace cjm
 	using fsv_t = std::basic_string_view<fchar_t>;
 	using tsv_t = std::basic_string_view<tchar_t>;
 	using tstr_stream_t = std::basic_stringstream<tchar_t>;
+	using tostrm_t = std::basic_ostream<tchar_t>;
+	using tistrm_t = std::basic_istream<tchar_t>;
 	
-
+	
 	
 	constexpr size_t binary_op_count = 11;
 	enum class binary_op : unsigned int
@@ -67,13 +69,20 @@ namespace cjm
 	std::vector<std::basic_string_view<Char, CharTraits>>
 		split(std::basic_string_view<Char, CharTraits> split_me, Char split_on);
 	
-
+	class bad_value_access;
 	struct binary_operation;
+	struct binary_operation_serdeser;
 	class cjm_helper_rgen;
 	struct cmd_args;
 	tstr_t to_tstr_t(fsv_t convert);
 	tstr_t serialize(int128_t value);
-	
+	void serialize(tostrm_t& ostr, int128_t value);
+
+	bool operator==(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
+	bool operator!=(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
+	binary_operation_serdeser& operator
+		<<(binary_operation_serdeser& bosds, const binary_operation& bin_op);
+	tostrm_t& operator<<(tostrm_t& ostr, const binary_operation_serdeser& other);
 	int128_t deserialize(tsv_t deser_me);
 	std::vector<binary_operation> create_random_ops(size_t count);
 	std::vector<binary_operation> create_random_ops(size_t count, binary_op op_code);
@@ -164,13 +173,39 @@ namespace cjm
 		static int128_t perform_calculate_result(int128_t lhs, int128_t rhs, binary_op op) noexcept;
 
 		binary_op m_op;
-		int128_t m_rhs;
 		int128_t m_lhs;
+		int128_t m_rhs;
 		std::optional<int128_t> m_result;
 		
 	};
 	
-	
+	struct binary_operation_serdeser
+	{
+		static constexpr tsv_t item_delimiter = u"\r\n"sv;
+		static constexpr tchar_t item_field_delimiter = u';';
+		friend struct std::hash<binary_operation_serdeser>;
+		friend bool operator==(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
+		friend bool operator!=(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
+		friend binary_operation_serdeser& operator
+			<<(binary_operation_serdeser& bosds, const binary_operation& bin_op);
+		friend tostrm_t& operator<<(tostrm_t& ostr, const binary_operation_serdeser& other);		
+		[[nodiscard]] bool has_value() const noexcept;
+		[[nodiscard]] binary_operation value() const;
+		[[nodiscard]] binary_operation value_or_default() const noexcept;
+		const binary_operation& operator*() const noexcept;
+		const binary_operation* operator->() const noexcept;
+		operator bool() const noexcept;
+		bool operator!() const noexcept;
+		
+		binary_operation_serdeser() noexcept = default;
+		binary_operation_serdeser(const binary_operation_serdeser& other) noexcept = default;
+		binary_operation_serdeser(binary_operation_serdeser&& other) noexcept = default;
+		binary_operation_serdeser& operator=(const binary_operation_serdeser& other) noexcept = default;
+		binary_operation_serdeser& operator=(binary_operation_serdeser&& other) noexcept = default;
+		~binary_operation_serdeser() = default;
+	private:
+		const binary_operation* m_op_view;
+	};
 	
 	
 	struct cmd_args
@@ -231,6 +266,18 @@ namespace cjm
 		
 		
 	};
+
+	class bad_value_access final : public std::logic_error
+	{
+	public:	
+		bad_value_access() : std::logic_error("The object accessed does not contain a valid value") {}
+		~bad_value_access() override = default;
+		bad_value_access(const bad_value_access& other) noexcept = default;
+		bad_value_access(bad_value_access&& other) noexcept = delete;
+		bad_value_access& operator=(const bad_value_access& other) noexcept = default;
+		bad_value_access& operator=(bad_value_access&& other) noexcept = delete;
+	};
+	
 	template<typename Char, typename CharTraits>
 	std::vector<std::basic_string_view<Char, CharTraits>>
 		split(std::basic_string_view<Char, CharTraits> split_me, Char split_on)
@@ -336,6 +383,15 @@ namespace std
 		std::size_t operator()( const cjm::binary_operation& s) const noexcept
 		{
 			return hash_value(s);
+		}
+	};
+
+	template<>
+	struct hash<cjm::binary_operation_serdeser>
+	{
+		std::size_t operator()(cjm::binary_operation_serdeser s) const noexcept
+		{
+			return std::hash<const cjm::binary_operation*>{}(s.m_op_view);
 		}
 	};
 }
