@@ -75,6 +75,8 @@ namespace cjm::tests
 	void run_mult_div_test_case_1();
 	void run_tests();
 	void test_serialize(int128_t serialize_me);
+	void test_serialize_one_bin_op();
+	void test_serialize_all_tc1_bin_op();
 	void execute_test_case_one();
 	void test_edge_case_comparisons();
 }

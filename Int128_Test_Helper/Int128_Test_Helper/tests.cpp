@@ -244,10 +244,20 @@ void cjm::tests::run_tests()
 			{
 				run_mult_div_test_case_1();
 			});
-		test_name = "test_case_one";
+		test_name = "test_case_one"sv;
 		do_test(test_name, []() -> void
 			{
 				execute_test_case_one();
+			});
+		test_name = "test_serialize_one_bin_op"sv;
+		do_test(test_name, []() -> void
+			{
+				test_serialize_one_bin_op();
+			});
+		test_name = "test_serialize_all_tc1_bin_op"sv;
+		do_test(test_name, []() -> void
+			{
+				test_serialize_all_tc1_bin_op();
 			});
 		
 	}
@@ -282,6 +292,59 @@ void cjm::tests::test_serialize(int128_t serialize_me)
 		tstr_t stream_serialized = ss.str();
 		cjm_assert(text == stream_serialized, "The stream serialization does not produce the same result as the string serialization.");
 		
+	}
+	catch (const test::cjm_test_fail&)
+	{
+		throw;
+	}
+	catch (const std::exception& ex)
+	{
+		throw test::cjm_test_fail{ fstr_t{ex.what()} };
+	}
+}
+
+void cjm::tests::test_serialize_one_bin_op()
+{
+	try
+	{
+		constexpr fsv_t file_name = "mul_tc1_first_bin_op.txt";
+		
+		binary_operation serialize_me = produce_mult1_tc1_binary_op();
+		binary_operation_serdeser ser_util{};
+		ser_util << serialize_me;
+		std::basic_ofstream<tchar_t, std::char_traits<tchar_t>> output_stream;
+		output_stream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+		output_stream.open(file_name.data());
+		output_stream << ser_util;
+		output_stream.close();		
+	}
+	catch (const test::cjm_test_fail&)
+	{
+		throw;
+	}
+	catch (const std::exception& ex)
+	{
+		throw test::cjm_test_fail{ fstr_t{ex.what()} };
+	}
+	
+}
+
+void cjm::tests::test_serialize_all_tc1_bin_op()
+{
+	try
+	{
+		constexpr fsv_t file_name = "mul_tc1_all_bin_op.txt";
+		auto vector = std::vector<binary_operation>{};
+		vector.reserve(4);
+		vector.emplace_back(produce_mult1_tc1_binary_op());
+		vector.emplace_back(produce_div1_tc1_binary_op());
+		vector.emplace_back(produce_mult1_tc1_rev_binary_op());
+		vector.emplace_back(produce_div1_tc1_rev_binary_op());
+		std::basic_ofstream<tchar_t, std::char_traits<tchar_t>> output_stream;
+		output_stream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
+		output_stream.open(file_name.data());
+		output_stream << vector;
+		output_stream.close();
 	}
 	catch (const test::cjm_test_fail&)
 	{

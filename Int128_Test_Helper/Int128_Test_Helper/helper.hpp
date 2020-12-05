@@ -65,6 +65,8 @@ namespace cjm
 		compare		
 	};
 
+
+	
 	template<typename Char, typename CharTraits = std::char_traits<Char>>
 	std::vector<std::basic_string_view<Char, CharTraits>>
 		split(std::basic_string_view<Char, CharTraits> split_me, Char split_on);
@@ -78,6 +80,10 @@ namespace cjm
 	tstr_t serialize(int128_t value);
 	void serialize(tostrm_t& ostr, int128_t value);
 
+	template<typename TSerDeser = binary_operation_serdeser>
+	tostrm_t& operator<<(tostrm_t& ost, const std::vector<binary_operation>& col);
+	
+	
 	bool operator==(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
 	bool operator!=(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
 	binary_operation_serdeser& operator
@@ -181,7 +187,7 @@ namespace cjm
 	
 	struct binary_operation_serdeser
 	{
-		static constexpr tsv_t item_delimiter = u"\r\n"sv;
+		static constexpr tsv_t item_delimiter = u"\n"sv;
 		static constexpr tchar_t item_field_delimiter = u';';
 		friend struct std::hash<binary_operation_serdeser>;
 		friend bool operator==(binary_operation_serdeser lhs, binary_operation_serdeser rhs) noexcept;
@@ -326,6 +332,20 @@ namespace cjm
 		}
 		return ret;
 	}
+
+	template <typename TSerDeser>
+	tostrm_t& operator<<(tostrm_t& ost, const std::vector<binary_operation>& col)
+	{
+		static constexpr tsv_t item_delimiter = TSerDeser::item_delimiter;
+		auto ser_deser = TSerDeser{};
+		for (const binary_operation& op : col)
+		{
+			ser_deser << op;
+			ost << ser_deser << item_delimiter;
+		}
+		return ost;
+	}
+
 	constexpr std::optional<tsv_t> text(binary_op op) noexcept
 	{
 		auto x = static_cast<unsigned int>(op);
