@@ -110,6 +110,36 @@ namespace HpTimeStamps.BigMath.Utils
             }
 
         }
+        // Casts from unsigned to signed while preserving the underlying binary
+        // representation.
+        internal static long BitCastToSigned(ulong castMe)
+        {
+            // ABSEIL/GOOGLE COMMENT: Casting an unsigned integer to a signed integer of the same
+            // width is implementation defined behavior if the source value would not fit
+            // in the destination type. We step around it with a roundtrip bitwise not
+            // operation to make sure this function remains constexpr. Clang, GCC, and
+            // MSVC optimize this to a no-op on x86-64.
+
+            //CJM COMMENT: not sure if the above applies to C# or not ... but no harm for now.
+            const ulong lShift = 1ul << 63;
+            unchecked
+            {
+
+                return ((castMe & (lShift)) != 0) ? ~((long) (~castMe)) : ((long) castMe);
+            }
+        }
+
+        internal static ulong TwosComplement(ulong invertMe)
+        {
+            unchecked
+            {
+                invertMe = ~invertMe;
+                ++invertMe;
+                return (ulong) invertMe;
+            }
+        }
+
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void DivModImpl(in Int128 dividend, in Int128 divisor, out Int128 quotientRet,
@@ -119,17 +149,30 @@ namespace HpTimeStamps.BigMath.Utils
             bool dividendNegative = dividend < 0;
             bool divisorNegative = divisor < 0;
 
-            DivModImpl((UInt128)dividend, (UInt128)divisor, out UInt128 uQuot, out UInt128 uRem);
-            quotientRet = (Int128)uQuot;
-            if (dividendNegative != divisorNegative && uQuot != 0)
+            DivModImpl(dividend.UnsignedAbsoluteValue(), divisor.UnsignedAbsoluteValue(), out UInt128 uQuot, out UInt128 uRem);
+            if (dividendNegative != divisorNegative)
             {
-                quotientRet = -quotientRet;
+                uQuot = -uQuot;
+                uRem = -uRem;
             }
+            quotientRet = new Int128(uQuot._hi, uQuot._lo);
+            remainderRet = new Int128(uRem._hi, uRem._lo);
+            ValidateUnsignedToSignedBitEquivalence(in quotientRet, in uQuot);
+            ValidateUnsignedToSignedBitEquivalence(in remainderRet, in uRem);
+        }
 
-            remainderRet = (Int128)uRem;
-            if (remainderRet < 0)
+        [Conditional("DEBUG")]
+        static void ValidateUnsignedToSignedBitEquivalence(in Int128 sRep, in UInt128 uRep)
+        {
+            bool highOk = sRep._hi == uRep._hi;
+            bool lowOk = sRep._lo == uRep._lo;
+            string errMsg = string.Empty;
+            if (!highOk && !lowOk) errMsg = " neither high nor low has bit equivalence.";
+            else if (!highOk) errMsg = " high does not have bit equivalence.";
+            else if (!lowOk) errMsg = " low does not have bit equivalence.";
+            if (!string.IsNullOrEmpty(errMsg))
             {
-                remainderRet = -remainderRet;
+                throw new InvalidOperationException($"Unable to verify bit equivalence between signed and unsigned:{errMsg}");
             }
         }
 
@@ -246,6 +289,7 @@ namespace HpTimeStamps.BigMath.Utils
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void UnsignedAddAssign(ref Int128 addToMe, in Int128 addMe)
         {
             ulong origLow = addToMe._lo;
@@ -257,6 +301,7 @@ namespace HpTimeStamps.BigMath.Utils
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void UnsignedAddAssign(ref UInt128 addToMe, in UInt128 addMe)
         {
             ulong origLow = addToMe._lo;

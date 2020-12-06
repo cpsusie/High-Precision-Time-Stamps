@@ -1,0 +1,25 @@
+Hi mom!
+Beginning unit tests: 
+BEGIN test_serialize TEST: 
+END test_serialize TEST: 
+BEGIN test_edge_ops TEST: 
+END test_edge_ops TEST: 
+BEGIN mult_div_test_case_1 TEST: 
+-7670048174861859330 * 1220709 / 5000000 == -1872579367497489088
+first step res: -9362896837487445440864970
+second step res: -1872579367497489088
+-1872579367497489088 * 5000000 / 1220709 == -7670048174861859329
+Absolute value of difference between original and round tripped: [1]; Percentage difference: [1.30377e-19].
+END mult_div_test_case_1 TEST: 
+BEGIN test_case_one TEST: 
+starting value: 			[-7670048174861859330].
+round tripped final: 			[-7670048174861859329].
+END test_case_one TEST: 
+BEGIN test_serialize_one_bin_op TEST: 
+END test_serialize_one_bin_op TEST: 
+BEGIN test_serialize_all_tc1_bin_op TEST: 
+END test_serialize_all_tc1_bin_op TEST: 
+All tests PASS!
+First file name: [target_file.txt].
+Second file name: [].
+Number of ops: [12].

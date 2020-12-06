@@ -17,4 +17,19 @@
     <ProjectReference Include="..\..\High Precision Time Stamps.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="binary_operations.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>binary_operations.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="binary_operations.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>binary_operations.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

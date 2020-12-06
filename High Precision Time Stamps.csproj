@@ -16,7 +16,7 @@
     </Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>
-      This release 0.0.5.1 fixes a misspelled namespace: HpTimesStamps -> HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
+      This release 0.0.5.1 fixes a misspelled namespace: HpTimesStamps -&gt; HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
       It also adds a unit test project that focuses on conversions.  More tests will be forthcoming.
       SourceLink support will be attempted.   It may not work correctly on this release but it is a goal.
       Also, a dependency to System.Memory Nuget package has been added.  I hope to get rid of dynamic array allocations in the Int128 multiplication, division and modulus operations.
@@ -48,10 +48,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Int128_Test_Helper\**" />
     <Compile Remove="TestApp\**" />
     <Compile Remove="UnitTests\**" />
+    <EmbeddedResource Remove="Int128_Test_Helper\**" />
     <EmbeddedResource Remove="TestApp\**" />
     <EmbeddedResource Remove="UnitTests\**" />
+    <None Remove="Int128_Test_Helper\**" />
     <None Remove="TestApp\**" />
     <None Remove="UnitTests\**" />
   </ItemGroup>
@@ -63,7 +66,7 @@
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

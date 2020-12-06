@@ -170,6 +170,13 @@
                 A <see cref="T:System.String" /> that represents this instance.
             </returns>
         </member>
+        <member name="M:HpTimeStamps.BigMath.Int128.UnsignedAbsoluteValue">
+            <summary>
+            Get the absolute value of this value as an unsigned integer.  If this value is negative,
+            after casting to unsigned the value will be returned in its 2's complement form
+            </summary>
+            <returns>The absolute value as an unsigned integer</returns>
+        </member>
         <member name="M:HpTimeStamps.BigMath.Int128.ToString(System.String,System.IFormatProvider)">
             <summary>
                 Returns a <see cref="T:System.String" /> that represents this instance.
@@ -738,26 +745,6 @@
                 The result of the operator.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.op_Modulus(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Implements the operator %.
-            </summary>
-            <param name="dividend">The dividend.</param>
-            <param name="divisor">The divisor.</param>
-            <returns>
-                The result of the operator.
-            </returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.op_Division(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Implements the operator /.
-            </summary>
-            <param name="dividend">The dividend.</param>
-            <param name="divisor">The divisor.</param>
-            <returns>
-                The result of the operator.
-            </returns>
-        </member>
         <member name="M:HpTimeStamps.BigMath.Int128.op_Multiply(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Implements the operator *.
@@ -772,8 +759,8 @@
             <summary>
                 Implements the operator &gt;&gt;.
             </summary>
-            <param name="value">The value.</param>
-            <param name="shift">The shift.</param>
+            <param name="lhs">The value.</param>
+            <param name="amount">The shift.</param>
             <returns>The result of the operator.</returns>
         </member>
         <member name="M:HpTimeStamps.BigMath.Int128.op_LeftShift(HpTimeStamps.BigMath.Int128@,System.Int32)">
@@ -781,8 +768,17 @@
                 Implements the operator &lt;&lt;.
             </summary>
             <param name="value">The value.</param>
-            <param name="shift">The shift.</param>
+            <param name="amount">The shift.</param>
             <returns>The result of the operator.</returns>
+        </member>
+        <member name="M:HpTimeStamps.BigMath.Int128.op_ExclusiveOr(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+            <summary>
+            XOR bitwise operator
+            </summary>
+            <param name="left">left hand operand</param>
+            <param name="right">right hand operand</param>
+            <returns>value that is <paramref name="left"/> bitwise-xor'd
+            with <paramref name="right"/>.</returns>
         </member>
         <member name="M:HpTimeStamps.BigMath.Int128.op_BitwiseOr(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
