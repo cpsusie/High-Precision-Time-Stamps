@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -311,6 +312,22 @@ namespace HpTimeStamps.BigMath
         ///     A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override readonly string ToString() => ToString(null, null);
+
+        /// <summary>
+        /// Get the absolute value of this value as an unsigned integer.  If this value is negative,
+        /// after casting to unsigned the value will be returned in its 2's complement form
+        /// </summary>
+        /// <returns>The absolute value as an unsigned integer</returns>
+        [Pure]
+        public readonly UInt128 UnsignedAbsoluteValue()
+        {
+            UInt128 me = new UInt128(High, Low);
+            if (HighSigned < 0)
+            {
+                me = -me;
+            }
+            return me;
+        }
 
         /// <summary>
         ///     Returns a <see cref="System.String" /> that represents this instance.
@@ -1890,6 +1907,8 @@ namespace HpTimeStamps.BigMath
             return remainder;
         }
 
+
+        
 
         //public static bool operator <<(in UInt128 lhs, int amount)
         //{

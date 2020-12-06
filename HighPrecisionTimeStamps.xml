@@ -170,6 +170,13 @@
                 A <see cref="T:System.String" /> that represents this instance.
             </returns>
         </member>
+        <member name="M:HpTimeStamps.BigMath.Int128.UnsignedAbsoluteValue">
+            <summary>
+            Get the absolute value of this value as an unsigned integer.  If this value is negative,
+            after casting to unsigned the value will be returned in its 2's complement form
+            </summary>
+            <returns>The absolute value as an unsigned integer</returns>
+        </member>
         <member name="M:HpTimeStamps.BigMath.Int128.ToString(System.String,System.IFormatProvider)">
             <summary>
                 Returns a <see cref="T:System.String" /> that represents this instance.

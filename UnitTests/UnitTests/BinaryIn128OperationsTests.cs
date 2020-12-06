@@ -24,25 +24,25 @@ namespace UnitTests
             }
         }
 
-        //[Fact]
-        //public void ValidateAllTestCaseOneOperations()
-        //{
-        //    int opNo = 0;
-        //    Assert.Equal(4, Fixture.TestCaseOneOperations.Length);
-        //    foreach (ref readonly var op in Fixture.TestCaseOneOperations.AsSpan())
-        //    {
-                
-        //        try
-        //        {
-        //          ValidateOp(in op, ++opNo);
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            Helper.WriteLine(e.Message);
-        //            throw;
-        //        }
-        //    }
-        //}
+        [Fact]
+        public void ValidateAllTestCaseOneOperations()
+        {
+            int opNo = 0;
+            Assert.Equal(4, Fixture.TestCaseOneOperations.Length);
+            foreach (ref readonly var op in Fixture.TestCaseOneOperations.AsSpan())
+            {
+
+                try
+                {
+                    ValidateOp(in op, ++opNo);
+                }
+                catch (Exception e)
+                {
+                    Helper.WriteLine(e.Message);
+                    throw;
+                }
+            }
+        }
 
         [Fact]
         public void ValidateOp1()
