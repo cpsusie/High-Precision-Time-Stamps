@@ -26,7 +26,10 @@ namespace UnitTests
 
     public readonly struct BinaryOperation : IEquatable<BinaryOperation>, IComparable<BinaryOperation>
     {
-
+        internal Int128 LeftOperand => _left;
+        internal Int128 RightOperand => _right;
+        internal BinaryOpCode OpCode => _opCode;
+        internal Int128 Result => _result;
         internal BinaryOperation(BinaryOpCode opCode, in Int128 left, in Int128 right, in Int128 result)
         {
             _left = left;
@@ -46,7 +49,7 @@ namespace UnitTests
         public bool Equals(BinaryOperation other) => other == this;
         public int CompareTo(BinaryOperation other) => Compare(in this, in other);
         public bool Validate() => (DoValidate()).Validated;
-        public (bool Validated, Int128 )
+        internal (bool Validated, Int128 CalculatedValue) Calculated_Value() => DoValidate();
         
         public override string ToString() => $"{_left} {_opCode} {_right} == {_result}";
 
