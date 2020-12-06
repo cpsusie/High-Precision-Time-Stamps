@@ -759,8 +759,8 @@
             <summary>
                 Implements the operator &gt;&gt;.
             </summary>
-            <param name="value">The value.</param>
-            <param name="shift">The shift.</param>
+            <param name="lhs">The value.</param>
+            <param name="amount">The shift.</param>
             <returns>The result of the operator.</returns>
         </member>
         <member name="M:HpTimeStamps.BigMath.Int128.op_LeftShift(HpTimeStamps.BigMath.Int128@,System.Int32)">
@@ -768,8 +768,17 @@
                 Implements the operator &lt;&lt;.
             </summary>
             <param name="value">The value.</param>
-            <param name="shift">The shift.</param>
+            <param name="amount">The shift.</param>
             <returns>The result of the operator.</returns>
+        </member>
+        <member name="M:HpTimeStamps.BigMath.Int128.op_ExclusiveOr(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+            <summary>
+            XOR bitwise operator
+            </summary>
+            <param name="left">left hand operand</param>
+            <param name="right">right hand operand</param>
+            <returns>value that is <paramref name="left"/> bitwise-xor'd
+            with <paramref name="right"/>.</returns>
         </member>
         <member name="M:HpTimeStamps.BigMath.Int128.op_BitwiseOr(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>

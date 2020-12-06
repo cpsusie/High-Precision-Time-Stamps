@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
+using HpTimeStamps;
 using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 
@@ -9,19 +11,26 @@ namespace UnitTests
     public class BinaryOperationFixture
     {
         public ImmutableArray<BinaryOperation> TestCaseOneOperations => TheBinaryOperations;
-
+        public ImmutableArray<BinaryOperation> ComparisonEdgeCaseTests => TheComparisonEdgeCases.Value;
 
         static BinaryOperationFixture()
         {
             TheBinaryOperations = InitBinaryOperations();
+            TheComparisonEdgeCases = new LocklessLazyWriteOnceValue<ImmutableArray<BinaryOperation>>(InitComparisonEdgeCases);
         }
 
-        private static readonly ImmutableArray<BinaryOperation> TheBinaryOperations; 
+        private static readonly ImmutableArray<BinaryOperation> TheBinaryOperations;
+
+        private static readonly HpTimeStamps.LocklessLazyWriteOnceValue<ImmutableArray<BinaryOperation>>
+            TheComparisonEdgeCases;
+
+        private static ImmutableArray<BinaryOperation> InitComparisonEdgeCases()
+            => BinaryOpCodeParser.ParseMany(binary_operations.comp_edge_ops);
+        
 
         private static ImmutableArray<BinaryOperation> InitBinaryOperations()
-        {
-            return BinaryOpCodeParser.ParseMany(binary_operations.mul_tc1_all_bin_op);
-        }
+            => BinaryOpCodeParser.ParseMany(binary_operations.mul_tc1_all_bin_op);
+        
     }
 
     public readonly struct BinaryOperation : IEquatable<BinaryOperation>, IComparable<BinaryOperation>
@@ -64,11 +73,75 @@ namespace UnitTests
                 case BinaryOpCode.Divide:
                     calculatedResult = _left / _right;
                     break;
+                case BinaryOpCode.LeftShift:
+                    Debug.Assert(_right <= 128);
+                    calculatedResult = _left << (int) _right;
+                    break;
+                case BinaryOpCode.RightShift:
+                    Debug.Assert(_right <= 128);
+                    calculatedResult = _left >> (int) _right;
+                    break;
+                case BinaryOpCode.And:
+                    calculatedResult = (_left & _right);
+                    break;
+                case BinaryOpCode.Or:
+                    calculatedResult = (_left | _right);
+                    break;
+                case BinaryOpCode.Xor:
+                    calculatedResult = (_left ^ _right);
+                    break;
+                case BinaryOpCode.Modulus:
+                    calculatedResult = (_left % _right);
+                    break;
+                case BinaryOpCode.Add:
+                    calculatedResult = _left + _right;
+                    break;
+                case BinaryOpCode.Subtract:
+                    calculatedResult = _left - _right;
+                    break;
+                case BinaryOpCode.Compare:
+                    calculatedResult = Int128.Compare(in _left, in _right);
+                    ValidateCompareResult(in _left, in _right, (int) calculatedResult);
+                    break;
                 default:
                     throw new NotSupportedException($"Operation {_opCode} is not supported.");
             }
 
             return (_result == calculatedResult, calculatedResult);
+        }
+
+        private void ValidateCompareResult(in Int128 left, in Int128 right, int compareResult)
+        {
+            if (compareResult == 0)
+            {
+                if (left != right) throw new InvalidOperationException("Compare res 0 but not equal.");
+                if (left.GetHashCode() != right.GetHashCode())
+                    throw new InvalidOperationException("Compare res 0 but hashes not equal.");
+                if (left > right)
+                    throw new InvalidOperationException("Compare equal but left > right??!");
+                if (left < right)
+                    throw new InvalidOperationException("Compare equal but left < right??!");
+                if (!(left <= right))
+                    throw new InvalidOperationException("Compare equal but left not <= right??!");
+                if (!(left >= right))
+                    throw new InvalidOperationException("Compare equal but left not >= right??!");
+            }
+            else if (compareResult > 0)
+            {
+                if (left == right) throw new InvalidOperationException("Comare greater but values equal?!");
+                if (!(left > right)) throw new InvalidOperationException("Compare greater but not greater?!");
+                if (left < right) throw new InvalidOperationException("Compare greater but is less?!");
+                if (!(left >= right)) throw new InvalidOperationException("Comare greater but values > or equal?!");
+                if (left <= right) throw new InvalidOperationException("Comare greater but left <= right?!/");
+            }
+            else //compareResult < 0
+            {
+                if (left == right) throw new InvalidOperationException("Comare less but values equal?!");
+                if (!(left < right)) throw new InvalidOperationException("Compare less but not less?!");
+                if (left > right) throw new InvalidOperationException("Compare less but is greater?!");
+                if (!(left <= right)) throw new InvalidOperationException("Comare less but values not < or equal?!");
+                if (left >= right) throw new InvalidOperationException("Comare less but left >= right?!/");
+            }
         }
 
         public override int GetHashCode()
@@ -211,7 +284,17 @@ namespace UnitTests
 
     public enum BinaryOpCode : byte
     {
+        LeftShift, 
+        RightShift,
+        And, 
+        Or,
+        Xor, 
+        Divide,
+        Modulus, 
+        Add,
+        Subtract, 
         Multiply,
-        Divide
+        Compare
+      
     }
 }

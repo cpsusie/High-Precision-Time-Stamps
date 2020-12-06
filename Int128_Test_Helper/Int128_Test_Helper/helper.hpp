@@ -42,6 +42,7 @@ namespace cjm
 	using fsv_t = std::basic_string_view<fchar_t>;
 	using tsv_t = std::basic_string_view<tchar_t>;
 	using tstr_stream_t = std::basic_stringstream<tchar_t>;
+	using tofstrm_t = std::basic_ofstream<tchar_t>;
 	using tostrm_t = std::basic_ostream<tchar_t>;
 	using tistrm_t = std::basic_istream<tchar_t>;
 	
@@ -99,7 +100,7 @@ namespace cjm
 
 	static std::vector<binary_operation> init_edge_comparisons();
 	inline const std::vector<binary_operation> edge_tests_comparison_v = init_edge_comparisons();
-
+	void serialize_binary_ops(fsv_t test_battery_name, fsv_t file_name, const std::vector<binary_operation>& ops);
 	
 	constexpr std::array<tsv_t, binary_op_count> op_name_lookup =
 		std::array<tsv_t, binary_op_count>{
@@ -370,7 +371,7 @@ namespace cjm
 		return std::nullopt;
 	}
 
-	
+		
 	static std::vector<binary_operation> init_edge_comparisons()
 	{
 		auto temp = std::array<int128_t, 11> 

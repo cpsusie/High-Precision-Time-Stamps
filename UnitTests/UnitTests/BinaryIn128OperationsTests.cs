@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
@@ -21,6 +22,46 @@ namespace UnitTests
             foreach (ref readonly var op in Fixture.TestCaseOneOperations.AsSpan())
             {
                 Helper.WriteLine("Operation#: {0}:\t\t{1}", ++opNo, op.ToString());
+            }
+            Helper.WriteLine("Done test case operations.");
+            Helper.WriteLine(string.Empty);
+            Helper.WriteLine("Printing comparison edge cases: ");
+            opNo = 0;
+            foreach (ref readonly var op in Fixture.ComparisonEdgeCaseTests.AsSpan())
+            {
+                Helper.WriteLine("Operation#: {0}:\t\t{1}", ++opNo, op.ToString());
+            }
+            Helper.WriteLine("Done printing edge case comparison tests.");
+        }
+
+        [Fact]
+        public void TestPrintMinValue()
+        {
+            string maxValue = Int128.MaxValue.ToString();
+            string maxValueLessOne = (Int128.MaxValue - 1).ToString();
+            string minValuePlusOne = (Int128.MinValue + 1).ToString();
+            string minValue = Int128.MinValue.ToString();
+            Assert.DoesNotContain(maxValue, itm => itm == ')' || itm == '(');
+            Assert.DoesNotContain(maxValueLessOne, itm => itm == ')' || itm == '(');
+            Assert.DoesNotContain(minValuePlusOne, itm => itm == ')' || itm == '(');
+            Assert.DoesNotContain(minValue, itm => itm == ')' || itm == '(');
+        }
+
+        [Fact]
+        public void TestComparisonEdgeCases()
+        {
+            int opNo = 0;
+            foreach (ref readonly var op in Fixture.ComparisonEdgeCaseTests.AsSpan())
+            {
+                try
+                {
+                    ValidateOp(in op, ++opNo);
+                }
+                catch (Exception ex)
+                {
+                    Helper.WriteLine(ex.Message);
+                    throw;
+                }
             }
         }
 

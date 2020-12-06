@@ -289,6 +289,7 @@ namespace HpTimeStamps.BigMath.Utils
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void UnsignedAddAssign(ref Int128 addToMe, in Int128 addMe)
         {
             ulong origLow = addToMe._lo;
@@ -300,6 +301,7 @@ namespace HpTimeStamps.BigMath.Utils
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void UnsignedAddAssign(ref UInt128 addToMe, in UInt128 addMe)
         {
             ulong origLow = addToMe._lo;

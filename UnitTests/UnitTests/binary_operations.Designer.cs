@@ -61,6 +61,19 @@ namespace UnitTests {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compare;ffffffffffffffff	7fffffffffffffff	;ffffffffffffffff	7fffffffffffffff	;0000000000000000	0000000000000000	;
+        ///Compare;ffffffffffffffff	7fffffffffffffff	;fffffffffffffffe	7fffffffffffffff	;0000000000000001	0000000000000000	;
+        ///Compare;ffffffffffffffff	7fffffffffffffff	;0000000000000000	8000000000000000	;0000000000000001	0000000000000000	;
+        ///Compare;ffffffffffffffff	7fffffffffffffff	;0000000000000001	8000000000000000	;0000000000000001	0000000000000000	;
+        ///Compare;ffffffffffffffff	7fffffffffffffff	;7ffffffff [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string comp_edge_ops {
+            get {
+                return ResourceManager.GetString("comp_edge_ops", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Multiply;958e83d29739c5fe	ffffffffffffffff	;000000000012a065	0000000000000000	;586c42a9b165dd36	fffffffffff84154	;
         ///Divide;586c42a9b165dd36	fffffffffff84154	;00000000004c4b40	0000000000000000	;e60342fc92962540	ffffffffffffffff	;
         ///Multiply;e60342fc92962540	ffffffffffffffff	;00000000004c4b40	0000000000000000	;586c42a9b1731000	fffffffffff84154	;

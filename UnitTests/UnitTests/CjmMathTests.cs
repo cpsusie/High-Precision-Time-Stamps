@@ -14,7 +14,7 @@ namespace UnitTests
         public CjmMathTests([NotNull] ITestOutputHelper helper, [NotNull] CjmMathUtilFixture fixture) : base(helper, fixture)
         {
         }
-
+        
         [Fact]
         public void PrintOneSetBitNlzSolution()
         {
@@ -159,6 +159,25 @@ namespace UnitTests
                     }
                 }
             }
+        }
+
+        [Fact]
+        public void TestMinValueConversions()
+        {
+            Int128 minValue = Int128.MinValue;
+            Int128 minValuePlusOne = minValue + 1;
+            double dlbPlusOne = (double) minValuePlusOne;
+            decimal dedPlusOne = (decimal) minValuePlusOne;
+            UInt128 unsigned = (UInt128) minValuePlusOne;
+
+            double dblMin = (double) minValue;
+            decimal decMin = (decimal) minValue;
+            UInt128 uMin = (UInt128) minValue;
+                
+            Helper.WriteLine("Min value + 1 conversions worked ok.  double: {0}, decimal{1}, uint128: {2}.", dlbPlusOne,
+                dedPlusOne, unsigned);
+            Helper.WriteLine("Min value conversions worked ok.  double: {0}, decimal{1}, uint128: {2}.", dblMin,
+                decMin, uMin);
         }
 
         private static bool ExpectArithmeticException(in Int128 l, in Int128 r) => (l == Int128.MinValue && r == -1) || (r == Int128.MinValue && l == -1);

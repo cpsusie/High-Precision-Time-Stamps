@@ -439,6 +439,17 @@ int cjm::execute(int argc, char* argv[])
 		std::cout << "First file name: [" << files.first_file() << "]." << newl;
 		std::cout << "Second file name: [" << files.second_file() << "]." << newl;
 		std::cout << "Number of ops: [" << files.op_count() << "]." << newl;
+
+		constexpr fsv_t comp_edge_batter = "Comparison Edge Case Test Battery";
+		constexpr fsv_t comp_edge_case_file = "comp_edge_ops.txt"sv;
+
+
+		fsv_t this_battery = comp_edge_batter;
+		fsv_t this_file = comp_edge_case_file;
+		const std::vector<binary_operation>* this_vector = &edge_tests_comparison_v;
+		
+		serialize_binary_ops(this_battery, this_file, *this_vector);
+		//std::cout << "Going to write comparison edge case"
 	}
 	catch (const std::domain_error& ex)
 	{
@@ -453,8 +464,8 @@ cjm::cmd_args cjm::extract_arr(int argc, char* argv[])
 	fstr_arr_t arr;
 	if (argc > 0)
 	{
-		char* first_argument = nullptr;
-		char* second_argument = nullptr;
+		char* first_argument;
+		char* second_argument;
 		char* third_argument = nullptr;
 		switch (argc)
 		{
@@ -489,7 +500,7 @@ cjm::cmd_args cjm::extract_arr(int argc, char* argv[])
 		if (third_is_number.first)
 			which_are_ints.push_back(3);
 		int int_val;
-		int pos = -1;
+		int pos;
 		switch (which_are_ints.size())
 		{
 		case 0:
@@ -541,6 +552,35 @@ cjm::cmd_args cjm::extract_arr(int argc, char* argv[])
 	}
 	throw std::domain_error{ "Two arguments needed: file name and positive integer.  Third file name optional." };
 }
+
+void cjm::serialize_binary_ops(fsv_t test_battery_name, fsv_t file_name, const std::vector<binary_operation>& ops)
+{
+	if (file_name.empty())
+	{
+		throw std::invalid_argument{ "File name supplied cannot be empty." };
+	}
+	if (ops.empty())
+	{
+		throw std::invalid_argument{ "Ops vector cannot be empty." };
+	}
+	try
+	{
+		std::cout << "Saving " << test_battery_name << " to file [" << file_name << "]... ";
+		auto stream = tofstrm_t{};
+		stream.exceptions(std::ios::badbit | std::ios::failbit);
+		stream.open(file_name.data());		
+		stream << ops;
+		stream.close();		
+	}
+	catch (const std::exception& ex)
+	{
+		fstr_stream_t message;
+		message << "Unable to save "sv << test_battery_name << " to file "sv << file_name
+			<< " because of exception: ["sv << ex.what() << "]."sv;
+		throw std::runtime_error{ message.str() };
+	}
+	std::cout << " successfully saved battery " << test_battery_name << " to file: [" << file_name << "]." << newl;
+ }
 
 std::pair<bool, int> parse_int(cjm::fsv_t str) noexcept
 {
@@ -609,7 +649,7 @@ cjm::fstr_t to_fstr_t(cjm::tsv_t convert)
 	}
 	else if constexpr (is_fsigned)
 	{
-		using ufchar_t = typename std::make_unsigned_t<cjm::fchar_t>;
+		using ufchar_t = std::make_unsigned_t<cjm::fchar_t>;
 
 		constexpr auto umax = static_cast<ufchar_t>(std::numeric_limits<cjm::fchar_t>::max());
 		constexpr auto umin = static_cast<ufchar_t>(std::numeric_limits<cjm::fchar_t>::min());
