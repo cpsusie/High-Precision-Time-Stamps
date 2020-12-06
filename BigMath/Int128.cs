@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -284,6 +285,7 @@ namespace HpTimeStamps.BigMath
         ///     A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
         [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override readonly int GetHashCode() => _hi.GetHashCode() ^ _lo.GetHashCode();
 
         /// <summary>
@@ -293,6 +295,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     true if obj has the same value as this instance; otherwise, false.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override readonly bool Equals(object obj) => obj is Int128 int128 && int128 == this;
 
         /// <summary>
@@ -302,6 +305,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     true if obj has the same value as this instance; otherwise, false.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool Equals(Int128 obj) => _hi == obj._hi && _lo == obj._lo;
 
         /// <summary>
@@ -311,6 +315,22 @@ namespace HpTimeStamps.BigMath
         ///     A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override readonly string ToString() => ToString(null, null);
+
+        /// <summary>
+        /// Get the absolute value of this value as an unsigned integer.  If this value is negative,
+        /// after casting to unsigned the value will be returned in its 2's complement form
+        /// </summary>
+        /// <returns>The absolute value as an unsigned integer</returns>
+        [Pure]
+        public readonly UInt128 UnsignedAbsoluteValue()
+        {
+            UInt128 me = new UInt128(High, Low);
+            if (HighSigned < 0)
+            {
+                me = -me;
+            }
+            return me;
+        }
 
         /// <summary>
         ///     Returns a <see cref="System.String" /> that represents this instance.
@@ -353,25 +373,28 @@ namespace HpTimeStamps.BigMath
                 return "0";
             }
 
+            bool negative = Sign < 0;
+
+
             var sb = new StringBuilder();
-            var ten = new Int128(10);
-            Int128 current = Sign < 0 ? -this : this;
-            Int128 r;
+            var ten = new UInt128(0, 10);
+            UInt128 current = ToUAbs();
+            UInt128 r;
             while (true)
             {
-                current = DivRem(current, ten, out r);
-                if (r._lo > 0 || current.Sign != 0 || (sb.Length == 0))
+                UInt128.DivMod(current, in ten, out current, out r);
+                if (r._lo > 0 || current != 0 || (sb.Length == 0))
                 {
                     sb.Insert(0, (char) ('0' + r._lo));
                 }
-                if (current.Sign == 0)
+                if (current== 0)
                 {
                     break;
                 }
             }
 
             string s = sb.ToString();
-            if ((Sign < 0) && (s != "0"))
+            if ((negative) && (s != "0"))
             {
                 return info.NegativeSign + s;
             }
@@ -815,6 +838,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     A signed number indicating the relative values of this instance and value.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Compare(in Int128 left, in Int128 right)
         {
             int leftSign = left.Sign;
@@ -848,6 +872,7 @@ namespace HpTimeStamps.BigMath
         /// </summary>
         /// <param name="value">An integer to compare.</param>
         /// <returns>A signed number indicating the relative values of this instance and value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareTo(Int128 value) => Compare(this, value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -879,7 +904,8 @@ namespace HpTimeStamps.BigMath
         ///     Gets the absolute value this object.
         /// </summary>
         /// <returns>The absolute value.</returns>
-        public Int128 ToAbs() => Abs(this);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Int128 ToAbs() => Abs(this);
 
         /// <summary>
         ///     Gets the absolute value of an Int128 object.
@@ -888,8 +914,13 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The absolute value.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 Abs(in Int128 value)
         {
+            if (value == Int128.MinValue)
+                throw new ArithmeticException(
+                    "The supplied value is the minimum value and it has no " +
+                    "unsigned positive equivalent in a 2's complement signed representation.");
             if (value.Sign < 0)
             {
                 return -value;
@@ -898,12 +929,18 @@ namespace HpTimeStamps.BigMath
             return value;
         }
 
+        [Pure]
+        public readonly UInt128 ToUAbs() => UnsignedAbsoluteValue();
+        [Pure]
+        public static UInt128 UAbs(in Int128 value) => value.UnsignedAbsoluteValue();
+
         /// <summary>
         ///     Adds two Int128 values and returns the result.
         /// </summary>
         /// <param name="left">The first value to add.</param>
         /// <param name="right">The second value to add.</param>
         /// <returns>The sum of left and right.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 Add(in Int128 left, in Int128 right) => left + right;
 
         /// <summary>
@@ -912,6 +949,7 @@ namespace HpTimeStamps.BigMath
         /// <param name="left">The value to subtract from (the minuend).</param>
         /// <param name="right">The value to subtract (the subtrahend).</param>
         /// <returns>The result of subtracting right from left.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 Subtract(in Int128 left, in Int128 right) => left - right;
 
         /// <summary>
@@ -934,24 +972,16 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The quotient of the division.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 DivRem(in Int128 dividend, in Int128 divisor, out Int128 remainder)
         {
             if (divisor == 0)
             {
                 throw new DivideByZeroException();
             }
-            
-            
-            int dividendSign = dividend.Sign;
-            Int128 dividendCopy = dividendSign < 0 ? -dividend : dividend;
-            int divisorSign = divisor.Sign;
-            Int128 divisorCopy = divisorSign < 0 ? -divisor : divisor;
 
-            uint[] quotient;
-            uint[] rem;
-            MathUtils.DivModUnsigned(dividendCopy.ToUIn32Array(), divisorCopy.ToUIn32Array(), out quotient, out rem);
-            remainder = new Int128(1, rem);
-            return new Int128(dividendSign*divisorSign, quotient);
+            CjmUtils.DivModImpl(in dividend, in divisor, out Int128 quotient, out remainder);
+            return quotient;
         }
 
         /// <summary>
@@ -1258,6 +1288,16 @@ namespace HpTimeStamps.BigMath
 
             double d;
             NumberFormatInfo nfi = CultureInfo.InvariantCulture.NumberFormat;
+            bool isMinValue = value == MinValue;
+            if (isMinValue)
+            {
+                var incremented = value + 1;
+                if (!double.TryParse(incremented.ToString(nfi), NumberStyles.Number, nfi, out d))
+                {
+                    throw new OverflowException();
+                }
+                return d - 1.0;
+            }
             if (!double.TryParse(value.ToString(nfi), NumberStyles.Number, nfi, out d))
             {
                 throw new OverflowException();
@@ -1430,6 +1470,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >(in Int128 left, in Int128 right) => Compare(in left, in right) > 0;
 
         /// <summary>
@@ -1440,6 +1481,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(in Int128 left, in Int128 right) => Compare(in left, in right) < 0;
 
         /// <summary>
@@ -1450,6 +1492,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator >=(in Int128 left, in Int128 right) => Compare(in left, in right) >= 0;
 
         /// <summary>
@@ -1460,6 +1503,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <=(in Int128 left, in Int128 right) => Compare(in left, in right) <= 0;
 
         /// <summary>
@@ -1470,6 +1514,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in Int128 left, in Int128 right) => Compare(left, right) != 0;
 
         /// <summary>
@@ -1480,6 +1525,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(in Int128 left, in Int128 right) => Compare(in left, in right) == 0;
 
         /// <summary>
@@ -1489,6 +1535,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 operator +(in Int128 value) => value;
 
         /// <summary>
@@ -1498,13 +1545,12 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
-        public static Int128 operator -(in Int128 value)
-        {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator -(in Int128 value) =>
             //if (value == Int128.MinValue)
             //    throw new ArithmeticException(
             //        "Value received is the MinValue for type: cannot negate a two's complement minimum value because it has no corresponding positive value in range.");
-            return TwosComplementNegate(value);
-        }
+            TwosComplementNegate(value);
 
         /// <summary>
         ///     Implements the operator +.
@@ -1514,6 +1560,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 operator +(in Int128 left, in Int128 right)
         {
             Int128 sum = left;
@@ -1536,28 +1583,62 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 operator -(in Int128 left, in Int128 right) => left + -right;
 
+        ///// <summary>
+        /////     Implements the operator /.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator /(in Int128 dividend, in Int128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(in dividend, in divisor, out Int128 ret, out _);
+            return ret;
+        }
 
-        /// <summary>
-        ///     Implements the operator %.
-        /// </summary>
-        /// <param name="dividend">The dividend.</param>
-        /// <param name="divisor">The divisor.</param>
-        /// <returns>
-        ///     The result of the operator.
-        /// </returns>
-        public static Int128 operator %(in Int128 dividend, in Int128 divisor) => SlowRemainder(in dividend, in divisor);
+        ///// <summary>
+        /////     Implements the operator %.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator %(in Int128 dividend, in Int128 divisor)
+        {
+            if (divisor == 0) throw new DivideByZeroException("The divisor cannot be zero.");
+            if (dividend == 0) return 0;
+            CjmUtils.DivModImpl(in dividend, in divisor, out _, out Int128 remainder);
+            return remainder;
+        }
 
-        /// <summary>
-        ///     Implements the operator /.
-        /// </summary>
-        /// <param name="dividend">The dividend.</param>
-        /// <param name="divisor">The divisor.</param>
-        /// <returns>
-        ///     The result of the operator.
-        /// </returns>
-        public static Int128 operator /(in Int128 dividend, in Int128 divisor) => SlowDivide(in dividend, in divisor);
+        ///// <summary>
+        /////     Implements the operator %.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        //public static Int128 operator %(in Int128 dividend, in Int128 divisor) => SlowRemainder(in dividend, in divisor);
+
+        ///// <summary>
+        /////     Implements the operator /.
+        ///// </summary>
+        ///// <param name="dividend">The dividend.</param>
+        ///// <param name="divisor">The divisor.</param>
+        ///// <returns>
+        /////     The result of the operator.
+        ///// </returns>
+        //public static Int128 operator /(in Int128 dividend, in Int128 divisor) => SlowDivide(in dividend, in divisor);
 
         /// <summary>
         ///     Implements the operator *.
@@ -1567,52 +1648,108 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     The result of the operator.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Int128 operator *(in Int128 left, in Int128 right) => CjmUtils.SignedMultiply(in left, in right);
 
         /// <summary>
         ///     Implements the operator &gt;&gt;.
         /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="shift">The shift.</param>
+        /// <param name="lhs">The value.</param>
+        /// <param name="amount">The shift.</param>
         /// <returns>The result of the operator.</returns>
-        public static Int128 operator >>(in Int128 value, int shift)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator >>(in Int128 lhs, int amount)
         {
-            if (shift == 0)
+            // uint64_t shifts of >= 64 are undefined, so we need some special-casing.
+            if (amount < 64)
             {
-                return value;
+                if (amount != 0)
+                {
+                    unchecked
+                    {
+                        long high = lhs.HighSigned >> amount;
+                        ulong low = (lhs._lo >> amount) | (lhs._hi << (64 - amount));
+                        return new Int128((ulong)high, low);
+                    }
+                }
+                return lhs;
             }
 
-            Span<ulong> src = stackalloc ulong[2] {value._lo, value._hi};
-            Span<ulong> dst = stackalloc ulong[2] {0, 0};
-            MathUtils.ShiftRightSigned(src, dst, shift);
-            Int128 ret = default;
-            ret._hi = dst[1];
-            ret._lo = dst[0];    //lo is stored in array entry 0
+            ulong hi = 0;
+            ulong lo = (ulong) (lhs.HighSigned >> (amount - 64));
+            return new Int128(hi, lo);
 
-            return ret;
+            //if (shift == 0)
+            //{
+            //    return value;
+            //}
+
+            //Span<ulong> src = stackalloc ulong[2] {value._lo, value._hi};
+            //Span<ulong> dst = stackalloc ulong[2] {0, 0};
+            //MathUtils.ShiftRightSigned(src, dst, shift);
+            //Int128 ret = default;
+            //ret._hi = dst[1];
+            //ret._lo = dst[0];    //lo is stored in array entry 0
+
+            //return ret;
         }
 
         /// <summary>
         ///     Implements the operator &lt;&lt;.
         /// </summary>
         /// <param name="value">The value.</param>
-        /// <param name="shift">The shift.</param>
+        /// <param name="amount">The shift.</param>
         /// <returns>The result of the operator.</returns>
-        public static Int128 operator <<(in Int128 value, int shift)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Int128 operator <<(in Int128 value, int amount)
         {
-            if (shift == 0)
+            if (amount < 64)
             {
+                if (amount != 0)
+                {
+                    long high = (value.HighSigned << amount) | ((long) (value.Low >> (64 - amount)));
+                    ulong low = (value.Low << amount);
+                    unchecked
+                    {
+                        return new Int128((ulong)high, low);
+                    }
+                }
                 return value;
             }
 
-            Span<ulong> src = stackalloc ulong[2] { value._lo, value._hi };
-            Span<ulong> dst = stackalloc ulong[2] { 0, 0 };
-            MathUtils.ShiftLeft(src, dst, shift);
-            Int128 ret = default;
-            ret._hi = dst[1];
-            ret._lo = dst[0];    //lo is stored in array entry 0
+            unchecked
+            {
+                long h = ((long) (value.Low << (amount - 64)));
+                return new Int128((ulong) h, 0);
+            }
+            //if (shift == 0)
+            //{
+            //    return value;
+            //}
 
-            return ret;
+            //Span<ulong> src = stackalloc ulong[2] { value._lo, value._hi };
+            //Span<ulong> dst = stackalloc ulong[2] { 0, 0 };
+            //MathUtils.ShiftLeft(src, dst, shift);
+            //Int128 ret = default;
+            //ret._hi = dst[1];
+            //ret._lo = dst[0];    //lo is stored in array entry 0
+
+            //return ret;
+        }
+
+        /// <summary>
+        /// XOR bitwise operator
+        /// </summary>
+        /// <param name="left">left hand operand</param>
+        /// <param name="right">right hand operand</param>
+        /// <returns>value that is <paramref name="left"/> bitwise-xor'd
+        /// with <paramref name="right"/>.</returns>
+        public static Int128 operator ^(in Int128 left, in Int128 right)
+        {
+            Int128 result = default;
+            result._hi = left._hi ^ right._hi;
+            result._lo = left._lo ^ right._lo;
+            return result;
         }
 
         /// <summary>
@@ -1623,16 +1760,6 @@ namespace HpTimeStamps.BigMath
         /// <returns>The result of the operator.</returns>
         public static Int128 operator |(in Int128 left, in Int128 right)
         {
-            if (left == 0)
-            {
-                return right;
-            }
-
-            if (right == 0)
-            {
-                return left;
-            }
-
             Int128 result = left;
             result._hi |= right._hi;
             result._lo |= right._lo;
@@ -1647,11 +1774,6 @@ namespace HpTimeStamps.BigMath
         /// <returns>The result of the operator.</returns>
         public static Int128 operator &(in Int128 left, in Int128 right)
         {
-            if (left == 0 || right == 0)
-            {
-                return Zero;
-            }
-
             Int128 result = left;
             result._hi &= right._hi;
             result._lo &= right._lo;
@@ -1857,6 +1979,20 @@ namespace HpTimeStamps.BigMath
             return remainder;
         }
 
+        public static void DivMod(in UInt128 dividend, in UInt128 divisor, out UInt128 quotient, out UInt128 remainder)
+        {
+            if (divisor == 0) throw new DivideByZeroException("Illegal to divide by zero");
+            if (dividend != 0)
+            {
+                CjmUtils.DivModImpl(dividend, in divisor, out quotient, out remainder);
+            }
+            else
+            {
+                quotient = Zero;
+                remainder = Zero;
+            }
+        }
+        
 
         //public static bool operator <<(in UInt128 lhs, int amount)
         //{
