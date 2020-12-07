@@ -354,51 +354,15 @@
                 The absolute value.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Add(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Adds two Int128 values and returns the result.
-            </summary>
-            <param name="left">The first value to add.</param>
-            <param name="right">The second value to add.</param>
-            <returns>The sum of left and right.</returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Subtract(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Subtracts one Int128 value from another and returns the result.
-            </summary>
-            <param name="left">The value to subtract from (the minuend).</param>
-            <param name="right">The value to subtract (the subtrahend).</param>
-            <returns>The result of subtracting right from left.</returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.SlowDivide(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Divides one Int128 value by another and returns the result.
-            </summary>
-            <param name="dividend">The value to be divided.</param>
-            <param name="divisor">The value to divide by.</param>
-            <returns>The quotient of the division.</returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.DivRem(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.DivRem(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Divides one Int128 value by another, returns the result, and returns the remainder in an output parameter.
             </summary>
             <param name="dividend">The value to be divided.</param>
             <param name="divisor">The value to divide by.</param>
-            <param name="remainder">
-                When this method returns, contains an Int128 value that represents the remainder from the
-                division. This parameter is passed uninitialized.
-            </param>
             <returns>
                 The quotient of the division.
             </returns>
-        </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.SlowRemainder(HpTimeStamps.BigMath.Int128@,HpTimeStamps.BigMath.Int128@)">
-            <summary>
-                Performs integer division on two Int128 values and returns the remainder.
-            </summary>
-            <param name="dividend">The value to be divided.</param>
-            <param name="divisor">The value to divide by.</param>
-            <returns>The remainder after dividing dividend by divisor.</returns>
         </member>
         <member name="M:HpTimeStamps.BigMath.Int128.ToUIn64Array">
             <summary>

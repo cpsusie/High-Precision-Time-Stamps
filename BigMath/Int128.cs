@@ -934,68 +934,28 @@ namespace HpTimeStamps.BigMath
         [Pure]
         public static UInt128 UAbs(in Int128 value) => value.UnsignedAbsoluteValue();
 
-        /// <summary>
-        ///     Adds two Int128 values and returns the result.
-        /// </summary>
-        /// <param name="left">The first value to add.</param>
-        /// <param name="right">The second value to add.</param>
-        /// <returns>The sum of left and right.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Int128 Add(in Int128 left, in Int128 right) => left + right;
-
-        /// <summary>
-        ///     Subtracts one Int128 value from another and returns the result.
-        /// </summary>
-        /// <param name="left">The value to subtract from (the minuend).</param>
-        /// <param name="right">The value to subtract (the subtrahend).</param>
-        /// <returns>The result of subtracting right from left.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Int128 Subtract(in Int128 left, in Int128 right) => left - right;
-
-        /// <summary>
-        ///     Divides one Int128 value by another and returns the result.
-        /// </summary>
-        /// <param name="dividend">The value to be divided.</param>
-        /// <param name="divisor">The value to divide by.</param>
-        /// <returns>The quotient of the division.</returns>
-        public static Int128 SlowDivide(in Int128 dividend, in Int128 divisor) => DivRem(dividend, divisor, out _);
 
         /// <summary>
         ///     Divides one Int128 value by another, returns the result, and returns the remainder in an output parameter.
         /// </summary>
         /// <param name="dividend">The value to be divided.</param>
         /// <param name="divisor">The value to divide by.</param>
-        /// <param name="remainder">
-        ///     When this method returns, contains an Int128 value that represents the remainder from the
-        ///     division. This parameter is passed uninitialized.
-        /// </param>
         /// <returns>
         ///     The quotient of the division.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Int128 DivRem(in Int128 dividend, in Int128 divisor, out Int128 remainder)
+        public static (Int128 Quotient, Int128 Remainder) DivRem(in Int128 dividend, in Int128 divisor)
         {
             if (divisor == 0)
             {
                 throw new DivideByZeroException();
             }
 
-            CjmUtils.DivModImpl(in dividend, in divisor, out Int128 quotient, out remainder);
-            return quotient;
+            CjmUtils.DivModImpl(in dividend, in divisor, out Int128 quotient, out Int128 remainder);
+            return (quotient, remainder);
         }
 
-        /// <summary>
-        ///     Performs integer division on two Int128 values and returns the remainder.
-        /// </summary>
-        /// <param name="dividend">The value to be divided.</param>
-        /// <param name="divisor">The value to divide by.</param>
-        /// <returns>The remainder after dividing dividend by divisor.</returns>
-        public static Int128 SlowRemainder(in Int128 dividend, in Int128 divisor)
-        {
-            Int128 remainder;
-            DivRem(in dividend, in divisor, out remainder);
-            return remainder;
-        }
+        
 
         /// <summary>
         ///     Converts an Int128 value to an unsigned long array.

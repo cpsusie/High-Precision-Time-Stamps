@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
+using HpTimeStamps;
 using HpTimeStamps.BigMath;
 using HpTimeStamps.BigMath.Utils;
 using JetBrains.Annotations;
@@ -11,6 +12,7 @@ namespace UnitTests
 {
     public class CjmMathTests : OutputHelperAndFixtureHavingTests<CjmMathUtilFixture>
     {
+       
         public CjmMathTests([NotNull] ITestOutputHelper helper, [NotNull] CjmMathUtilFixture fixture) : base(helper, fixture)
         {
         }
@@ -192,6 +194,84 @@ namespace UnitTests
             }
         }
 
+        [Fact]
+        public void ConversionTestCaseOne()
+        {
+            const long rawMs = 49_799_470;
+            const long tsTicksPerSecond = 10_000_000;
+            const long durationTicksPerSecond = 2_441_465;
+            Assert.Equal(tsTicksPerSecond, TimeSpan.TicksPerSecond);
+
+            TestConversionArithmetic(rawMs, durationTicksPerSecond, tsTicksPerSecond);
+        }
+        
+        private void TestConversionArithmetic(long rawMilliseconds, long stopwatchTicksPerSecond, long timespanTicksPerSecond)
+        {
+            Helper.WriteLine($"Raw milliseconds: {rawMilliseconds:N0}.");
+            Helper.WriteLine($"Stopwatch Ticks / Second: {stopwatchTicksPerSecond:N0}.");
+            Helper.WriteLine($"Timespan Ticks Per Second: {timespanTicksPerSecond:N0}.");
+            Int128 gcd = (long) Gcd((ulong) stopwatchTicksPerSecond, (ulong) timespanTicksPerSecond);
+            (Int128 stopWatchTicksReduced, Int128 swtRemainder) = Int128.DivRem(stopwatchTicksPerSecond, gcd);
+            Assert.True(swtRemainder == 0);
+            (Int128 timespanTicksReduced, Int128 tstRemainder) = Int128.DivRem(timespanTicksPerSecond, gcd);
+            Assert.True(tstRemainder == 0);
+
+            TimeSpan ts = TimeSpan.FromMilliseconds(rawMilliseconds);
+            Assert.True((long) ts.TotalMilliseconds == rawMilliseconds);
+
+
+            Int128 timeSpanTicks = ts.Ticks;
+            Int128 durationTicks = ConvertTsTicksToSwTicks(timeSpanTicks);
+            Helper.WriteLine("Stopwatch ticks: {0}.", durationTicks );
+            Helper.WriteLine("Timespan ticks: {0}.", timeSpanTicks);
+            Assert.True(durationTicks >= long.MinValue && durationTicks <= long.MaxValue);
+              
+
+            (double dtMsWithFrac, long durationTickMilliseconds) = ConvertDurationTicksToMilliseconds((long) durationTicks);
+            Helper.WriteLine("Duration milliseconds.  Integer: {0:N0}; Float: {1:N}.", durationTickMilliseconds, dtMsWithFrac);
+            Helper.WriteLine("Time span milliseconds: {0:N}", ts.TotalMilliseconds);
+            double diff = Math.Abs(dtMsWithFrac - ts.TotalMilliseconds);
+            Helper.WriteLine($"Difference: {diff}.");
+
+            (double Float, long Integer) ConvertDurationTicksToMilliseconds(long dtks)
+            {
+                const long toMsConvFactor = 1_000;
+                Int128 dt = dtks;
+                Int128 intermediate = dtks * toMsConvFactor;
+                (Int128 resultQ, Int128 resultR) = Int128.DivRem(intermediate, stopwatchTicksPerSecond);
+                double fraction = resultR == 0 ? 0 : (double) resultR / (double) stopwatchTicksPerSecond;
+                double floatRet = ((double) resultQ) + fraction;
+                Assert.True(resultQ <= long.MaxValue && resultQ >= long.MinValue);
+                return (floatRet, (long) resultQ);
+
+            }
+            Int128 ConvertTsTicksToSwTicks(Int128 tsTicksToConvert)
+            {
+                Int128 ret = tsTicksToConvert * stopwatchTicksPerSecond / timespanTicksPerSecond;
+                Assert.True(ret == tsTicksToConvert * stopWatchTicksReduced / timespanTicksReduced );
+                return ret;
+            }
+
+            Int128 ConvertSwTicksToTsTicks(Int128 swTicks)
+            {
+                Int128 ret = swTicks * timespanTicksPerSecond / stopwatchTicksPerSecond;
+                Assert.True(ret == swTicks * timespanTicksReduced / stopWatchTicksReduced);
+                return ret;
+            }
+
+            
+        }
+        private static ulong Gcd(ulong a, ulong b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                    a %= b;
+                else
+                    b %= a;
+            }
+            return a | b;
+        }
         private void ValidateNonProblematicMultiplication(in Int128 l, in Int128 r)
         {
             (_, Int128 slowRes, Int128 fastRes) = TestFasterMultiplication(in l, in r);
