@@ -40,7 +40,12 @@ namespace HpTimeStamps
         /// <summary>
         /// Number of ticks in a millisecond
         /// </summary>
-        public static readonly long TicksPerMillisecond;
+        public static readonly double TicksPerMillisecond;
+        /// <summary>
+        /// Number of ticks in a microsecond
+        /// </summary>
+        public static readonly double TicksPerMicrosecond;
+
         /// <summary>
         /// Number of ticks in a second.  Unlike <see cref="TimeSpan"/>, this will always
         /// be keyed to <see cref="Stopwatch.Frequency"/>.
@@ -74,7 +79,6 @@ namespace HpTimeStamps
         #endregion
 
         #region Readonly internal static values
-        internal static readonly TickInt TicksPerMicrosecond;
         
         /// <summary>
         /// Longest positive period representable in seconds
@@ -143,41 +147,67 @@ namespace HpTimeStamps
         /// <param name="value">Value representing days</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromDays(double value) => Interval(value, TicksPerDay);
+        public static Duration FromDays(double value)
+        {
+            TickInt ticks = (TickInt) (value * TicksPerDay);
+            return new Duration(in ticks);
+        }
+
         /// <summary>
         /// Compute a duration from a value representing hours
         /// </summary>
         /// <param name="value">Value representing days</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromHours(double value) => Interval(value, TicksPerHour);
+        public static Duration FromHours(double value)
+        {
+            TickInt ticks = (TickInt)(value * TicksPerHour);
+            return new Duration(in ticks);
+        }
+
         /// <summary>
         /// Compute a duration from a value representing milliseconds
         /// </summary>
         /// <param name="value">Value representing milliseconds</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromMilliseconds(double value) => Interval(value, TicksPerMillisecond);
+        public static Duration FromMilliseconds(long value)
+        {
+            return Duration.FromMicroseconds(value * 1_000);
+        }
+
         /// <summary>
         /// Get a Duration from microseconds
         /// </summary>
         /// <param name="value">Microseconds</param>
         /// <returns>A duration consisting of <paramref name="value"/> microseconds.</returns>
-        public static Duration FromMicroseconds(double value) => Interval(value, (double) TicksPerMicrosecond);
+        public static Duration FromMicroseconds(long value)
+        {
+            TickInt ticks = (TickInt) (value * TicksPerMicrosecond);
+            return new Duration(in ticks);
+        }
         /// <summary>
         /// Compute a duration from a value representing minutes
         /// </summary>
         /// <param name="value">Value representing minutes</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromMinutes(double value) => Interval(value, TicksPerMinute);
+        public static Duration FromMinutes(double value)
+        {
+            TickInt ticks = (TickInt)(value * TicksPerMinute);
+            return new Duration(in ticks);
+        }
         /// <summary>
         /// Compute a duration from a value representing seconds
         /// </summary>
         /// <param name="value">Value representing seconds</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a Duration.</exception>
-        public static Duration FromSeconds(double value) => Interval(value, TicksPerSecond);
+        public static Duration FromSeconds(double value)
+        {
+            TickInt ticks = (TickInt)(value * TicksPerSecond);
+            return new Duration(in ticks);
+        }
         /// <summary>
         /// Create a duration from ticks
         /// </summary>
@@ -205,12 +235,12 @@ namespace HpTimeStamps
         /// <summary>
         /// Number of whole milliseconds represented, fractional time remaining discarded
         /// </summary>
-        public int Milliseconds => (int)((_ticks / TicksPerMillisecond) % 1_000);
+        public int Milliseconds => (int)(((double) _ticks / TicksPerMillisecond) % 1_000);
 
         /// <summary>
         /// Number of whole microseconds represented, fractional time remaining discarded
         /// </summary>
-        public long Microseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000);
+        public long Microseconds => (long) (((double)_ticks / TicksPerMicrosecond) % 1_000_000);
 
         /// <summary>
         /// Number of whole minutes represented, fractional time remaining discarded
@@ -235,7 +265,15 @@ namespace HpTimeStamps
         /// <summary>
         /// Duration represented in microseconds, including fractional parts
         /// </summary>
-        public double TotalMicroseconds =>  (double) _ticks / (double) TicksPerMicrosecond;
+        public double TotalMicroseconds
+        {
+            get
+            { 
+                 
+               double temp = ((double) _ticks) / TicksPerSecond;
+               return temp * 1_000_000;
+            }
+        }
 
         /// <summary>
         /// The duration represented in milliseconds, including fractional parts
@@ -245,15 +283,8 @@ namespace HpTimeStamps
         {
             get
             {
-                double temp = (double) _ticks / TicksPerSecond * 1_000;
-                
-                if (temp > (double) MaxMilliseconds)
-                    return (double)MaxMilliseconds;
+                return TotalMicroseconds / 1_000;
 
-                if (temp < (double) MinMilliseconds)
-                    return (double)MinMilliseconds;
-
-                return temp;
             }
         }
 
@@ -315,7 +346,7 @@ namespace HpTimeStamps
             long totalMilliSeconds = ((long)days * 3_600 * 24 + (long)hours * 3_600 + (long)minutes * 60 + seconds) * 1_000 + milliseconds;
             if (totalMilliSeconds > MaxMilliseconds || totalMilliSeconds < MinMilliseconds)
                 throw new ArgumentException("Period specified will not fit in a timespan.");
-            _ticks = (TickInt)totalMilliSeconds * TicksPerMillisecond;
+            _ticks = (TickInt) (totalMilliSeconds * TicksPerMillisecond);
         }
 
         static Duration()
@@ -326,16 +357,18 @@ namespace HpTimeStamps
                 throw new UnsupportedStopwatchResolutionException(TicksPerSecond,
                     MinimumSupportedStopwatchTicksPerSecond);
             }
-            TicksPerMillisecond = TicksPerSecond / 1_000;
-            TicksPerMicrosecond = (TickInt) TicksPerMillisecond / 1_000;
+            TicksPerMicrosecond = TicksPerSecond / 1_000_000.0;
+            TicksPerMillisecond = TicksPerSecond / 1_000.0;
+            
             TicksPerMinute = TicksPerSecond * 60;
             TicksPerHour = TicksPerMinute * 60;
             TicksPerDay = TicksPerHour * 24;
             MaxSeconds = TickInt.MaxValue / TicksPerSecond;
             MinSeconds = TickInt.MinValue / TicksPerSecond;
-            MaxMilliseconds = TickInt.MaxValue / TicksPerMillisecond;
-            MinMilliseconds = TickInt.MinValue / TicksPerMillisecond;
-            TicksPerTenthSecond = TicksPerMillisecond * 100;
+            
+            MaxMilliseconds = (TickInt) ((double) TickInt.MaxValue / TicksPerMillisecond);
+            MinMilliseconds = (TickInt) ((double) TickInt.MinValue / TicksPerMillisecond);
+            TicksPerTenthSecond = (TickInt) TicksPerMillisecond * 100;
 
             EasyConversionsToAndFromPortableDuration =
                 TestEasyConversions(TicksPerSecond, PortableDuration.TicksPerSecond);
@@ -633,13 +666,13 @@ namespace HpTimeStamps
             (long) (( stopwatchTicks* MonotonicTimeStamp<MonotonicStampContext>.TheToTsTickConversionFactorNumerator) /
                 MonotonicTimeStamp<MonotonicStampContext>.ToToTsTickConversionFactorDenominator);
 
-        private static Duration Interval(double value, double scale)
-        {
-            if (double.IsNaN(value))
-                throw new ArgumentException("Parameter is NaN.", nameof(value));
-            double ticks = value * scale;
-            return IntervalFromDoubleTicks(ticks);
-        }
+        //private static Duration Interval(double value, double scale)
+        //{
+        //    if (double.IsNaN(value))
+        //        throw new ArgumentException("Parameter is NaN.", nameof(value));
+        //    double ticks = value * scale;
+        //    return IntervalFromDoubleTicks(ticks);
+        //}
 
         private static Duration IntervalFromDoubleTicks(double ticks)
         {
@@ -699,7 +732,7 @@ namespace HpTimeStamps
         #region Private Methods
         private static bool TestCloseEnoughRoundingErrorLikely(in Duration x, in Duration y)
         {
-            Duration epsilon = FromMilliseconds(0.5);
+            Duration epsilon = FromMicroseconds(500);
             Duration difference = x - y;
             if (difference < Zero)
             {
