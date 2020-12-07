@@ -72,9 +72,9 @@ namespace UnitTests
             }
 
             DateTime stamp = HpTimeStamps.TimeStampSource.Now;
-            (TimeSpan ts, Duration dur) = Fixture.Between1MillisecondAndOneDay;
+            (TimeSpan ts, Duration dur, long milliseconds) = Fixture.Between1MillisecondAndOneDay;
             BinaryOpCode operation = Fixture.AddOrSubtract;
-            PrintOperation(stamp, ts, in dur, operation);
+            PrintOperation(stamp, ts, in dur, operation, milliseconds);
             (DateTime tsOpResult, DateTime durOpResult) = ExecuteOperation(stamp, ts, in dur, operation);
             PrintResults(tsOpResult, durOpResult);
             ValidateWithinOneMillisecond(tsOpResult, durOpResult);
@@ -111,10 +111,11 @@ namespace UnitTests
                 return (spanRes, durRes);
             }
 
-            void PrintOperation(DateTime dt, TimeSpan t, in Duration d, BinaryOpCode op)
+            void PrintOperation(DateTime dt, TimeSpan t, in Duration d, BinaryOpCode op, long l)
             {
                 Helper.WriteLine("Stamp arithmetic test {0} of {1}.", opNumber, numTests);
-                Helper.WriteLine("Stamp: {0:O}", dt);
+                Helper.WriteLine("Stamp: {0:O}.", dt);
+                Helper.WriteLine("Raw milliseconds: {0:N0} ms", milliseconds);
                 Helper.WriteLine("Timespan: {0:N3} ms (i.e. {1:N} hours, {2:N} minutes, {3:N} seconds and {4:N} milliseconds).", ts.TotalMilliseconds, ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
                 Helper.WriteLine("Duration: {0:N3} ms (i.e. {1:N} hours, {2:N} minutes, {3:N} seconds and {4:N} milliseconds).", d.TotalMilliseconds, d.Hours, d.Minutes, d.Seconds, d.Milliseconds);
                 Helper.WriteLine("Operation: {0}.", op);

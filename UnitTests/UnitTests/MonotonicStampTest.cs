@@ -53,10 +53,15 @@ namespace UnitTests
             Helper.WriteLine("Easy conversions between stopwatch ticks and timespan ticks: [{0}]", MonotonicStampFixture.StampContext.EasyConversionToAndFromTimespanTicks);
             Helper.WriteLine("Easy conversions between stopwatch ticks and nanoseconds: [{0}]", MonotonicStampFixture.StampContext.EasyConversionToAndFromNanoseconds);
 
+            Helper.WriteLine("Duration frequency: {0:N0} ticks per second.", Duration.TicksPerSecond);
+            Helper.WriteLine("Timespan frequency: {0:N0} ticks per second.", TimeSpan.TicksPerSecond);
+            Helper.WriteLine("{0}: {1:N0}", nameof(MonotonicStamp.TheToTsTickConversionFactorNumerator),
+                MonotonicStamp.TheToTsTickConversionFactorNumerator);
+            Helper.WriteLine("{0}: {1:N0}", nameof(MonotonicStamp.ToToTsTickConversionFactorDenominator),
+                MonotonicStamp.ToToTsTickConversionFactorDenominator);
             MonotonicStamp now = Fixture.StampNow;
             Helper.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());
             Helper.WriteLine("Initial utc stamp: [{0:O}].", now.ToUtcDateTime());
-
         }
 
         [Fact]

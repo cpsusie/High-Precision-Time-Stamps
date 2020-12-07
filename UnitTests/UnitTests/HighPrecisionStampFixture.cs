@@ -12,12 +12,12 @@ namespace UnitTests
 
         public BinaryOpCode AddOrSubtract => TheRGen.Value.Next(0, 2) == 0 ? BinaryOpCode.Add : BinaryOpCode.Subtract;
 
-        public (TimeSpan RandomTs, Duration RandomDuration) Between1MillisecondAndOneDay
+        public (TimeSpan RandomTs, Duration RandomDuration, long Milliseconds) Between1MillisecondAndOneDay
         {
             get
             {
-                double milliseconds = RandomMillisecondsBetween(1, MillisecondsPerDay);
-                return (TimeSpan.FromMilliseconds(milliseconds), Duration.FromMilliseconds(milliseconds));
+                long milliseconds = RandomMillisecondsBetween(1, MillisecondsPerDay);
+                return (TimeSpan.FromMilliseconds(milliseconds), Duration.FromMilliseconds(milliseconds), milliseconds);
             }
         }
 
