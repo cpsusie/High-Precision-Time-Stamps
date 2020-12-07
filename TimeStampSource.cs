@@ -29,7 +29,11 @@ namespace HpTimeStamps
         /// How long has it been since calibration (on THIS thread)
         /// </summary>
         public static TimeSpan TimeSinceCalibration => TheUtil.TimeSinceLastCalibration;
-        
+        /// <summary>
+        /// The offset from utc.  To get utc time from local, SUBTRACT this value from local.
+        /// To get local from utc, add this value to utc.
+        /// </summary>
+        public static TimeSpan LocalUtcOffset => TheUtil.LocalOffsetFromUtc;
         /// <summary>
         /// Perform calibration now for THIS thread
         /// </summary>

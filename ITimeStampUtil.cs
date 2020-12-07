@@ -45,6 +45,13 @@ namespace HpTimeStamps
         /// Whether the util is calibrated at present
         /// </summary>
         bool IsCalibrated { get; }
+
+        /// <summary>
+        /// The offset from utc.  To get utc time from local, SUBTRACT this value from local.
+        /// To get local from utc, add this value to utc.
+        /// </summary>
+        TimeSpan LocalOffsetFromUtc { get; }
+
         /// <summary>
         /// Manually force a calibration.  If not calibrated, upon call to
         /// <see cref="CurrentLocalTimeStamp"/> or <see cref="CurrentUtcTimeStamp"/> calibration will

@@ -1854,6 +1854,12 @@
             Whether the util is calibrated at present
             </summary>
         </member>
+        <member name="P:HpTimeStamps.ITimeStampUtil.LocalOffsetFromUtc">
+            <summary>
+            The offset from utc.  To get utc time from local, SUBTRACT this value from local.
+            To get local from utc, add this value to utc.
+            </summary>
+        </member>
         <member name="M:HpTimeStamps.ITimeStampUtil.Calibrate">
             <summary>
             Manually force a calibration.  If not calibrated, upon call to
@@ -3065,6 +3071,12 @@
             How long has it been since calibration (on THIS thread)
             </summary>
         </member>
+        <member name="P:HpTimeStamps.TimeStampSource.LocalUtcOffset">
+            <summary>
+            The offset from utc.  To get utc time from local, SUBTRACT this value from local.
+            To get local from utc, add this value to utc.
+            </summary>
+        </member>
         <member name="M:HpTimeStamps.TimeStampSource.Calibrate">
             <summary>
             Perform calibration now for THIS thread
@@ -3118,6 +3130,9 @@
             True if the util has a current calibration.  <seealso cref="P:HpTimeStamps.TimeStampUtil.CalibrationWindow"/> for how long
             calibration lasts before becoming considered stale.
             </summary>
+        </member>
+        <member name="P:HpTimeStamps.TimeStampUtil.LocalOffsetFromUtc">
+            <inheritdoc />
         </member>
         <member name="P:HpTimeStamps.TimeStampUtil.StopWatchTicksPerSecond">
             <summary>

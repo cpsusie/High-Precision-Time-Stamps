@@ -55,6 +55,14 @@ namespace HpTimeStamps
         /// calibration lasts before becoming considered stale.
         /// </summary>
         public bool IsCalibrated => TheSIsCalibrated.Value && TimeSinceLastCalibration < TheMaxTimeBeforeRecalibration;
+
+        /// <inheritdoc />
+        public TimeSpan LocalOffsetFromUtc => TheUtcDifferential.IsValueCreated
+            ? TimeSpan.FromTicks(TheUtcDifferential.Value)
+            : CalculateUtcOffsetFromSystemClock();
+
+        
+
         /// <summary>
         /// How many high precision ticks per second are there?
         /// </summary>
@@ -81,13 +89,14 @@ namespace HpTimeStamps
             {
                 long ts = Stopwatch.GetTimestamp();
                 long differential = TheSDtDifferential.Value;
+                long utcDifferential = TheUtcDifferential.Value;
                 if (!IsCalibrated)
                 {
                     Calibrate();
                     ts = Stopwatch.GetTimestamp();
                     differential = TheSDtDifferential.Value;
                 }
-                return new DateTime(ConvertStopwatchTicksToDateTimeTicks(ts, differential), DateTimeKind.Utc);
+                return new DateTime(ConvertStopwatchTicksToDateTimeTicks(ts, differential - utcDifferential), DateTimeKind.Utc);
             }
         }
 
@@ -172,6 +181,10 @@ namespace HpTimeStamps
             TheSIsCalibrated.Value = true;
             TheSDtDifferential.Value = differential;
             TheSLastCalibTime.Value = DateTime.Now;
+            DateTime lastCalibTime = TheSLastCalibTime.Value;
+            DateTime lastCalibUtcTime = lastCalibTime.ToUniversalTime();
+            TimeSpan utcDifferential = (lastCalibTime - lastCalibUtcTime);
+            TheUtcDifferential.Value = utcDifferential.Ticks;
         }
 
         private static long ComputeDifferential()
@@ -240,6 +253,11 @@ namespace HpTimeStamps
 
         }
 
+        private TimeSpan CalculateUtcOffsetFromSystemClock()
+        {
+            DateTime localNow = DateTime.Now;
+            return localNow - localNow.ToUniversalTime();
+        }
 
         private static long ConvertStopwatchTicksToDateTimeTicks(long swTicks, long differential) =>
             ConvertStopwatchTicksToDateTimeTicks(swTicks) + differential;
@@ -252,6 +270,7 @@ namespace HpTimeStamps
         private static readonly double? TheStopWatchTicksToDateTimeTicksConversionFactor; 
         private static readonly long TheDateTimeTicksPerSecond;
         private static readonly long TheStopWatchTicksPerSecond;
+        private static readonly ThreadLocal<long> TheUtcDifferential = new ThreadLocal<long>(false);
         private static readonly ThreadLocal<long> TheSDtDifferential = new ThreadLocal<long>(false); 
         private static readonly ThreadLocal<bool> TheSIsCalibrated = new ThreadLocal<bool>(()=>false,false);
         private static readonly ThreadLocal<DateTime> TheSLastCalibTime = new ThreadLocal<DateTime>(() => DateTime.MinValue,false);
