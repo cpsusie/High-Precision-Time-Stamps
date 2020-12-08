@@ -210,7 +210,11 @@ namespace HpTimeStamps
         /// </summary>
         /// <param name="value">ticks</param>
         /// <returns>the value</returns>
-        internal static PortableDuration FromStopwatchTicks(in TickInt value) => new PortableDuration(in value);
+        internal static PortableDuration FromStopwatchTicks(in TickInt value)
+        {
+            TickInt converted = ConvertDurationTicksToPortableDurationTicks(in value);
+            return new PortableDuration((TickInt) converted );
+        }
 
         #endregion
 
