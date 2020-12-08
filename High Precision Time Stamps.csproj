@@ -8,24 +8,24 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.0.5.1-beta</Version>
+    <Version>0.0.5.4-beta</Version>
     <Description>
       This pre-release alpha package provides timestamps in a similar manner to DateTime.Now except it uses the hardware's high precision event timer, where available.  Time stamps are more precise and, when retrieved on the same thread within a short time of each other, can be expected to be more accurate relative to each other than those retrieved by DateTime.Now.  They may be less accurate in reference to offical UTC time or system time, but, under most circumstances, should remain approximately accurate.
 
       The use-case for this project is when approximately accurate timestamps are needed for purposes of identifying when an event happened, but are also used to measure elapsed time between events that happen on a scale of milliseconds or microseconds.
     </Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>
+    <PackageReleaseNotes>This release resolved some major problems with int128 arithmetic.  Now the code is based on the work of Google/Abseil in their C++ int128 library.  Also, multiplication and division are now faster.  Unit test project significantly updated.  Unit test utility written in C++ that generates Int128 operations and their results using Abseil, which the C# unit tests use to verify that the calculations produce the same value.  The unit test utility is not very user friendly at this point, but is really only intended to produce data the C# unit test project can use.
       This release 0.0.5.1 fixes a misspelled namespace: HpTimesStamps -&gt; HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
       It also adds a unit test project that focuses on conversions.  More tests will be forthcoming.
       SourceLink support will be attempted.   It may not work correctly on this release but it is a goal.
       Also, a dependency to System.Memory Nuget package has been added.  I hope to get rid of dynamic array allocations in the Int128 multiplication, division and modulus operations.
-    </PackageReleaseNotes>
+</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps</PackageTags>
-    <AssemblyVersion>0.0.5.1</AssemblyVersion>
-    <FileVersion>0.0.5.1</FileVersion>
+    <AssemblyVersion>0.0.5.4</AssemblyVersion>
+    <FileVersion>0.0.5.4</FileVersion>
     <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -61,6 +61,14 @@
 
   <ItemGroup>
     <Compile Remove="BigMath\BigInteger.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="LICENSE" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="LICENSE" />
   </ItemGroup>
 
   <ItemGroup>
