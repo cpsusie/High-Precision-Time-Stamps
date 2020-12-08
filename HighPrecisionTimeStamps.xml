@@ -1220,6 +1220,11 @@
             Number of ticks in a millisecond
             </summary>
         </member>
+        <member name="F:HpTimeStamps.Duration.TicksPerMicrosecond">
+            <summary>
+            Number of ticks in a microsecond
+            </summary>
+        </member>
         <member name="F:HpTimeStamps.Duration.TicksPerSecond">
             <summary>
             Number of ticks in a second.  Unlike <see cref="T:System.TimeSpan"/>, this will always
@@ -1323,7 +1328,7 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a Duration.</exception>
         </member>
-        <member name="M:HpTimeStamps.Duration.FromMilliseconds(System.Double)">
+        <member name="M:HpTimeStamps.Duration.FromMilliseconds(System.Int64)">
             <summary>
             Compute a duration from a value representing milliseconds
             </summary>
@@ -1331,7 +1336,7 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a Duration.</exception>
         </member>
-        <member name="M:HpTimeStamps.Duration.FromMicroseconds(System.Double)">
+        <member name="M:HpTimeStamps.Duration.FromMicroseconds(System.Int64)">
             <summary>
             Get a Duration from microseconds
             </summary>

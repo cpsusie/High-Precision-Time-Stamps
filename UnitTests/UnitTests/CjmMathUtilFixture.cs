@@ -11,6 +11,7 @@ namespace UnitTests
 {
     public class CjmMathUtilFixture
     {
+        public long OneDayInMilliseconds = 86_400_000;
         public ImmutableSortedDictionary<ulong, int> OneCountLookup => OneCountULongs;
         internal ImmutableArray<Int128> ProblematicOperandsForMultiplicationAndDivision => TheProblematicDivMulOperands;
         public ulong RandomULong
@@ -23,6 +24,34 @@ namespace UnitTests
             }
         }
 
+        public bool RandomSign
+        {
+            get
+            {
+                return TheRGen.Value.Next(0, 2) == 1;
+            }
+        }
+
+        public long RandomNegativeOneDayToOneDayInMilliseconds
+        {
+            get
+            {
+                const ulong oneDayInMilliseconds = 86_400_000ul;
+                long ret;
+                ulong random = RandomULong;
+                unchecked
+                {
+                    random %= oneDayInMilliseconds;
+                    ret = (long) random;
+                }
+                if (random != 0 && RandomSign)
+                {
+                    ret = -ret;
+                }
+
+                return ret;
+            }
+        }
         public long RandomLong
         {
             get

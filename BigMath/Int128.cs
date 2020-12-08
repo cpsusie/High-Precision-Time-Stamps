@@ -117,8 +117,35 @@ namespace HpTimeStamps.BigMath
         ///     Initializes a new instance of the <see cref="Int128" /> struct.
         /// </summary>
         /// <param name="value">The value.</param>
-        public Int128(double value) : this((decimal) value)
+        public Int128(double value)
         {
+            UInt128 temp = default;
+            bool negate = false;
+            if (value < 0)
+            {
+                negate = true;
+                value = -value;
+            }
+            if (value <= ulong.MaxValue)
+            {
+                temp._lo = (ulong) value;
+                temp._hi = 0;
+            }
+            else
+            {
+                var shift = Math.Max((int)Math.Ceiling(Math.Log(value, 2)) - 63, 0);
+                temp._lo = (ulong)(value / Math.Pow(2, shift));
+                temp._hi = 0;
+                temp <<= shift;
+            }
+
+            if (negate)
+            {
+                temp = -temp;
+            }
+
+            _hi = temp._hi;
+            _lo = temp._lo;
         }
 
         /// <summary>

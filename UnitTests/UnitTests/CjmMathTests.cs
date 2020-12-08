@@ -204,12 +204,41 @@ namespace UnitTests
 
             TestConversionArithmetic(rawMs, durationTicksPerSecond, tsTicksPerSecond);
         }
+        [Fact]
+        public void TestRandomConversions()
+        {
+            const int numTests = 10_000_000;
+            const long tsTicksPerSecond = 10_000_000;
+            const long durationTicksPerSecond = 2_441_465;
+            Assert.Equal(tsTicksPerSecond, TimeSpan.TicksPerSecond);
+
+            for (int testNo = 1; testNo <= numTests; ++testNo)
+            {
+                if (testNo % 100_000 == 0)
+                {
+                    Helper.WriteLine($"On test {testNo:N0} of {numTests:N0}.");
+                }
+                long rawMs = Fixture.RandomNegativeOneDayToOneDayInMilliseconds;
+                Assert.True(rawMs >= -Fixture.OneDayInMilliseconds && rawMs <= Fixture.OneDayInMilliseconds);
+                try
+                {
+                    TestConversionArithmetic(rawMs, durationTicksPerSecond, tsTicksPerSecond);
+                }
+                catch (Exception e)
+                {
+                    Helper.WriteLine($"Test failed.  Value: {rawMs:N0}; Exception: {e}.");
+                    throw;
+                }
+            }
+            
+        }
+       
         
         private void TestConversionArithmetic(long rawMilliseconds, long stopwatchTicksPerSecond, long timespanTicksPerSecond)
         {
-            Helper.WriteLine($"Raw milliseconds: {rawMilliseconds:N0}.");
-            Helper.WriteLine($"Stopwatch Ticks / Second: {stopwatchTicksPerSecond:N0}.");
-            Helper.WriteLine($"Timespan Ticks Per Second: {timespanTicksPerSecond:N0}.");
+            //Helper.WriteLine($"Raw milliseconds: {rawMilliseconds:N0}.");
+            //Helper.WriteLine($"Stopwatch Ticks / Second: {stopwatchTicksPerSecond:N0}.");
+            //Helper.WriteLine($"Timespan Ticks Per Second: {timespanTicksPerSecond:N0}.");
             Int128 gcd = (long) Gcd((ulong) stopwatchTicksPerSecond, (ulong) timespanTicksPerSecond);
             (Int128 stopWatchTicksReduced, Int128 swtRemainder) = Int128.DivRem(stopwatchTicksPerSecond, gcd);
             Assert.True(swtRemainder == 0);
@@ -222,16 +251,33 @@ namespace UnitTests
 
             Int128 timeSpanTicks = ts.Ticks;
             Int128 durationTicks = ConvertTsTicksToSwTicks(timeSpanTicks);
-            Helper.WriteLine("Stopwatch ticks: {0}.", durationTicks );
-            Helper.WriteLine("Timespan ticks: {0}.", timeSpanTicks);
+            //Helper.WriteLine("Stopwatch ticks: {0}.", durationTicks );
+            //Helper.WriteLine("Timespan ticks: {0}.", timeSpanTicks);
             Assert.True(durationTicks >= long.MinValue && durationTicks <= long.MaxValue);
               
 
             (double dtMsWithFrac, long durationTickMilliseconds) = ConvertDurationTicksToMilliseconds((long) durationTicks);
-            Helper.WriteLine("Duration milliseconds.  Integer: {0:N0}; Float: {1:N}.", durationTickMilliseconds, dtMsWithFrac);
-            Helper.WriteLine("Time span milliseconds: {0:N}", ts.TotalMilliseconds);
+            //Helper.WriteLine("Duration milliseconds.  Integer: {0:N0}; Float: {1:N}.", durationTickMilliseconds, dtMsWithFrac);
+            //Helper.WriteLine("Time span milliseconds: {0:N}", ts.TotalMilliseconds);
             double diff = Math.Abs(dtMsWithFrac - ts.TotalMilliseconds);
-            Helper.WriteLine($"Difference: {diff}.");
+            //Helper.WriteLine($"Difference: {diff}.");
+            Assert.True(diff <= 1.5, $"milliseconds difference must be less than 1.5.  Actual value: {diff:N}.");
+
+            Int128 timespanTicksRoundTripped = ConvertSwTicksToTsTicks(in durationTicks);
+            Assert.True(timespanTicksRoundTripped <= long.MaxValue && timespanTicksRoundTripped >= long.MinValue);
+            ref readonly Int128 bigger = ref timeSpanTicks;
+            ref readonly Int128 smaller = ref timespanTicksRoundTripped;
+            if (bigger < smaller)
+            {
+                bigger = ref timespanTicksRoundTripped;
+                smaller = ref timeSpanTicks;
+            }
+
+            long tickDiff = (long) (bigger - smaller);
+            TimeSpan ticksDiff = TimeSpan.FromTicks(tickDiff);
+            //Helper.WriteLine($"difference between original and round tripped stopwatch ticks: [{tickDiff:N0}], or {ticksDiff.TotalMilliseconds:N3}." );
+            Assert.True(ticksDiff.TotalMilliseconds <= 1.5, $"ticksDiff > 1.5 milliseconds. value: {ticksDiff}.");
+
 
             (double Float, long Integer) ConvertDurationTicksToMilliseconds(long dtks)
             {
@@ -245,14 +291,14 @@ namespace UnitTests
                 return (floatRet, (long) resultQ);
 
             }
-            Int128 ConvertTsTicksToSwTicks(Int128 tsTicksToConvert)
+            Int128 ConvertTsTicksToSwTicks(in Int128 tsTicksToConvert)
             {
                 Int128 ret = tsTicksToConvert * stopwatchTicksPerSecond / timespanTicksPerSecond;
                 Assert.True(ret == tsTicksToConvert * stopWatchTicksReduced / timespanTicksReduced );
                 return ret;
             }
 
-            Int128 ConvertSwTicksToTsTicks(Int128 swTicks)
+            Int128 ConvertSwTicksToTsTicks(in Int128 swTicks)
             {
                 Int128 ret = swTicks * timespanTicksPerSecond / stopwatchTicksPerSecond;
                 Assert.True(ret == swTicks * timespanTicksReduced / stopWatchTicksReduced);
