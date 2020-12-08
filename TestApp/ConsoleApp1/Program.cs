@@ -18,6 +18,28 @@ namespace TestApp
     {
         static void Main()
         {
+
+            Console.WriteLine("System information:");
+            Console.WriteLine("TimeSpan ticks per second: {0:N0}", TimeSpan.TicksPerSecond);
+            Console.WriteLine("Duration ticks per second: {0:N0}", Duration.TicksPerSecond);
+            Console.WriteLine("Portable duration ticks per second: {0:N0}", PortableDuration.TicksPerSecond);
+            Console.WriteLine("Local reference time: [{0:O}].", MonotonicSource.StampContext.LocalTimeBeginReference);
+            Console.WriteLine("Utc reference time: [{0:O}].", MonotonicSource.StampContext.UtcDateTimeBeginReference);
+            Console.WriteLine("Local utc offset: [{0:N3}] hours.", MonotonicSource.StampContext.UtcLocalTimeOffset.TotalHours);
+            Console.WriteLine("Stopwatch tick equivalent to local time: [{0:N}]",
+                MonotonicSource.StampContext.ReferenceTicks);
+            Console.WriteLine("Easy conversion all around: [{0}]", MonotonicSource.StampContext.EasyConversionAllWays);
+            Console.WriteLine("Easy conversions between stopwatch ticks and timespan ticks: [{0}]", MonotonicSource.StampContext.EasyConversionToAndFromTimespanTicks);
+            Console.WriteLine("Easy conversions between stopwatch ticks and nanoseconds: [{0}]", MonotonicSource.StampContext.EasyConversionToAndFromNanoseconds);
+
+            Console.WriteLine("Duration frequency: {0:N0} ticks per second.", Duration.TicksPerSecond);
+            Console.WriteLine("Timespan frequency: {0:N0} ticks per second.", TimeSpan.TicksPerSecond);
+            MonotonicStamp now = MonotonicSource.StampNow;
+            Console.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());
+            Console.WriteLine("Initial utc stamp: [{0:O}].", now.ToUtcDateTime());
+            Console.WriteLine("DONE SYSTEM INFO.");
+            Console.WriteLine();
+
             Console.WriteLine("Begin hp timestamp test.");
             TestHpTimestamps();
             Console.WriteLine("End hp timestamp test.");
