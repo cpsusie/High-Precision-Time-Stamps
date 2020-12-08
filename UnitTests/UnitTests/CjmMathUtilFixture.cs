@@ -24,13 +24,7 @@ namespace UnitTests
             }
         }
 
-        public bool RandomSign
-        {
-            get
-            {
-                return TheRGen.Value.Next(0, 2) == 1;
-            }
-        }
+        public bool RandomSign => TheRGen.Value.Next(0, 2) == 1;
 
         public long RandomNegativeOneDayToOneDayInMilliseconds
         {

@@ -190,7 +190,7 @@ namespace UnitTests
         }
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
-            if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, "Value may not be negative.");
+            if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, @"Value may not be negative.");
             while (numSpans-- > 0)
             {
                 yield return RandomSpan;
@@ -212,7 +212,7 @@ namespace UnitTests
 
         private ImmutableArray<PortableDuration> DoTestPortableDurationSerDeser(ImmutableArray<PortableDuration> arr)
         {
-            if (arr.IsDefault) throw new ArgumentException("The array is not properly initialized.", nameof(arr));
+            if (arr.IsDefault) throw new ArgumentException(@"The array is not properly initialized.", nameof(arr));
             var temp = ImmutableArray.CreateBuilder<PortableDuration>(arr.Length);
             for (int i = 0; i < arr.Length; ++i)
             {
@@ -230,7 +230,6 @@ namespace UnitTests
                 TimeSpan rootTimeSpan = TimeSpan.FromTicks(tsTicks);
                 PortableDuration portableDuration = rootTimeSpan;
                 Duration d = (Duration) portableDuration;
-                PortableDuration pdFromD = (PortableDuration) d;
                 TimeSpan fromD = (TimeSpan) d;
 
                 double rootMilliseconds = rootTimeSpan.TotalMilliseconds;
