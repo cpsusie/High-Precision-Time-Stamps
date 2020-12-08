@@ -30,6 +30,18 @@ namespace UnitTests
                 throw;
             }
         }
+        [Fact]
+        public void TestDoubleTimeSpanDurationInteractionOne()
+        {
+            const double epsilon = 1.0;
+            long milliseconds = 35_226_120;
+            Duration d = Duration.FromMilliseconds(milliseconds);
+            TimeSpan t = TimeSpan.FromMilliseconds(milliseconds);
+            Assert.True(Math.Abs(t.TotalMilliseconds - milliseconds) <= epsilon);
+            Assert.True(Math.Abs(d.TotalMilliseconds - milliseconds) <= epsilon);
+
+        }
+
 
         [Fact]
         public void TestUtcStampCorrelationWithMain()

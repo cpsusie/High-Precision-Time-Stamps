@@ -20,7 +20,7 @@ namespace UnitTests
                 return (TimeSpan.FromMilliseconds(milliseconds), Duration.FromMilliseconds(milliseconds), milliseconds);
             }
         }
-
+        public long Between1MillisecondAndOneDayInMilliseconds => RandomMillisecondsBetween(1, MillisecondsPerDay);
         public readonly struct HighPrecisionTimeStampSource
         {
             public DateTime Now
