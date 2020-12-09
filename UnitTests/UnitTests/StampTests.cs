@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using HpTimeStamps;
+using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -111,6 +112,36 @@ namespace UnitTests
             Assert.True(diff < Duration.FromMilliseconds(1));
 
         }
+
+        [Fact]
+        public void TestPortableStamp()
+        {
+            MonotonicStamp stamp = Fixture.MonotonicStampNow;
+            (DateTime utcReferenceTime, Duration offsetFromReference, TimeSpan localUtcOffset) = stamp.Value;
+            DateTime local = stamp.ToLocalDateTime();
+            DateTime utc = stamp.ToUtcDateTime();
+            DateTime localFromComponents = (utcReferenceTime + (TimeSpan) offsetFromReference).ToLocalTime();
+            DateTime utcFromComponents = (utcReferenceTime + (TimeSpan) offsetFromReference);
+            Assert.Equal(local, localFromComponents);
+            Assert.Equal(utc, utcFromComponents);
+
+            Int128 utcRefTimeNanosecondSinceNetEpoch =
+                (((Int128) utcReferenceTime.Ticks) * PortableDuration.TicksPerSecond) / TimeSpan.TicksPerSecond;
+            Helper.WriteLine($"Utc reference time is {utcRefTimeNanosecondSinceNetEpoch} nanoseconds since .NET epoch.");
+            PortableDuration offsetFromReferenceInNanoseconds = (PortableDuration) offsetFromReference;
+            Duration roundTripped = (Duration) offsetFromReferenceInNanoseconds;
+            Duration difference = (offsetFromReference - roundTripped).AbsoluteValue();
+            Assert.True(difference <= Duration.FromMicroseconds(1));
+
+            Int128 monotonicStampDistEpochInNanoSeconds =
+                utcRefTimeNanosecondSinceNetEpoch + offsetFromReferenceInNanoseconds.Ticks;
+            Helper.WriteLine($"Monotonic stamp's distanceFromEpochInNanoseconds: {monotonicStampDistEpochInNanoSeconds}");
+
+            PortableMonotonicStamp pstamp = stamp;
+            Helper.WriteLine($"pstamp nanoseconds dist from epoch: {pstamp._dateTimeNanosecondOffsetFromMinValueUtc}");
+            Assert.Equal(monotonicStampDistEpochInNanoSeconds, pstamp._dateTimeNanosecondOffsetFromMinValueUtc );
+        }
+
 
         private void CompareMonotonicStamps(MonotonicStamp expected, MonotonicStamp actual, Duration maxDiff)
         {
