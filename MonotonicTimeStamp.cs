@@ -345,11 +345,27 @@ namespace HpTimeStamps
         [Pure]
         public PortableMonotonicStamp ToPortableStamp()
         {
-            long tsTicksSinceUtcEpoch = (Context.UtcDateTimeBeginReference.ToUniversalTime() -
-                                        DateTime.MinValue.ToUniversalTime()).Ticks;
-            Int128 stopwatchTicksSinceUtcEpoch = ConvertTimeSpanTicksToStopwatchTicks(tsTicksSinceUtcEpoch);
-            stopwatchTicksSinceUtcEpoch += _stopWatchTicks;
-            return new PortableMonotonicStamp(stopwatchTicksSinceUtcEpoch);
+            Duration referenceTimeSinceEpoch =
+                (Duration) TimeSpan.FromTicks(Context.UtcDateTimeBeginReference.ToUniversalTime().Ticks);
+            referenceTimeSinceEpoch += Duration.FromStopwatchTicks(_stopWatchTicks);
+
+            PortableDuration pd = (PortableDuration) referenceTimeSinceEpoch;
+ 
+            return new PortableMonotonicStamp(in pd._ticks);
+
+            static Int128 ConvertTimeStampTicksToNanoseconds(Int128 timespanTicks)
+            {
+                timespanTicks *= 1_000_000_000;
+                timespanTicks /= TimeSpan.TicksPerSecond;
+                return timespanTicks;
+            }
+
+            static Int128 ConvertDurationTicksToNanoseconds(Int128 durationTicks)
+            {
+                durationTicks *= 1_000_000_000;
+                durationTicks /= Duration.TicksPerSecond;
+                return durationTicks;
+            }
         }
 
         /// <summary>

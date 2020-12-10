@@ -218,13 +218,13 @@ namespace HpTimeStamps
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static TimeSpan CreateTimespanFromNanoseconds(Int128 nanoseconds)
         {
-            nanoseconds = nanoseconds * (TimeSpan.TicksPerSecond / NanosecondsFrequency);
-            if (nanoseconds > TimeSpan.MaxValue.Ticks)
+            Int128 tsTics  = nanoseconds * TimeSpan.TicksPerSecond / NanosecondsFrequency;
+            if (tsTics > TimeSpan.MaxValue.Ticks)
             {
                 throw new ArgumentOutOfRangeException(nameof(nanoseconds), nanoseconds,
                     "Value does not fit in a timespan.");
             }
-            return TimeSpan.FromTicks((long)nanoseconds);
+            return TimeSpan.FromTicks((long)tsTics);
         }
 
         private static Int128 StopwatchTicksFromNanoseconds(in Int128 nanoseconds) => nanoseconds * (LocalStopwatchFrequency / NanosecondsFrequency);
