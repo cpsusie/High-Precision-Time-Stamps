@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using HpTimeStamps;
+using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -188,6 +189,32 @@ namespace UnitTests
             const long failingVal = -6_433_771_731_613_161_268;
             TestPortableDurationDurationConversions(1, failingVal);
         }
+
+        [Fact]
+        public void TestDateTimeRoundTrippingNanosecondScaleBreakdown()
+        {
+            DateTime theDateTime = new DateTime(1919, 2, 3, 17, 15, 42, 981, DateTimeKind.Utc) +
+                                   TimeSpan.FromMilliseconds(0.6255);
+            Helper.WriteLine("Date time to breakdown: [{0:O}].", theDateTime);
+            (int originalWholeDays, int originalWholeSeconds, int originalWholeNanoseconds,
+                Int128 originalTotalNanoseconds) = BreakDownDateTimeNanosecondsScale(theDateTime);
+            Helper.WriteLine(
+                "Original whole days: [{0:N0}]; Original whole seconds [{1:N0}]; Original whole nanoseconds [{2:N0}]; Total nanoseconds original date time: [{3}].",
+                originalWholeDays, originalWholeSeconds, originalWholeNanoseconds, originalTotalNanoseconds);
+            DateTime andBack = ConstructUtcDateTimeFromNanosecondsScaleBreakdown(originalWholeDays,
+                originalWholeSeconds, originalWholeNanoseconds, originalTotalNanoseconds);
+            Assert.Equal(theDateTime, andBack);
+            Helper.WriteLine("Round tripped date time: [{0:O}].", andBack);
+            Helper.WriteLine("Round tripped date time as local date time: [{0:O}].", andBack.ToLocalTime());
+
+            PortableMonotonicStamp stamp = new PortableMonotonicStamp(originalTotalNanoseconds);
+            Helper.WriteLine("Portable monotonic stamp based on total nanoseconds (stamp.ToString()): [{0}].", stamp.ToString());
+            Helper.WriteLine("Portable monotonic stamp converted utc date time: [{0:O}].", stamp.ToUtcDateTime());
+            Helper.WriteLine("Portable monotonic stamp converted to local date time: [{0:O}].", stamp.ToLocalDateTime());
+
+            
+        }
+
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, @"Value may not be negative.");
@@ -250,6 +277,45 @@ namespace UnitTests
                     testNo, tsTicks, ex);
                 throw;
             }
+        }
+
+        private (int WholeDays, int WholeSeconds, int WholeNanoseconds, Int128 TotalNanoseconds) BreakDownDateTimeNanosecondsScale(DateTime dt)
+        {
+            Int128 billion = 1_000_000_000;
+            Int128 nanosecondPerDay = ((Int128) 86_400) * billion;
+            dt = dt.ToUniversalTime();
+            long dtTicks = dt.Ticks;
+            Int128 ticks = dtTicks;
+            ticks *= 100; //convert timespan ticks to nanoseconds
+            (Int128 wholeDays, Int128 _) = Int128.DivRem( ticks , nanosecondPerDay);
+            Int128 remainingNanoseconds = ticks - (wholeDays * nanosecondPerDay);
+            Assert.True(wholeDays < int.MaxValue);
+            Int128 wholeSeconds;
+            (wholeSeconds, remainingNanoseconds) = Int128.DivRem(remainingNanoseconds, billion);
+            Assert.True(wholeDays < int.MaxValue);
+            Assert.True(remainingNanoseconds < int.MaxValue);
+            
+            return ((int) wholeDays, (int) wholeSeconds, (int) remainingNanoseconds, ticks);
+
+        }
+
+        private DateTime ConstructUtcDateTimeFromNanosecondsScaleBreakdown(int wholeDays, int wholeSeconds,
+            int wholeNanoseconds, Int128? verifyNanosecondsTotal = null)
+        {
+            Int128 billion = 1_000_000_000;
+            Int128 nanosecondPerDay = ((Int128)86_400) * billion;
+            
+            Int128 daysToNanoseconds = wholeDays * nanosecondPerDay;
+            Int128 wholeSecondsNanoseconds = wholeSeconds * billion;
+            Int128 remainingNanoseconds = wholeNanoseconds;
+
+            Int128 totalNanoseconds = daysToNanoseconds + wholeSecondsNanoseconds + remainingNanoseconds;
+            Assert.True(verifyNanosecondsTotal == null || verifyNanosecondsTotal == totalNanoseconds);
+
+            (Int128 totalAsDateTimeTicks, Int128 discardedNanoseconds) = Int128.DivRem(in totalNanoseconds, 100);
+            DateTime dt = new DateTime((long) totalAsDateTimeTicks, DateTimeKind.Utc);
+            return dt;
+
         }
 
         private void TestTimeSpanDurationConversions(long tsTicks)
