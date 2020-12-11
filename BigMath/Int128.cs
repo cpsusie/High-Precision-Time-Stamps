@@ -7,28 +7,25 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 using HpTimeStamps.BigMath.Utils;
+using JetBrains.Annotations;
 
 namespace HpTimeStamps.BigMath
 {
     /// <summary>
     ///     Represents a 128-bit signed integer.
     /// </summary>
-    [DebuggerDisplay("{DebuggerDisplay,nq}")]
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
     [DataContract]
     internal struct Int128 : IComparable<Int128>, IComparable, IEquatable<Int128>, IFormattable
     {
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         [FieldOffset(0)] [DataMember]
         internal ulong _lo;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         [FieldOffset(8)] [DataMember]
         internal ulong _hi;
 
@@ -348,7 +345,7 @@ namespace HpTimeStamps.BigMath
         /// after casting to unsigned the value will be returned in its 2's complement form
         /// </summary>
         /// <returns>The absolute value as an unsigned integer</returns>
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public readonly UInt128 UnsignedAbsoluteValue()
         {
             UInt128 me = new UInt128(High, Low);
@@ -374,26 +371,27 @@ namespace HpTimeStamps.BigMath
                 formatProvider = CultureInfo.CurrentCulture;
             }
 
+            char ch = '\0';
             if (!string.IsNullOrEmpty(format))
             {
-                char ch = format[0];
+                ch = format[0];
                 if ((ch == 'x') || (ch == 'X'))
                 {
                     int min;
                     int.TryParse(format.Substring(1).Trim(), out min);
                     return this.ToBytes(false).ToHexString(ch == 'X', min, trimZeros: true);
                 }
-
-                if (((ch != 'G') && (ch != 'g')) && ((ch != 'D') && (ch != 'd')))
+                
+                if (((ch != 'G') && (ch != 'g')) && ((ch != 'D') && (ch != 'd') && (ch != 'n') && (ch != 'N')))
                 {
                     throw new NotSupportedException("Not supported format: " + format);
                 }
             }
 
-            return ToString((NumberFormatInfo) formatProvider.GetFormat(typeof (NumberFormatInfo)));
+            return ToString((NumberFormatInfo) formatProvider.GetFormat(typeof (NumberFormatInfo)), ch == 'n' || ch == 'N');
         }
 
-        private readonly string ToString(NumberFormatInfo info)
+        private readonly string ToString(NumberFormatInfo info, bool includeSeparators = false)
         {
             if (Sign == 0)
             {
@@ -401,25 +399,37 @@ namespace HpTimeStamps.BigMath
             }
 
             bool negative = Sign < 0;
-
+            
 
             var sb = new StringBuilder();
             var ten = new UInt128(0, 10);
             UInt128 current = ToUAbs();
             UInt128 r;
+            int digitsInserted = 0;
             while (true)
             {
+              
                 UInt128.DivMod(current, in ten, out current, out r);
                 if (r._lo > 0 || current != 0 || (sb.Length == 0))
                 {
                     sb.Insert(0, (char) ('0' + r._lo));
+                    if (includeSeparators && ++digitsInserted % 3 == 0)
+                    {
+                        sb.Insert(0, info.NumberGroupSeparator);
+                    }
                 }
                 if (current== 0)
                 {
                     break;
                 }
             }
-
+            
+            
+            if (sb.StartsWith(info.NumberGroupSeparator.AsSpan()))
+            {
+                sb.Remove(0, info.NumberGroupSeparator.Length);
+            }
+            
             string s = sb.ToString();
             if ((negative) && (s != "0"))
             {
@@ -429,6 +439,8 @@ namespace HpTimeStamps.BigMath
             return s;
         }
 
+        
+        
         /// <summary>
         ///     Converts the numeric value to an equivalent object. The return value indicates whether the conversion succeeded.
         /// </summary>
@@ -956,9 +968,9 @@ namespace HpTimeStamps.BigMath
             return value;
         }
 
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public readonly UInt128 ToUAbs() => UnsignedAbsoluteValue();
-        [Pure]
+        [System.Diagnostics.Contracts.Pure]
         public static UInt128 UAbs(in Int128 value) => value.UnsignedAbsoluteValue();
 
 
@@ -2012,9 +2024,25 @@ namespace HpTimeStamps.BigMath
             _hi = hi;
         }
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        
         [FieldOffset(0)] [DataMember] internal ulong _lo;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         [FieldOffset(8)] [DataMember] internal ulong _hi;
     }
+
+    internal static class StringBuilderExtensions
+    {
+        public static bool StartsWith([NotNull] this StringBuilder sb, ReadOnlySpan<char> chars)
+        {
+            if (sb == null) throw new ArgumentNullException(nameof(sb));
+            if (sb.Length == 0 || sb.Length < chars.Length) return false;
+            int idx = 0;
+            foreach (char c in chars)
+            {
+                if (c != sb[idx++])
+                    return false;
+            }
+            return true;
+        }
+    }
+    
 }

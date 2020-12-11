@@ -202,6 +202,50 @@ namespace UnitTests
 
             TestConversionArithmetic(rawMs, durationTicksPerSecond, tsTicksPerSecond);
         }
+        
+        [Fact]
+        public void TestPrintWithSeparators()
+        {
+            Int128 printMe = new Int128(0xc0de_d00d_fea2_b00b, 0xcafe_babe_face_b00b);
+            string withoutSeparators = printMe.ToString();
+            string asHexaDecimal = printMe.ToString("X");
+            string withSeparators = printMe.ToString("N");
+            Helper.WriteLine("decimal: {0}.", withoutSeparators);
+            Helper.WriteLine("hexadecimal: 0x{0}.", asHexaDecimal);
+            Helper.WriteLine("With separators: {0}.", withSeparators);
+            Assert.Equal("-83,913,681,977,670,342,067,983,590,708,596,527,093", withSeparators);
+            Int128 zero = 0;
+            Int128 negOne = -1;
+            Int128 one = 1;
+            Int128 ten = 10;
+            Int128 negTen = -10;
+            Int128 ninetyNine = 99;
+            Int128 negativeNinetyNine = -99;
+            Int128 oneHundred = 100;
+            Int128 negOneHundred = -100;
+            Int128 ninehundredNinetyNine = 999;
+            Int128 negNinehundredNinetyNine = -999;
+            Int128 oneThousand = 1000;
+            Int128 negOneThousand = -1000;
+            Int128 oneHundredThousand = 100000;
+            Int128 negOneHundredThousand = -100000;
+            Assert.Equal("0",zero.ToString("n"));
+            Assert.Equal("-1", negOne.ToString("N"));
+            Assert.Equal("1", one.ToString("N"));
+            Assert.Equal("10", ten.ToString("N"));
+            Assert.Equal("-10", negTen.ToString("N"));
+            Assert.Equal("99", ninetyNine.ToString("N"));
+            Assert.Equal("-99", negativeNinetyNine.ToString("N"));
+            Assert.Equal("100", oneHundred.ToString("N"));
+            Assert.Equal("-100", negOneHundred.ToString("N"));
+            Assert.Equal("999", ninehundredNinetyNine.ToString("N"));
+            Assert.Equal("-999", negNinehundredNinetyNine.ToString("N"));
+            Assert.Equal("1,000", oneThousand.ToString("N"));
+            Assert.Equal("-1,000", negOneThousand.ToString("N"));
+            Assert.Equal("100,000", oneHundredThousand.ToString("N"));
+            Assert.Equal("-100,000", negOneHundredThousand.ToString("N"));
+        }
+        
         [Fact]
         public void TestRandomConversions()
         {

@@ -219,11 +219,22 @@ namespace UnitTests
         public void TestMonotonicStampRoundTripDurationScale()
         {
             MonotonicStamp stamp = Fixture.StampNow;
+            DateTime stampAsUtcDateTime = stamp.ToUtcDateTime();
             (int wholeDays, int wholeSeconds, int wholeNanoseconds, decimal fractionalNanoseconds, Int128 totalWholeNanoseconds)=  BreakdownMonotonicStampNanosecondsScale(stamp);
             Helper.WriteLine(
                 "For monotonic stamp [{0}], nanoseconds breakdown: [{1:N0}] whole days + [{2:N0}] whole seconds + [{3:N0}] whole nanoseconds + [{4:N}] fractional nanoseconds.",
                 stamp, wholeDays, wholeSeconds, wholeNanoseconds, fractionalNanoseconds);
             Helper.WriteLine("Total whole nanoseconds for that stamp: [{0}].", totalWholeNanoseconds);
+            (int dtWholeDays, int dtWholeSeconds, int dtWholeNanoseconds, Int128 originalTotalNanoseconds) =
+                BreakDownDateTimeNanosecondsScale(stampAsUtcDateTime);
+            Helper.WriteLine(
+                "Utc DateTime whole days: [{0:N0}]; Utc DateTime whole seconds [{1:N0}]; Utc DateTime whole nanoseconds [{2:N0}]; UtcDateTime total nanoseconds: [{3}].",
+                dtWholeDays, dtWholeSeconds, dtWholeNanoseconds, originalTotalNanoseconds);
+            Assert.Equal(wholeDays, dtWholeDays);
+            Assert.Equal(wholeSeconds, dtWholeSeconds );
+
+            int diff = Math.Abs(dtWholeNanoseconds - wholeNanoseconds);
+            Assert.True(diff <= 1000);
         }
 
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
@@ -343,17 +354,16 @@ namespace UnitTests
             Int128 pdTicksPerSecond = PortableDuration.TicksPerSecond;
             
             Int128 timespanTicksForUtcReferenceTime = utcReferenceTime.Ticks;
-
+            
             Duration tsTicksForUtcRefAsDuration = Duration.FromTimespanTicks((long) timespanTicksForUtcReferenceTime);
 
             (Int128 durationTicksForUtcReferenceTime, Int128 remainderTicks) =
                 Int128.DivRem(timespanTicksForUtcReferenceTime * Duration.TicksPerSecond, dateTimeTps);
-
-            Helper.WriteLine("Remainder ticks: [{0:N}].", ((decimal)(long)remainderTicks) / (long) dateTimeTps);
-            Assert.True(durationTicksForUtcReferenceTime <= long.MaxValue &&
-                   tsTicksForUtcRefAsDuration.Ticks <= long.MaxValue);
+            
+            Helper.WriteLine("Remainder ticks: [{0:N}].", ((decimal)remainderTicks) / (long) dateTimeTps);
+            
             Helper.WriteLine("tsTicksForUtcRefAsDuration: [{0:N}]; durationTicksForUtcReferenceTime: [{1:N}]",
-                (long) tsTicksForUtcRefAsDuration.Ticks, (long) durationTicksForUtcReferenceTime);
+                 tsTicksForUtcRefAsDuration.Ticks, durationTicksForUtcReferenceTime);
             Assert.Equal(tsTicksForUtcRefAsDuration.Ticks, durationTicksForUtcReferenceTime);
 
 
