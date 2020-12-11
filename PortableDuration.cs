@@ -190,6 +190,19 @@ namespace HpTimeStamps
         public static PortableDuration FromMilliseconds(double value) => Interval(value, TicksPerMillisecond);
 
         /// <summary>
+        /// Compute a duration from a value representing microseconds
+        /// </summary>
+        /// <param name="value">Value representing milliseconds</param>
+        /// <returns>A duration</returns>
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromMicroseconds(double value)
+        {
+            Debug.Assert(TicksPerSecond == 1_000_000_000, "Expect pd tics to always be nanoseconds");
+            double result = value * 1_000.0;
+            return new PortableDuration((PdInt) result);
+        }
+
+        /// <summary>
         /// Compute a duration from a value representing minutes
         /// </summary>
         /// <param name="value">Value representing minutes</param>
@@ -716,5 +729,7 @@ namespace HpTimeStamps
         [SuppressMessage("ReSharper", "InconsistentNaming")] //only internal by special dispensation
         [DataMember] internal readonly PdInt _ticks;
         #endregion
+
+       
     }
 }

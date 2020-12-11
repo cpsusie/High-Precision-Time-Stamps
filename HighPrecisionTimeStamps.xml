@@ -2489,6 +2489,14 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
         </member>
+        <member name="M:HpTimeStamps.PortableDuration.FromMicroseconds(System.Double)">
+            <summary>
+            Compute a duration from a value representing microseconds
+            </summary>
+            <param name="value">Value representing milliseconds</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
         <member name="M:HpTimeStamps.PortableDuration.FromMinutes(System.Double)">
             <summary>
             Compute a duration from a value representing minutes

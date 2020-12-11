@@ -215,6 +215,17 @@ namespace UnitTests
             
         }
 
+        [Fact]
+        public void TestMonotonicStampRoundTripDurationScale()
+        {
+            MonotonicStamp stamp = Fixture.StampNow;
+            (int wholeDays, int wholeSeconds, int wholeNanoseconds, decimal fractionalNanoseconds, Int128 totalWholeNanoseconds)=  BreakdownMonotonicStampNanosecondsScale(stamp);
+            Helper.WriteLine(
+                "For monotonic stamp [{0}], nanoseconds breakdown: [{1:N0}] whole days + [{2:N0}] whole seconds + [{3:N0}] whole nanoseconds + [{4:N}] fractional nanoseconds.",
+                stamp, wholeDays, wholeSeconds, wholeNanoseconds, fractionalNanoseconds);
+            Helper.WriteLine("Total whole nanoseconds for that stamp: [{0}].", totalWholeNanoseconds);
+        }
+
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, @"Value may not be negative.");
@@ -289,11 +300,11 @@ namespace UnitTests
             ticks *= 100; //convert timespan ticks to nanoseconds
             (Int128 wholeDays, Int128 _) = Int128.DivRem( ticks , nanosecondPerDay);
             Int128 remainingNanoseconds = ticks - (wholeDays * nanosecondPerDay);
-            Assert.True(wholeDays < int.MaxValue);
+            Assert.True(wholeDays <= int.MaxValue);
             Int128 wholeSeconds;
             (wholeSeconds, remainingNanoseconds) = Int128.DivRem(remainingNanoseconds, billion);
-            Assert.True(wholeDays < int.MaxValue);
-            Assert.True(remainingNanoseconds < int.MaxValue);
+            Assert.True(wholeDays <= int.MaxValue);
+            Assert.True(remainingNanoseconds <= int.MaxValue);
             
             return ((int) wholeDays, (int) wholeSeconds, (int) remainingNanoseconds, ticks);
 
@@ -317,6 +328,71 @@ namespace UnitTests
             return dt;
 
         }
+
+
+        
+
+        private (int WholeDays, int WholeSeconds, int WholeNanoseconds, decimal FractionalNanoseconds, Int128
+            TotalWholeNanoseconds)  BreakdownMonotonicStampNanosecondsScale(MonotonicStamp stamp)
+        {
+            var (utcReferenceTime, offsetFromReference, localUtcOffset) = stamp.Value;
+
+            DateTime stampAsUtcDateTime = stamp.ToUtcDateTime();
+            Int128 durationTps = Duration.TicksPerSecond;
+            Int128 dateTimeTps = TimeSpan.TicksPerSecond;
+            Int128 pdTicksPerSecond = PortableDuration.TicksPerSecond;
+            
+            Int128 timespanTicksForUtcReferenceTime = utcReferenceTime.Ticks;
+
+            Duration tsTicksForUtcRefAsDuration = Duration.FromTimespanTicks((long) timespanTicksForUtcReferenceTime);
+
+            (Int128 durationTicksForUtcReferenceTime, Int128 remainderTicks) =
+                Int128.DivRem(timespanTicksForUtcReferenceTime * Duration.TicksPerSecond, dateTimeTps);
+
+            Helper.WriteLine("Remainder ticks: [{0:N}].", ((decimal)(long)remainderTicks) / (long) dateTimeTps);
+            Assert.True(durationTicksForUtcReferenceTime <= long.MaxValue &&
+                   tsTicksForUtcRefAsDuration.Ticks <= long.MaxValue);
+            Helper.WriteLine("tsTicksForUtcRefAsDuration: [{0:N}]; durationTicksForUtcReferenceTime: [{1:N}]",
+                (long) tsTicksForUtcRefAsDuration.Ticks, (long) durationTicksForUtcReferenceTime);
+            Assert.Equal(tsTicksForUtcRefAsDuration.Ticks, durationTicksForUtcReferenceTime);
+
+
+            Int128 durationTicksWithOffset = (tsTicksForUtcRefAsDuration + offsetFromReference).Ticks;
+
+            
+            
+            Int128 durationTicksBackToTimespanTicks =
+                durationTicksWithOffset * dateTimeTps / Duration.TicksPerSecond;
+
+            Assert.True(durationTicksBackToTimespanTicks < long.MaxValue);
+            DateTime roundTrippedWithOffsetFromReference = new DateTime((long) durationTicksBackToTimespanTicks, DateTimeKind.Utc);
+            
+
+            Helper.WriteLine("Expected stamp (monotonic utc): [{0:O}]; Actual round trip: [{1:O}].", stampAsUtcDateTime, roundTrippedWithOffsetFromReference);
+            PortableDuration tolerance = PortableDuration.FromMicroseconds(2.5);
+            TimeSpan oneMicro = (TimeSpan) tolerance;
+            Assert.Equal(stampAsUtcDateTime, roundTrippedWithOffsetFromReference, oneMicro);
+
+            (Int128 totalWholeNanoseconds, Int128 fractionalTicks) =
+                Int128.DivRem(durationTicksWithOffset * pdTicksPerSecond, durationTps);
+            Assert.True(fractionalTicks <= long.MaxValue);
+            long fractionalTicks64 = (long) fractionalTicks;
+            decimal durationTpsDec = (decimal) durationTps;
+            decimal fractionalNanoseconds = fractionalTicks64 / durationTpsDec;
+
+            Int128 billion = 1_000_000_000;
+            Int128 nanosecondPerDay = ((Int128)86_400) * billion;
+
+            int wholeDays = (int) (totalWholeNanoseconds / nanosecondPerDay);
+            Int128 remainingNanoseconds = totalWholeNanoseconds - (wholeDays * nanosecondPerDay);
+            Int128 wholeSeconds128;
+            (wholeSeconds128, remainingNanoseconds) = Int128.DivRem(remainingNanoseconds, billion);
+            Assert.True(wholeSeconds128 <= int.MaxValue && remainingNanoseconds <= int.MaxValue);
+            int wholeSeconds = (int) wholeSeconds128;
+            int wholeNanoSeconds = (int) remainingNanoseconds;
+            return (wholeDays, wholeSeconds, wholeNanoSeconds, fractionalNanoseconds, totalWholeNanoseconds);
+        }
+
 
         private void TestTimeSpanDurationConversions(long tsTicks)
         {
