@@ -117,6 +117,12 @@ namespace UnitTests
             int portableDirectFractionalSeconds = portable.FractionalSeconds;
             //convert to milliseconds before comparison
             Assert.Equal(portableDirectFractionalSeconds / 1_000_000, millisecondsPortableStampDateTime);
+            string stampStr = utcFromStamp.ToString("O");
+            //string fudge = "1919-06-10T20:32:41.3210000Z";
+            //int length = fudge.Length;
+            ReadOnlySpan<char> chars = stampStr.AsSpan().Slice(stampStr.Length-8, 7);
+            int value = Int32.Parse(chars);
+            Assert.Equal(value, portableDirectFractionalSeconds / 100);
         }
 
         [Fact]
