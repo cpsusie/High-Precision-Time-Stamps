@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HpTimeStamps.BigMath;
@@ -41,19 +42,63 @@ namespace HpTimeStamps
     /// </summary>
     /// <typeparam name="TStampContext">The common context used by all stamps parameterized with this type</typeparam>
     /// <remarks>DO NOT USE ACROSS PROCESSES!  DO NOT SERIALIZE!  NOT FOR ARCHIVE!</remarks>
+    [SuppressMessage("ReSharper", "StaticMemberInGenericType")] //YES! Intended.  Every stamp context type should have its own static properties.
     public readonly struct MonotonicTimeStamp<TStampContext> : IEquatable<MonotonicTimeStamp<TStampContext>>, IComparable<MonotonicTimeStamp<TStampContext>> where TStampContext : struct, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         /// <summary>
+        /// The maximum <see cref="DateTime"/> capable of being expressed in terms of the current monotonic context (i.e. converted into 
+        /// a monotonic stamp).  Importing date times into monotonic stamps is not recommended.  Instead,
+        /// if the monotonic stamp is going to be meaningful for beyond a brief period in the currently running process,
+        /// it should be converted into a <see cref="DateTime"/> or a <see cref="PortableMonotonicStamp"/>.
+        /// </summary>
+        /// <remarks>
+        /// This amount will vary depending on system configuration.  Do not make assumptions -- it can get pretty strange on
+        /// some systems.
+        /// </remarks>
+        public static DateTime MaximumImportableDateTime { get; }
+
+        /// <summary>
+        /// The minimum <see cref="DateTime"/> capable of being expressed in terms of the current monotonic context (i.e. converted into 
+        /// a monotonic stamp).  Importing date times into monotonic stamps is not recommended.  Instead,
+        /// if the monotonic stamp is going to be meaningful for beyond a brief period in the currently running process,
+        /// it should be converted into a <see cref="DateTime"/> or a <see cref="PortableMonotonicStamp"/>.
+        /// </summary>
+        /// <remarks>
+        /// This amount will vary depending on system configuration.  Do not make assumptions -- it can get pretty strange on
+        /// some systems.
+        /// </remarks>
+        public static DateTime MinimumImportableDateTime { get; }
+
+        /// <summary>
+        /// The maximum value of the monotonic timestamp in the current process.
+        /// </summary>
+        /// <remarks>
+        /// Unlike <see cref="DateTime"/> and <see cref="PortableMonotonicStamp"/>, this value may change from system to system.
+        /// Make no assumptions about it beyond the promise it will not change in the currently running process.
+        /// </remarks>
+        public static MonotonicTimeStamp<TStampContext> MaxValue { get; }
+        /// <summary>
+        /// The minimum value of the monotonic timestamp in the current process.
+        /// </summary>
+        /// <remarks>
+        /// Unlike <see cref="DateTime"/> and <see cref="PortableMonotonicStamp"/>, this value may change from system to system.
+        /// Make no assumptions about it beyond the promise it will not change in the currently running process.
+        /// </remarks>
+        public static MonotonicTimeStamp<TStampContext> MinValue { get; }
+
+        /// <summary>
         /// Converts a monotonic timestamp into a format suitable for use across
         /// process boundaries or to be serialized and deserialized in a different process.
-        ///
-        /// This is a completely roundtrippable conversion if and only if it is converted back IN-PROCESS.
         ///
         /// If loaded into a different process, time zone offset will be lost.
         /// </summary>
         /// <param name="timestamp">the stamp to convert</param>
         /// <returns>a portable monotonic timestamp</returns>
-        public static implicit operator PortableMonotonicStamp(in MonotonicTimeStamp<TStampContext> timestamp) =>
+        /// <remarks>
+        /// This might not be 100% round-trippable if the conversion factor between the stopwatch and nanoseconds doesn't lead itself to 
+        /// nice round division.  Check <see cref="IMonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.
+        /// </remarks>
+        public static explicit operator PortableMonotonicStamp(in MonotonicTimeStamp<TStampContext> timestamp) =>
             timestamp.ToPortableStamp();
 
         /// <summary>
@@ -135,6 +180,70 @@ namespace HpTimeStamps
             ToToTsTickConversionFactorDenominator = swTicksPerSecond / gcd;
             UtcLocalOffsetPeriod = context.UtcLocalTimeOffset;
             ReferenceTicksAsDuration = Duration.FromStopwatchTicks(referenceTicks);
+            (MaximumImportableDateTime, MinimumImportableDateTime, MaxValue, MinValue) = CalculateMaximumAndMinimumImportableDateTimes();
+
+        }
+
+
+        static (DateTime Max, DateTime Min, MonotonicTimeStamp<TStampContext> MaxStamp, MonotonicTimeStamp<TStampContext> MinStamp ) CalculateMaximumAndMinimumImportableDateTimes()
+        {
+            long dateTimeUtcReferenceTicks = UtcReference.Ticks;
+
+
+            DateTime effectiveMinMonotonicDateTime = DateTime.MinValue.ToUniversalTime() + TimeSpan.FromDays(7);
+            DateTime effectiveMaxMonotonicDateTime = DateTime.MaxValue.ToUniversalTime() - TimeSpan.FromDays(7);
+            //Because MIN AND MAX are apparently UNSPECIFIED rather than UTC in some versions of .NET, it can screw up min max calculations.  Since we aren't likely to ever being collecting
+            //monotonic stamps anywhere around min or max value, put a week buffer time in there to prevent conflict.
+            long dateTimeMaxTimeSpanTicks = effectiveMaxMonotonicDateTime.Ticks;
+            long dateTimeMinTimeSpanTicks = effectiveMinMonotonicDateTime.Ticks;
+            
+#if DEBUG
+            DateTime confirmedMax = new DateTime(dateTimeMaxTimeSpanTicks, DateTimeKind.Utc);
+            DateTime confirmedMin = new DateTime(dateTimeMinTimeSpanTicks, DateTimeKind.Utc);
+
+            Debug.Assert(confirmedMax == effectiveMaxMonotonicDateTime);
+            Debug.Assert(confirmedMin == effectiveMinMonotonicDateTime);
+#endif
+
+
+            TimeSpan maxDurationOffsetAsTimeSpan = TimeSpan.FromTicks(dateTimeMaxTimeSpanTicks - dateTimeUtcReferenceTicks);
+            TimeSpan minDurationOffsetAsTimeSpan = TimeSpan.FromTicks(dateTimeMinTimeSpanTicks - dateTimeUtcReferenceTicks);
+
+#if DEBUG
+            DateTime maxDateTime = new DateTime((TimeSpan.FromTicks(dateTimeUtcReferenceTicks) + maxDurationOffsetAsTimeSpan).Ticks, DateTimeKind.Utc);
+            DateTime minDateTime = new DateTime((TimeSpan.FromTicks(dateTimeUtcReferenceTicks) + minDurationOffsetAsTimeSpan).Ticks, DateTimeKind.Utc);
+            Debug.WriteLine($"Max datetime: {maxDateTime:O}; Min datetime: {minDateTime:O}");
+#endif
+
+            Duration maxDurationOffset = (Duration) maxDurationOffsetAsTimeSpan;
+            Duration minDurationOffset = (Duration) minDurationOffsetAsTimeSpan;
+
+            Debug.Assert((TimeSpan) maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
+            Debug.Assert((TimeSpan) minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
+
+
+            if (maxDurationOffset.Ticks > long.MaxValue)
+            {
+                maxDurationOffset = Duration.FromStopwatchTicks(long.MaxValue);
+            }
+
+            if (minDurationOffset.Ticks < long.MinValue)
+            {
+                minDurationOffset = Duration.FromStopwatchTicks(long.MinValue);
+            }
+
+            TimeSpan roundTrippingMin = (TimeSpan) minDurationOffset;
+            TimeSpan roundTrippingMax = (TimeSpan) maxDurationOffset;
+            Debug.Assert(roundTrippingMin <= minDurationOffsetAsTimeSpan);
+
+            Debug.Assert((TimeSpan)maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
+            Debug.Assert((TimeSpan)minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
+
+            MonotonicTimeStamp<TStampContext> max =
+                new MonotonicTimeStamp<TStampContext>((long) maxDurationOffset.Ticks);
+            MonotonicTimeStamp<TStampContext> min =
+                new MonotonicTimeStamp<TStampContext>((long) minDurationOffset.Ticks);
+            return (max.ToUtcDateTime(), min.ToUtcDateTime(), max, min);
         }
 
         /// <summary>
@@ -158,8 +267,15 @@ namespace HpTimeStamps
         /// </summary>
         /// <returns>a date-time</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DateTime ToUtcDateTime() => DateTime.SpecifyKind(UtcReference + ((TimeSpan) ElapsedSinceUtcReference), DateTimeKind.Utc);
+        public DateTime ToUtcDateTime()
+        {
+
+            var ret =  DateTime.SpecifyKind(UtcReference + ((TimeSpan)ElapsedSinceUtcReference), DateTimeKind.Utc);
+            return ret;
+        }
+
         
+
         /// <summary>
         /// Tests two stamps for value equality
         /// </summary>

@@ -2054,17 +2054,61 @@
              <typeparam name="TStampContext">The common context used by all stamps parameterized with this type</typeparam>
              <remarks>DO NOT USE ACROSS PROCESSES!  DO NOT SERIALIZE!  NOT FOR ARCHIVE!</remarks>
         </member>
-        <member name="M:HpTimeStamps.MonotonicTimeStamp`1.op_Implicit(HpTimeStamps.MonotonicTimeStamp{`0}@)~HpTimeStamps.PortableMonotonicStamp">
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MaximumImportableDateTime">
+            <summary>
+            The maximum <see cref="T:System.DateTime"/> capable of being expressed in terms of the current monotonic context (i.e. converted into 
+            a monotonic stamp).  Importing date times into monotonic stamps is not recommended.  Instead,
+            if the monotonic stamp is going to be meaningful for beyond a brief period in the currently running process,
+            it should be converted into a <see cref="T:System.DateTime"/> or a <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>.
+            </summary>
+            <remarks>
+            This amount will vary depending on system configuration.  Do not make assumptions -- it can get pretty strange on
+            some systems.
+            </remarks>
+        </member>
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MinimumImportableDateTime">
+            <summary>
+            The minimum <see cref="T:System.DateTime"/> capable of being expressed in terms of the current monotonic context (i.e. converted into 
+            a monotonic stamp).  Importing date times into monotonic stamps is not recommended.  Instead,
+            if the monotonic stamp is going to be meaningful for beyond a brief period in the currently running process,
+            it should be converted into a <see cref="T:System.DateTime"/> or a <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>.
+            </summary>
+            <remarks>
+            This amount will vary depending on system configuration.  Do not make assumptions -- it can get pretty strange on
+            some systems.
+            </remarks>
+        </member>
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MaxValue">
+            <summary>
+            The maximum value of the monotonic timestamp in the current process.
+            </summary>
+            <remarks>
+            Unlike <see cref="T:System.DateTime"/> and <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>, this value may change from system to system.
+            Make no assumptions about it beyond the promise it will not change in the currently running process.
+            </remarks>
+        </member>
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MinValue">
+            <summary>
+            The minimum value of the monotonic timestamp in the current process.
+            </summary>
+            <remarks>
+            Unlike <see cref="T:System.DateTime"/> and <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>, this value may change from system to system.
+            Make no assumptions about it beyond the promise it will not change in the currently running process.
+            </remarks>
+        </member>
+        <member name="M:HpTimeStamps.MonotonicTimeStamp`1.op_Explicit(HpTimeStamps.MonotonicTimeStamp{`0}@)~HpTimeStamps.PortableMonotonicStamp">
              <summary>
              Converts a monotonic timestamp into a format suitable for use across
              process boundaries or to be serialized and deserialized in a different process.
-            
-             This is a completely roundtrippable conversion if and only if it is converted back IN-PROCESS.
             
              If loaded into a different process, time zone offset will be lost.
              </summary>
              <param name="timestamp">the stamp to convert</param>
              <returns>a portable monotonic timestamp</returns>
+             <remarks>
+             This might not be 100% round-trippable if the conversion factor between the stopwatch and nanoseconds doesn't lead itself to 
+             nice round division.  Check <see cref="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.
+             </remarks>
         </member>
         <member name="M:HpTimeStamps.MonotonicTimeStamp`1.op_Explicit(HpTimeStamps.PortableMonotonicStamp@)~HpTimeStamps.MonotonicTimeStamp{`0}">
             <summary>

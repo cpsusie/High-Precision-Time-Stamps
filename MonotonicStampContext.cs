@@ -20,8 +20,8 @@ namespace HpTimeStamps
         {
             Guid id = Guid.NewGuid();
             long refTicks = Stopwatch.GetTimestamp();
-            DateTime localTime = DateTime.Now;
-            DateTime utcTime = localTime.ToUniversalTime();
+            DateTime utcTime = DateTime.UtcNow;
+            DateTime localTime = utcTime.ToLocalTime();
             long ticksPerSecond = Stopwatch.Frequency;
             if (!Stopwatch.IsHighResolution)
             {

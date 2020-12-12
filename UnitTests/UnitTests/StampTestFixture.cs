@@ -40,7 +40,7 @@ namespace UnitTests
 
         public MonotonicStamp MonotonicStampNow => TheMsFixture.StampNow;
 
-        public PortableMonotonicStamp PortableStampNow => MonotonicStampNow;
+        public PortableMonotonicStamp PortableStampNow => TheMsFixture.StampNow.ToPortableStamp();
 
         static StampTestFixture()
         {

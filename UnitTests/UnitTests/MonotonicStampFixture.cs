@@ -4,6 +4,7 @@ using System.Runtime.Serialization;
 using System.Xml;
 using HpTimeStamps;
 using JetBrains.Annotations;
+using Xunit;
 using MonotonicStampContext = HpTimeStamps.MonotonicStampContext;
 namespace UnitTests
 {
@@ -28,6 +29,13 @@ namespace UnitTests
 
         static MonotonicStampFixture()
         {
+            if (!MonotonicStampSource.IsContextSet)
+            {
+                var temp = MonotonicStampSource.StampContext;
+                Assert.False(temp.IsInvalid);
+                Assert.True(MonotonicStampSource.IsContextSet);
+            }
+            
             StampContextLocalBeginReference = StampContext.LocalTimeBeginReference;
             StampContextUtcBeginReference = StampContext.UtcDateTimeBeginReference;
             StopwatchTickEquivalentToRefTime = StampContext.ReferenceTicks;

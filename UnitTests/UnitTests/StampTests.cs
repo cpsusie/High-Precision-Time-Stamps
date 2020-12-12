@@ -137,7 +137,7 @@ namespace UnitTests
                 utcRefTimeNanosecondSinceNetEpoch + offsetFromReferenceInNanoseconds.Ticks;
             Helper.WriteLine($"Monotonic stamp's distanceFromEpochInNanoseconds: {monotonicStampDistEpochInNanoSeconds}");
 
-            PortableMonotonicStamp pstamp = stamp;
+            PortableMonotonicStamp pstamp = (PortableMonotonicStamp) stamp;
             Helper.WriteLine($"pstamp nanoseconds dist from epoch: {pstamp._dateTimeNanosecondOffsetFromMinValueUtc}");
             Assert.Equal(monotonicStampDistEpochInNanoSeconds, pstamp._dateTimeNanosecondOffsetFromMinValueUtc );
         }
