@@ -123,6 +123,30 @@ namespace UnitTests
             ReadOnlySpan<char> chars = stampStr.AsSpan().Slice(stampStr.Length-8, 7);
             int value = Int32.Parse(chars);
             Assert.Equal(value, portableDirectFractionalSeconds / 100);
+
+            Helper.WriteLine("Here is the original monotonic stamp: [{0}].", stamp);
+            Helper.WriteLine("Here is the portable version: [{0}].", portable);
+        }
+
+        [Fact]
+        public void TestDtStringsIso8601AlwaysSameLength()
+        {
+            DateTime noFractionalSecondsJan = new DateTime(1919, 1, 1, 1, 1, 1, DateTimeKind.Utc);
+            int noFrSecJanLength = GetLength(noFractionalSecondsJan);
+            DateTime withFractionalSecondsJan = noFractionalSecondsJan + TimeSpan.FromMilliseconds(123.4567);
+            int wFrcSJanLength = GetLength(withFractionalSecondsJan);
+            DateTime noFractionalSecondsDec = new DateTime(1919, 12, 12, 17, 17, 59, DateTimeKind.Utc);
+            int noFrSD = GetLength(noFractionalSecondsDec);
+            DateTime withFracSecDec = noFractionalSecondsDec + TimeSpan.FromMilliseconds(999.9999);
+            int wFrSD = GetLength(withFracSecDec);
+            
+            Assert.True(noFrSecJanLength == wFrcSJanLength &&
+                        wFrcSJanLength == noFrSD &&
+                        noFrSD == wFrSD);
+
+            Helper.WriteLine("All 8601 datetime stamps are {0:N0} characters long.", noFrSecJanLength);
+
+            static int GetLength(DateTime dt) => dt.ToString("O").Length;
         }
 
         [Fact]

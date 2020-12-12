@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Text;
 using HpTimeStamps.BigMath;
 
 namespace HpTimeStamps
@@ -119,7 +120,7 @@ namespace HpTimeStamps
         /// <summary>
         /// The fractional seconds (1 - 9,999,999)
         /// </summary>
-        public int FractionalSeconds => GetComponents().FractionalSeconds;
+        public int FractionalSeconds => GetFractionalSeconds();
 
         /// <summary>
         /// Amount of time elapsed since epoch
@@ -206,13 +207,12 @@ namespace HpTimeStamps
                 throw new PortableTimestampOverflowException("Overflow prevented conversion of portable monotonic stamp to a UTC DateTime.", inner);
             }
         }
-        
+
         /// <summary>
         /// Get a string representation of this value in ISO 8601 format
         /// </summary>
         /// <returns>A string representation.</returns>
-        public override string ToString() =>
-            $".NET Datetime epoch + {_dateTimeNanosecondOffsetFromMinValueUtc} nanoseconds"; 
+        public override string ToString() => BuildString();
         #endregion
         
         #region Equality/Comparison and Related Methods and Operators
@@ -336,12 +336,33 @@ namespace HpTimeStamps
 
         #region Private Methods
 
-        private (short Year, byte Month, byte Day, byte Hour, byte Minute, short WholeSeconds, int FractionalSeconds) GetComponents()
+        private string BuildString()
+        {
+            //if we have non-zero values (from nanoseconds vs datetime/timespan's tenth of a microsecond resolution), fill them in
+            //otherwise, don't waste space.  Maybe reconsider this later. ... want always same width?  ... want specify width?
+            //
+            var result = new StringBuilder(ToUtcDateTime().ToString("O"));
+            int fractionalSeconds = GetFractionalSeconds() % 100;
+            int penultimateChar = Math.DivRem(fractionalSeconds, 10, out int ultimateChar);
+            if (ultimateChar != 0)
+            {
+                result[result.Length - 1] = Convert.ToChar(penultimateChar);
+                result.Append(Convert.ToChar(ultimateChar));
+                result.Append('Z');
+            }
+            else if (penultimateChar != 0)
+            {
+                result[result.Length - 1] = Convert.ToChar(penultimateChar);
+                result.Append('Z');
+            }
+            return result.ToString();
+        }
+
+        private (short Year, byte Month, byte Day, byte Hour, byte Minute, short WholeSeconds) GetComponents()
         {
             DateTime utc = ToUtcDateTime();
             short year, wholeSeconds;
             byte month, day, hour, minute;
-            int fractionalSeconds;
             unchecked
             {
                 year = (short)utc.Year;
@@ -351,15 +372,22 @@ namespace HpTimeStamps
                 minute = (byte) utc.Minute;
                 wholeSeconds = (short) utc.Second;
 
-                (Int128 wholeSecondsFromStamp, Int128 fractionalSecondsStamp) =
-                    Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
-#if DEBUG
-                int wsfs = (int) (wholeSecondsFromStamp % 60);
-                Debug.Assert(wsfs == wholeSeconds);
-#endif
-                fractionalSeconds = (int) fractionalSecondsStamp;
+//                (Int128 wholeSecondsFromStamp, Int128 fractionalSecondsStamp) =
+//                    Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
+//#if DEBUG
+//                int wsfs = (int) (wholeSecondsFromStamp % 60);
+//                Debug.Assert(wsfs == wholeSeconds);
+//#endif
+//                fractionalSeconds = (int) fractionalSecondsStamp;
             }
-            return (year, month, day, hour, minute, wholeSeconds, fractionalSeconds);
+            return (year, month, day, hour, minute, wholeSeconds);
+        }
+
+        private int GetFractionalSeconds()
+        {
+            (Int128 _, Int128 fractionalSecondsStamp) =
+                    Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
+            return (int)fractionalSecondsStamp;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
