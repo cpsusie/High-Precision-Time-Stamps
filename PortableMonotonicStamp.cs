@@ -23,8 +23,50 @@ namespace HpTimeStamps
         /// </summary>
         public const long NanosecondsFrequency = 1_000_000_000;
 
-        internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch) =>
+        /// <summary>
+        /// Minimum value representable 
+        /// </summary>
+        public static ref readonly PortableMonotonicStamp MinValue => ref TheMinValue;
+        /// <summary>
+        /// Maximum value representable
+        /// </summary>
+        public static ref readonly PortableMonotonicStamp MaxValue => ref TheMaxValue;
+
+        internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch)
+        {
+            if (nanosecondSinceDtUtcEpoch > MaxValueUtcDtNanoseconds ||
+                nanosecondSinceDtUtcEpoch < MinValueUtcDtNanoseconds)
+                throw new ArgumentOutOfRangeException(nameof(nanosecondSinceDtUtcEpoch),
+                    nanosecondSinceDtUtcEpoch.ToString("N"),
+                    "The offset supplied places this stamp outside the supported range of .NET time.");
             _dateTimeNanosecondOffsetFromMinValueUtc = nanosecondSinceDtUtcEpoch;
+        }
+
+        static PortableMonotonicStamp()
+        {
+            MaxValueUtcDtNanoseconds = DateTime.MaxValue.ToUniversalTime().Ticks * (Int128)100;
+            MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128)100;
+            TheMinValue = new PortableMonotonicStamp(MinValueUtcDtNanoseconds);
+            TheMaxValue = new PortableMonotonicStamp(MaxValueUtcDtNanoseconds);
+            Validate();
+
+        }
+        [Conditional("DEBUG")]
+        static void Validate()
+        {
+            Debug.Assert(PortableDuration.TicksPerSecond == 1_000_000_000);
+            Debug.Assert(TimeSpan.TicksPerSecond == 10_000_000);
+            Int128 minValueNanoseconds = MinValue._dateTimeNanosecondOffsetFromMinValueUtc;
+            Int128 maxValueNanoseconds = MaxValue._dateTimeNanosecondOffsetFromMinValueUtc;
+
+            Int128 toTimeSpanTicksMin = minValueNanoseconds / 100;
+            Int128 toTimeSpanTicksMax = maxValueNanoseconds / 100;
+            Debug.Assert(toTimeSpanTicksMin >= long.MinValue);
+            Debug.Assert(toTimeSpanTicksMax <= long.MaxValue);
+            DateTime min = new DateTime((long) toTimeSpanTicksMin, DateTimeKind.Utc);
+            DateTime max = new DateTime((long) toTimeSpanTicksMax, DateTimeKind.Utc);
+            Debug.Assert(min == DateTime.MinValue.ToUniversalTime() && max == DateTime.MaxValue.ToUniversalTime());
+        }
 
         /// <summary>
         /// Convert this to a datetime in the local datetime timezone.
@@ -39,8 +81,7 @@ namespace HpTimeStamps
         {
             try
             {
-                DateTime utc = ToUtcDateTime();
-                return utc.ToLocalTime();
+                return ToUtcDateTime().ToLocalTime();
             }
             catch (ArgumentOutOfRangeException inner)
             {
@@ -61,14 +102,29 @@ namespace HpTimeStamps
         {
             try
             {
-                TimeSpan dtFromMin = CreateTimespanFromNanoseconds(_dateTimeNanosecondOffsetFromMinValueUtc);
-                DateTime utcTime = DateTime.SpecifyKind(DateTime.MinValue + dtFromMin, DateTimeKind.Utc);
-                return utcTime;
+                return (DateTime) this;
             }
             catch (ArgumentOutOfRangeException inner)
             {
                 throw new PortableTimestampOverflowException("Overflow prevented conversion of portable monotonic stamp to a UTC DateTime.", inner);
             }
+        }
+
+        /// <summary>
+        /// Convert a monotonic stamp to a portable stamp
+        /// </summary>
+        /// <param name="monotonicStamp">the monotonic stamp to convert</param>
+        /// <remarks>Will be roundtrippable (less timezone info ... will be made UTC)
+        /// unless the factors for conversion between monotonic stamps and nanoseconds are
+        /// not conducive to even division.  <see cref="MonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.</remarks>
+        public static explicit operator PortableMonotonicStamp(
+            in MonotonicTimeStamp<MonotonicStampContext> monotonicStamp)
+        {
+            var (utcReferenceTime, offsetFromReference, _) = monotonicStamp.Value;
+            Debug.Assert(utcReferenceTime.Kind == DateTimeKind.Utc);
+            Int128 refTimeNanosecondsSinceMin = (((Int128) utcReferenceTime.Ticks * 100) - MinValueUtcDtNanoseconds);
+            PortableDuration pd = (PortableDuration) offsetFromReference;
+            return new PortableMonotonicStamp(pd._ticks + refTimeNanosecondsSinceMin);
         }
 
         /// <summary>
@@ -78,6 +134,36 @@ namespace HpTimeStamps
         public override string ToString() =>
             $".NET Datetime epoch + {_dateTimeNanosecondOffsetFromMinValueUtc} nanoseconds";
         
+        /// <summary>
+        /// Convert a date time to a portable timestamp
+        /// </summary>
+        /// <param name="convertMe">value to convert</param>
+        /// <returns>converted value</returns>
+        /// <remarks>If the source is a <see cref="DateTime"/>, will be roundtrippable back (with timezone locality stripped) </remarks>
+        public static implicit operator PortableMonotonicStamp(DateTime convertMe)
+        {
+            Int128 ticksSinceUtcDotNetEpoch =
+                ((Int128) convertMe.ToUniversalTime().Ticks * 100) - MinValueUtcDtNanoseconds;
+            Debug.Assert(ticksSinceUtcDotNetEpoch >= MinValueUtcDtNanoseconds && ticksSinceUtcDotNetEpoch <= MaxValueUtcDtNanoseconds );
+            return new PortableMonotonicStamp(in ticksSinceUtcDotNetEpoch);
+        }
+
+        /// <summary>
+        /// Convert a monotonic stamp into a date time
+        /// </summary>
+        /// <param name="monotonicStamp"></param>
+        public static explicit operator DateTime(in PortableMonotonicStamp monotonicStamp)
+        {
+            if (monotonicStamp._dateTimeNanosecondOffsetFromMinValueUtc < MinValueUtcDtNanoseconds ||
+                monotonicStamp._dateTimeNanosecondOffsetFromMinValueUtc > MaxValueUtcDtNanoseconds)
+            {
+                throw new ArgumentOutOfRangeException(nameof(monotonicStamp), monotonicStamp,
+                    "The portable monotonic stamp is too big or too small to be expressed as a datetime.");
+            }
+            Int128 elapsedSinceEpoch = (MinValueUtcDtNanoseconds + monotonicStamp._dateTimeNanosecondOffsetFromMinValueUtc) / 100;
+            Debug.Assert(elapsedSinceEpoch >= long.MinValue && elapsedSinceEpoch <= long.MaxValue);
+            return new DateTime((long) elapsedSinceEpoch, DateTimeKind.Utc);
+        }
 
         /// <summary>
         /// Test two portable monotonic stamps for value equality
@@ -232,6 +318,9 @@ namespace HpTimeStamps
         private static readonly long LocalStopwatchFrequency = Stopwatch.Frequency;
         // ReSharper disable once InconsistentNaming -- internal where private normal for efficiency
         [DataMember] internal readonly Int128 _dateTimeNanosecondOffsetFromMinValueUtc;
-        
+        private static readonly Int128 MaxValueUtcDtNanoseconds = DateTime.MaxValue.ToUniversalTime().Ticks * (Int128)100;
+        private static readonly Int128 MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128)100;
+        private static readonly PortableMonotonicStamp TheMinValue;
+        private static readonly PortableMonotonicStamp TheMaxValue;
     }
 }

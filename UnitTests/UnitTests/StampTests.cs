@@ -91,55 +91,69 @@ namespace UnitTests
 
 
         }
-        
+
         [Fact]
-        public void TestPortables()
+        public void TestDateTimePortables()
         {
-            MonotonicStamp monotonicNow = Fixture.MonotonicStampNow;
-            PortableMonotonicStamp now = Fixture.PortableStampNow;
-            Helper.WriteLine("Portable stamp: {0}.", now);
-            MonotonicStamp convertedToMonotonic = (MonotonicStamp) now;
-            DateTime local = now.ToLocalDateTime();
-            DateTime utc = now.ToUtcDateTime();
-            Helper.WriteLine("Monotonic now: [{0}].", monotonicNow);
-            Helper.WriteLine("Portable->monotonic: [{0}].", convertedToMonotonic);
-            Helper.WriteLine("As local dt: [{0:O}].", local);
-            Helper.WriteLine("As utc dt: [{0:O}.]", utc);
-
-            var diff = convertedToMonotonic - monotonicNow;
-            if (diff < Duration.Zero) diff = -diff;
-            Helper.WriteLine("Difference in monotonic and portable -> monotonic: {0:N6} microseconds.", diff.TotalMicroseconds);
-            Assert.True(diff < Duration.FromMilliseconds(1));
-
+            DateTime stamp = new DateTime(1919, 06, 10, 20, 32, 41, 321, DateTimeKind.Utc);
+            Helper.WriteLine($"An arbitrary date time: [{stamp:O}].");
+            PortableMonotonicStamp portableStamp = stamp;
+            Helper.WriteLine("As a portable stamp: [{0}].", portableStamp);
+            DateTime reversed = (DateTime) portableStamp;
+            Helper.WriteLine("Reversed: [{0:O}]", reversed);
+            Assert.True(reversed == stamp);
         }
-
+        
         [Fact]
         public void TestPortableStamp()
         {
             MonotonicStamp stamp = Fixture.MonotonicStampNow;
-            (DateTime utcReferenceTime, Duration offsetFromReference, TimeSpan localUtcOffset) = stamp.Value;
-            DateTime local = stamp.ToLocalDateTime();
-            DateTime utc = stamp.ToUtcDateTime();
-            DateTime localFromComponents = (utcReferenceTime + (TimeSpan) offsetFromReference).ToLocalTime();
-            DateTime utcFromComponents = (utcReferenceTime + (TimeSpan) offsetFromReference);
-            Assert.Equal(local, localFromComponents);
-            Assert.Equal(utc, utcFromComponents);
+            DateTime utcDtFromStamp = stamp.ToUtcDateTime();
+            PortableMonotonicStamp portableStamp = (PortableMonotonicStamp) stamp;
+            PortableMonotonicStamp fromDateTime = utcDtFromStamp;
+            DateTime fromPortableStampMadeFromMonotonicStamp = (DateTime) portableStamp;
+            DateTime fromDateTimeMadeFromUtcDateTime = (DateTime) fromDateTime;
+            Assert.True(fromDateTimeMadeFromUtcDateTime == utcDtFromStamp);
 
-            Int128 utcRefTimeNanosecondSinceNetEpoch =
-                (((Int128) utcReferenceTime.Ticks) * PortableDuration.TicksPerSecond) / TimeSpan.TicksPerSecond;
-            Helper.WriteLine($"Utc reference time is {utcRefTimeNanosecondSinceNetEpoch} nanoseconds since .NET epoch.");
-            PortableDuration offsetFromReferenceInNanoseconds = (PortableDuration) offsetFromReference;
-            Duration roundTripped = (Duration) offsetFromReferenceInNanoseconds;
-            Duration difference = (offsetFromReference - roundTripped).AbsoluteValue();
-            Assert.True(difference <= Duration.FromMicroseconds(1));
+            if (fromPortableStampMadeFromMonotonicStamp != fromDateTimeMadeFromUtcDateTime)
+            {
+                DateTime bigger = fromDateTimeMadeFromUtcDateTime > fromPortableStampMadeFromMonotonicStamp
+                    ? fromDateTimeMadeFromUtcDateTime
+                    : fromPortableStampMadeFromMonotonicStamp;
+                DateTime smaller = fromDateTimeMadeFromUtcDateTime < fromPortableStampMadeFromMonotonicStamp
+                    ? fromDateTimeMadeFromUtcDateTime
+                    : fromPortableStampMadeFromMonotonicStamp;
+                TimeSpan difference = bigger - smaller;
+                Assert.True(difference <= TimeSpan.FromMilliseconds(0.001));
+                Helper.WriteLine("difference between the datetimes is: [{0:N5}] milliseconds.", difference.TotalMilliseconds);
+            }
+            else
+            {
+                Helper.WriteLine("The two date times are identical.");
+            }
 
-            Int128 monotonicStampDistEpochInNanoSeconds =
-                utcRefTimeNanosecondSinceNetEpoch + offsetFromReferenceInNanoseconds.Ticks;
-            Helper.WriteLine($"Monotonic stamp's distanceFromEpochInNanoseconds: {monotonicStampDistEpochInNanoSeconds}");
+            if (portableStamp != fromDateTime)
+            {
+                PortableDuration diff;
+                if (portableStamp > fromDateTime)
+                {
+                    diff = new PortableDuration( portableStamp._dateTimeNanosecondOffsetFromMinValueUtc - fromDateTime._dateTimeNanosecondOffsetFromMinValueUtc);
+                }
+                else
+                {
+                    diff = new PortableDuration(fromDateTime._dateTimeNanosecondOffsetFromMinValueUtc - portableStamp._dateTimeNanosecondOffsetFromMinValueUtc);
+                }
 
-            PortableMonotonicStamp pstamp = (PortableMonotonicStamp) stamp;
-            Helper.WriteLine($"pstamp nanoseconds dist from epoch: {pstamp._dateTimeNanosecondOffsetFromMinValueUtc}");
-            Assert.Equal(monotonicStampDistEpochInNanoSeconds, pstamp._dateTimeNanosecondOffsetFromMinValueUtc );
+                Helper.WriteLine(
+                    "Difference between portable stamps as imported from monotonic vs imported from TS: [{0:N}].",
+                    diff.Ticks);
+            }
+            else
+            {
+                Helper.WriteLine("The two portable monotonic stamps are identical.");
+            }
+            
+
         }
 
 

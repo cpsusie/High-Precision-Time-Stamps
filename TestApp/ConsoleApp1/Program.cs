@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using HpTimeStamps;
@@ -109,6 +110,12 @@ namespace TestApp
                 Console.WriteLine($"All {numThreads} threads started at [{createdAllThreadsAt:O}].");
                 Console.WriteLine($"Should take slightly more than {duration.TotalSeconds:N} seconds.");
                 var results = GenerateResults(threads);
+                Console.WriteLine("Validating monotonicity thread...");
+                foreach (var list in results.Values)
+                {
+                    ValidateMonotonicity(list);
+                }
+                Console.WriteLine("Intra-thread monotonicity validated.");
                 needToDispose = false;
                 DateTime gotResultsAt = MonotonicSource.Now;
                 TimeSpan totalTime = gotResultsAt - createdAllThreadsAt;
@@ -141,6 +148,42 @@ namespace TestApp
                 }
             }
 
+        }
+        public static void ValidateMonotonicity(ImmutableList<DateTime> stamps)
+        {
+            if (stamps.Count > 1)
+            {
+                var priorStamp = stamps.First();
+                int idx = 0;
+                foreach (var stamp in stamps.Skip(1))
+                {
+                    ++idx;
+                    if (stamp < priorStamp)
+                    {
+                        throw new InvalidOperationException(
+                            $"Monotonicity validated stamp at idx {idx}.  Stamp at {idx} (value: {stamp}) is less than stamp at idx {idx - 1} (value: {priorStamp})!");
+                    }
+                    priorStamp = stamp;
+                }
+            }
+        }
+        public static void ValidateMonotonicity(ImmutableList<MonotonicStamp> stamps)
+        {
+            if (stamps.Count > 1)
+            {
+                var priorStamp = stamps.First();
+                int idx = 0;
+                foreach (var stamp in stamps.Skip(1))
+                {
+                    ++idx;
+                    if (stamp < priorStamp)
+                    {
+                        throw new InvalidOperationException(
+                            $"Monotonicity validated stamp at idx {idx}.  Stamp at {idx} (value: {stamp}) is less than stamp at idx {idx - 1} (value: {priorStamp})!");
+                    }
+                    priorStamp = stamp;
+                }
+            }
         }
 
         [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local")]  //kinda the whole point
@@ -176,6 +219,12 @@ namespace TestApp
                 Console.WriteLine($"Should take slightly more than {duration.TotalSeconds:N} seconds.");
                 var results = GenerateResults(threads);
                 needToDispose = false;
+                Console.WriteLine("Validating monotonicity thread...");
+                foreach (var list in results.Values)
+                {
+                    ValidateMonotonicity(list);
+                }
+                Console.WriteLine("Intra-thread monotonicity validated.");
                 DateTime gotResultsAt = TimeStampSource.Now;
                 TimeSpan totalTime = gotResultsAt - createdAllThreadsAt;
                 Console.WriteLine($"Results retrieved.  Time elapsed: {totalTime.TotalSeconds:F6} seconds.");

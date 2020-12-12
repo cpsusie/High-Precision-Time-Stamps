@@ -87,21 +87,6 @@ namespace HpTimeStamps
         public static MonotonicTimeStamp<TStampContext> MinValue { get; }
 
         /// <summary>
-        /// Converts a monotonic timestamp into a format suitable for use across
-        /// process boundaries or to be serialized and deserialized in a different process.
-        ///
-        /// If loaded into a different process, time zone offset will be lost.
-        /// </summary>
-        /// <param name="timestamp">the stamp to convert</param>
-        /// <returns>a portable monotonic timestamp</returns>
-        /// <remarks>
-        /// This might not be 100% round-trippable if the conversion factor between the stopwatch and nanoseconds doesn't lead itself to 
-        /// nice round division.  Check <see cref="IMonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.
-        /// </remarks>
-        public static explicit operator PortableMonotonicStamp(in MonotonicTimeStamp<TStampContext> timestamp) =>
-            timestamp.ToPortableStamp();
-
-        /// <summary>
         /// Convert a portable timestamp to a local timestamp
         /// </summary>
         /// <param name="ts">the portable timestamp to convert</param>

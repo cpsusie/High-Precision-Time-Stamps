@@ -2096,20 +2096,6 @@
             Make no assumptions about it beyond the promise it will not change in the currently running process.
             </remarks>
         </member>
-        <member name="M:HpTimeStamps.MonotonicTimeStamp`1.op_Explicit(HpTimeStamps.MonotonicTimeStamp{`0}@)~HpTimeStamps.PortableMonotonicStamp">
-             <summary>
-             Converts a monotonic timestamp into a format suitable for use across
-             process boundaries or to be serialized and deserialized in a different process.
-            
-             If loaded into a different process, time zone offset will be lost.
-             </summary>
-             <param name="timestamp">the stamp to convert</param>
-             <returns>a portable monotonic timestamp</returns>
-             <remarks>
-             This might not be 100% round-trippable if the conversion factor between the stopwatch and nanoseconds doesn't lead itself to 
-             nice round division.  Check <see cref="P:HpTimeStamps.IMonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.
-             </remarks>
-        </member>
         <member name="M:HpTimeStamps.MonotonicTimeStamp`1.op_Explicit(HpTimeStamps.PortableMonotonicStamp@)~HpTimeStamps.MonotonicTimeStamp{`0}">
             <summary>
             Convert a portable timestamp to a local timestamp
@@ -2905,6 +2891,16 @@
             Number of nanoseconds in a second
             </summary>
         </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.MinValue">
+            <summary>
+            Minimum value representable 
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.MaxValue">
+            <summary>
+            Maximum value representable
+            </summary>
+        </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.ToLocalDateTime">
             <summary>
             Convert this to a datetime in the local datetime timezone.
@@ -2922,11 +2918,34 @@
             <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Cannot be converted to
             DateTime because of overflow.</exception>
         </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Explicit(HpTimeStamps.MonotonicTimeStamp{HpTimeStamps.MonotonicStampContext}@)~HpTimeStamps.PortableMonotonicStamp">
+            <summary>
+            Convert a monotonic stamp to a portable stamp
+            </summary>
+            <param name="monotonicStamp">the monotonic stamp to convert</param>
+            <remarks>Will be roundtrippable (less timezone info ... will be made UTC)
+            unless the factors for conversion between monotonic stamps and nanoseconds are
+            not conducive to even division.  <see cref="P:HpTimeStamps.MonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.</remarks>
+        </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.ToString">
             <summary>
             Get a string representation of this value
             </summary>
             <returns>A string representation.</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Implicit(System.DateTime)~HpTimeStamps.PortableMonotonicStamp">
+            <summary>
+            Convert a date time to a portable timestamp
+            </summary>
+            <param name="convertMe">value to convert</param>
+            <returns>converted value</returns>
+            <remarks>If the source is a <see cref="T:System.DateTime"/>, will be roundtrippable back (with timezone locality stripped) </remarks>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Explicit(HpTimeStamps.PortableMonotonicStamp@)~System.DateTime">
+            <summary>
+            Convert a monotonic stamp into a date time
+            </summary>
+            <param name="monotonicStamp"></param>
         </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Equality(HpTimeStamps.PortableMonotonicStamp@,HpTimeStamps.PortableMonotonicStamp@)">
             <summary>
