@@ -37,6 +37,14 @@ namespace TestApp
             MonotonicStamp now = MonotonicSource.StampNow;
             Console.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());
             Console.WriteLine("Initial utc stamp: [{0:O}].", now.ToUtcDateTime());
+            
+            Console.WriteLine("Earliest instant representable as a monotonic timestamp in this process: [{0}].", MonotonicStamp.MinValue);
+            Console.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MinValue.ToUtcDateTime());
+            Console.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MinValue.ToLocalDateTime());
+            Console.WriteLine("Latest instant representable as a monotonic timestamp in this process: [{0}]", MonotonicStamp.MaxValue);
+            Console.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToUtcDateTime());
+            Console.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToLocalDateTime());
+            
             Console.WriteLine("DONE SYSTEM INFO.");
             Console.WriteLine();
 
