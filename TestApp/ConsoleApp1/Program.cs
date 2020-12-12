@@ -37,14 +37,14 @@ namespace TestApp
             MonotonicStamp now = MonotonicSource.StampNow;
             Console.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());
             Console.WriteLine("Initial utc stamp: [{0:O}].", now.ToUtcDateTime());
-            
+
             Console.WriteLine("Earliest instant representable as a monotonic timestamp in this process: [{0}].", MonotonicStamp.MinValue);
             Console.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MinValue.ToUtcDateTime());
             Console.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MinValue.ToLocalDateTime());
             Console.WriteLine("Latest instant representable as a monotonic timestamp in this process: [{0}]", MonotonicStamp.MaxValue);
             Console.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToUtcDateTime());
             Console.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToLocalDateTime());
-            
+
             Console.WriteLine("DONE SYSTEM INFO.");
             Console.WriteLine();
 
@@ -93,7 +93,7 @@ namespace TestApp
             Assert(dtLocalNowPlusX - tsDiff == dtLocalNow, "Difference between now plus x and x should be now.");
             
             bool needToDispose = false;
-            List<ITsGenThread> threads = null;
+            List<ITimeStampThread<MonotonicStamp>> threads = null;
             try
             {
                 int numThreads = 6;
@@ -115,7 +115,8 @@ namespace TestApp
                 Console.WriteLine($"Results retrieved.  Time elapsed: {totalTime.TotalSeconds:F6} seconds.");
                 Console.WriteLine("Processing results...");
                 DateTime beginProcessResultsAt = MonotonicSource.Now;
-                string textOfResults = ProcessResults(results, sleepInterval);
+                string textOfResults = ProcessResults(results, sleepInterval, stamp => stamp.ToLocalDateTime(),
+                    (minuend, subtrahend) => (TimeSpan) (minuend - subtrahend));
                 DateTime endProcessResultsAt = MonotonicSource.Now;
                 TimeSpan elapsed = endProcessResultsAt - beginProcessResultsAt;
                 Console.WriteLine($"It took {elapsed.TotalMilliseconds:F3} ms to process the results.");
@@ -132,7 +133,7 @@ namespace TestApp
             {
                 if (needToDispose)
                 {
-                    IEnumerable<ITsGenThread> disposeUs = threads;
+                    IEnumerable<ITimeStampThread> disposeUs = threads;
                     foreach (var item in disposeUs?.Reverse() ?? Enumerable.Empty<ITsGenThread>())
                     {
                         item.Dispose();
@@ -158,7 +159,7 @@ namespace TestApp
         static void TestHpTimestamps()
         {
             bool needToDispose = false;
-            List<ITsGenThread> threads = null;
+            List<ITimeStampThread<DateTime>> threads = null;
             try
             {
                 int numThreads = 6;
@@ -180,7 +181,7 @@ namespace TestApp
                 Console.WriteLine($"Results retrieved.  Time elapsed: {totalTime.TotalSeconds:F6} seconds.");
                 Console.WriteLine("Processing results...");
                 DateTime beginProcessResultsAt = TimeStampSource.Now;
-                string textOfResults = ProcessResults(results, sleepInterval);
+                string textOfResults = ProcessResults(results, sleepInterval, stamp => stamp,(minuend, subtrahend) => minuend - subtrahend);
                 DateTime endProcessResultsAt = TimeStampSource.Now;
                 TimeSpan elapsed = endProcessResultsAt - beginProcessResultsAt;
                 Console.WriteLine($"It took {elapsed.TotalMilliseconds:F3} ms to process the results.");
@@ -197,8 +198,8 @@ namespace TestApp
             {
                 if (needToDispose)
                 {
-                    IEnumerable<ITsGenThread> disposeUs = threads;
-                    foreach (var item in disposeUs?.Reverse() ?? Enumerable.Empty<ITsGenThread>())
+                    IEnumerable<ITimeStampThread<DateTime>> thrdList = threads;
+                    foreach (var item in thrdList?.Reverse() ?? Enumerable.Empty<ITimeStampThread<DateTime>>())
                     {
                         item.Dispose();
                     }
@@ -206,7 +207,7 @@ namespace TestApp
             }
         }
 
-        private static string ProcessResults(ImmutableDictionary<int, ImmutableList<DateTime>> results, TimeSpan sleepInterval)
+        private static string ProcessResults<TStamp>(ImmutableDictionary<int, ImmutableList<TStamp>> results, TimeSpan sleepInterval, [JetBrains.Annotations.NotNull] Func<TStamp, DateTime> convertsToDateTime, [JetBrains.Annotations.NotNull] Func<TStamp, TStamp, TimeSpan> subtractStampsYieldingSpan) where TStamp : unmanaged, IEquatable<TStamp>, IComparable<TStamp>
         {
             TimeSpan epsilon = TimeSpan.FromMilliseconds(2);
             SortedDictionary<ResPair, Dictionary<int, int>>duplicateDictionary = new SortedDictionary<ResPair, Dictionary<int, int>>();
@@ -220,10 +221,10 @@ namespace TestApp
                 if (kvp.Value.Any())
                 {
                     sb.AppendLine(
-                        $"\tLast timestamp: {kvp.Value.Last():O}; First timestamp {kvp.Value.First():O}. Elapsed: " +
-                        $"[{(kvp.Value.Last() - kvp.Value.First()).TotalSeconds:F6}] seconds.");
-                    AddValueToDuplDict(duplicateDictionary, kvp.Key, kvp.Value);
-                    var statistics = GetStatistics(kvp.Value);
+                        $"\tLast timestamp: {convertsToDateTime(kvp.Value.Last()):O}; First timestamp {convertsToDateTime(kvp.Value.First()):O}. Elapsed: " +
+                        $"[{(convertsToDateTime(kvp.Value.Last()) - convertsToDateTime(kvp.Value.First())).TotalSeconds:F6}] seconds.");
+                    AddValueToDuplDict(duplicateDictionary, kvp.Key, kvp.Value.Select(convertsToDateTime));
+                    var statistics = GetStatistics(kvp.Value, subtractStampsYieldingSpan);
                     sb.AppendLine(
                         $"\tFor thread: [{kvp.Key.ToString()}], shortest consecutive interval: " +
                         $"[{statistics.ShortestConsecutiveDelay.TotalMilliseconds:F3}] ms; " +
@@ -329,7 +330,7 @@ namespace TestApp
             }
 
             (ImmutableArray<TimeSpan> AllSpans, TimeSpan ShortestConsecutiveDelay, TimeSpan LongestConsecutiveDelay, TimeSpan AverageConsecutiveDelay)
-                GetStatistics(ImmutableList<DateTime> times)
+                GetStatistics(ImmutableList<TStamp> times, Func<TStamp, TStamp, TimeSpan> sbtrYldSpn)
             {
                 List<TimeSpan> spans;
                 TimeSpan shortest, longest, average;
@@ -339,7 +340,7 @@ namespace TestApp
                     case 0:
                         return (ImmutableArray<TimeSpan>.Empty, TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero);
                     default:
-                        spans = ComputeDifferences(times);
+                        spans = ComputeDifferences(times, sbtrYldSpn);
                         break;
                 }
 
@@ -369,15 +370,15 @@ namespace TestApp
                 }
             }
 
-            List<TimeSpan> ComputeDifferences(ImmutableList<DateTime> times)
+            List<TimeSpan> ComputeDifferences(ImmutableList<TStamp> times, Func<TStamp, TStamp, TimeSpan> subtractStampsYieldSpan)
             {
                 List<TimeSpan> spans = new List<TimeSpan>();
                 Debug.Assert(times.Count > 1);
                 for (int i = 0; i < times.Count - 1; ++i)
                 {
-                    DateTime earlier = times[i];
-                    DateTime later = times[i + 1];
-                    spans.Add(later - earlier);
+                    TStamp earlier = times[i];
+                    TStamp later = times[i + 1];
+                    spans.Add(subtractStampsYieldSpan(later, earlier));
                 }
                 return spans;
             }
@@ -411,10 +412,10 @@ namespace TestApp
 
 
 
-        static ImmutableDictionary<int, ImmutableList<DateTime>> GenerateResults([JetBrains.Annotations.NotNull] List<ITsGenThread> threads)
+        static ImmutableDictionary<int, ImmutableList<TStamp>> GenerateResults<TStamp>([JetBrains.Annotations.NotNull] List<ITimeStampThread<TStamp>> threads) where TStamp : unmanaged, IEquatable<TStamp>, IComparable<TStamp>
         {
-            var ret = ImmutableDictionary.CreateBuilder<int, ImmutableList<DateTime>>();
-            IEnumerable<ITsGenThread> toIterateBackwards = threads;
+            var ret = ImmutableDictionary.CreateBuilder<int, ImmutableList<TStamp>>();
+            IEnumerable<ITimeStampThread<TStamp>> toIterateBackwards = threads;
             foreach (var thread in toIterateBackwards.Reverse())
             {
                 var list = thread.Join();
@@ -424,9 +425,9 @@ namespace TestApp
             return ret.ToImmutable();
         }
 
-        static List<ITsGenThread> CreateMonoThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
+        static List<ITimeStampThread<MonotonicStamp>> CreateMonoThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
         {
-            List<ITsGenThread> ret = new List<ITsGenThread>(numThreads);
+            List<ITimeStampThread<MonotonicStamp>> ret = new List<ITimeStampThread<MonotonicStamp>>(numThreads);
             try
             {
                 while (ret.Count < numThreads)
@@ -437,7 +438,7 @@ namespace TestApp
             catch (Exception ex)
             {
                 Console.Error.WriteLineAsync(ex.ToString());
-                IEnumerable<ITsGenThread> threads = ret;
+                IEnumerable<ITimeStampThread> threads = ret;
                 foreach (var thread in threads.Reverse())
                 {
                     try
@@ -453,9 +454,9 @@ namespace TestApp
             }
             return ret;
         }
-        static List<ITsGenThread> CreateHpThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
+        static List<ITimeStampThread<DateTime>> CreateHpThreads(int numThreads, TimeSpan duration, TimeSpan sleepInterval)
         {
-            List<ITsGenThread> ret = new List<ITsGenThread>(numThreads);
+            List<ITimeStampThread<DateTime>> ret = new List<ITimeStampThread<DateTime>>(numThreads);
             try
             {
                 while (ret.Count < numThreads)
@@ -466,7 +467,7 @@ namespace TestApp
             catch (Exception ex)
             {
                 Console.Error.WriteLineAsync(ex.ToString());
-                IEnumerable<ITsGenThread> threads = ret;
+                IEnumerable<ITimeStampThread> threads = ret;
                 foreach (var thread in threads.Reverse())
                 {
                     try
@@ -500,25 +501,39 @@ namespace TestApp
         }
     }
 
-    internal interface ITsGenThread : IDisposable
+    internal interface ITimeStampThread : IDisposable
     {
         int ThreadNumber { get; }
-        [JetBrains.Annotations.NotNull] ImmutableList<DateTime> Timestamps { get; }
-        [JetBrains.Annotations.NotNull] ImmutableList<DateTime> Join();
         bool IsDisposed { get; }
         bool IsThreadActive { get; }
+    }
+
+    internal interface ITimeStampThread<TTimestamp> : ITimeStampThread
+        where TTimestamp : unmanaged, IComparable<TTimestamp>, IEquatable<TTimestamp>
+    {
+        [JetBrains.Annotations.NotNull] ImmutableList<TTimestamp> Timestamps { get; }
+        [JetBrains.Annotations.NotNull] ImmutableList<TTimestamp> Join();
+    }
+
+    internal interface ITsGenThread : ITimeStampThread<DateTime>
+    {
 
     }
 
-    sealed class MonoTsGeneratingThread : ITsGenThread
+    internal interface IMonoTsGenThread : ITimeStampThread<MonotonicStamp>
     {
-        public static ITsGenThread GenerateThread(TimeSpan duration, TimeSpan sleepInterval)
+
+    }
+
+    sealed class MonoTsGeneratingThread : IMonoTsGenThread
+    {
+        public static IMonoTsGenThread GenerateThread(TimeSpan duration, TimeSpan sleepInterval)
         {
             var ret = new MonoTsGeneratingThread(sleepInterval, duration);
             try
             {
                 ret.Start();
-                DateTime giveUp = DateTime.Now + TimeSpan.FromMilliseconds(100);
+                DateTime giveUp = MonotonicSource.Now + TimeSpan.FromMilliseconds(100);
                 while (!ret.IsThreadActive && DateTime.Now <= giveUp)
                 {
                     Thread.Sleep(TimeSpan.FromMilliseconds(1));
@@ -541,12 +556,12 @@ namespace TestApp
 
         public int ThreadNumber { get; }
 
-        public ImmutableList<DateTime> Timestamps
+        public ImmutableList<MonotonicStamp> Timestamps
         {
             get
             {
                 var temp = _gathered;
-                return temp ?? ImmutableList<DateTime>.Empty;
+                return temp ?? ImmutableList<MonotonicStamp>.Empty;
             }
         }
 
@@ -595,13 +610,13 @@ namespace TestApp
             GC.SuppressFinalize(this);
         }
 
-        public ImmutableList<DateTime> Join()
+        public ImmutableList<MonotonicStamp> Join()
         {
-            ImmutableList<DateTime> ret;
+            ImmutableList<MonotonicStamp> ret;
             if (_threadFlag.Status == ThreadStatus.Terminated)
             {
                 var temp = _gathered;
-                ret = temp ?? ImmutableList<DateTime>.Empty;
+                ret = temp ?? ImmutableList<MonotonicStamp>.Empty;
             }
             else
             {
@@ -611,7 +626,7 @@ namespace TestApp
                     Thread.Sleep(TimeSpan.FromMilliseconds(1));
                 }
                 var temp = _gathered;
-                ret = temp ?? ImmutableList<DateTime>.Empty;
+                ret = temp ?? ImmutableList<MonotonicStamp>.Empty;
             }
             return ret;
         }
@@ -713,7 +728,7 @@ namespace TestApp
             }
             finally
             {
-                Interlocked.CompareExchange(ref _gathered, ImmutableList<DateTime>.Empty, null);
+                Interlocked.CompareExchange(ref _gathered, ImmutableList<MonotonicStamp>.Empty, null);
                 _threadFlag.SignalTerminated();
             }
         }
@@ -721,20 +736,28 @@ namespace TestApp
         private void Execute(in CancellationToken token)
         {
             DateTime quitAfter = DateTime.Now + _duration;
-            var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<DateTime>();
+            var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<MonotonicStamp>();
             try
             {
+                int noYieldCount = 0;
                 while (DateTime.Now <= quitAfter)
                 {
                     token.ThrowIfCancellationRequested();
                     for (int i = 0; i < 10; ++i)
                     {
-                        builder.Add(MonotonicSource.Now);
-                        Thread.SpinWait(2500);
+                        builder.Add(MonotonicSource.StampNow);
                     }
 
+                    if (!Thread.Yield())
+                    {
+                        if (++noYieldCount > 10)
+                        {
+                            noYieldCount = 0;
+                            SleepFor(_sleepInterval, in token);
+                        }
+                    }
                     token.ThrowIfCancellationRequested();
-                    SleepFor(_sleepInterval, in token);
+                    
                 }
             }
             finally
@@ -755,7 +778,7 @@ namespace TestApp
 
         private DisposeFlag _isDisposed;
         private ThreadStatusFlag _threadFlag;
-        [CanBeNull] private volatile ImmutableList<DateTime> _gathered;
+        [CanBeNull] private volatile ImmutableList<MonotonicStamp> _gathered;
         private readonly TimeSpan _sleepInterval;
         private readonly TimeSpan _duration;
         [JetBrains.Annotations.NotNull] private readonly Thread _thread;
@@ -977,17 +1000,23 @@ namespace TestApp
             var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<DateTime>();
             try
             {
+                int noYieldCount = 0;
                 while (DateTime.Now <= quitAfter)
                 {
                     token.ThrowIfCancellationRequested();
                     for (int i = 0; i < 10; ++i)
                     {
                         builder.Add(TimeStampSource.Now);
-                        Thread.SpinWait(2500);
                     }
-
                     token.ThrowIfCancellationRequested();
-                    SleepFor(_sleepInterval, in token);
+                    if (!Thread.Yield())
+                    {
+                        if (++noYieldCount >= 10)
+                        {
+                            noYieldCount = 0;
+                            SleepFor(_sleepInterval, in token);
+                        }
+                    }
                 }
             }
             finally
@@ -1006,8 +1035,8 @@ namespace TestApp
             }
         }
 
-        private DisposeFlag _isDisposed = new DisposeFlag();
-        private ThreadStatusFlag _threadFlag = new ThreadStatusFlag();
+        private DisposeFlag _isDisposed;
+        private ThreadStatusFlag _threadFlag;
         [CanBeNull] private volatile ImmutableList<DateTime> _gathered;
         private readonly TimeSpan _sleepInterval;
         private readonly TimeSpan _duration;

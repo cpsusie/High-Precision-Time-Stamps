@@ -606,4 +606,6 @@ namespace HpTimeStamps
                 : Duration.FromStopwatchTicks(convertMe *
                                               (PortableMonotonicStamp.NanosecondsFrequency / Stopwatch.Frequency));
     }
+
+    
 }
