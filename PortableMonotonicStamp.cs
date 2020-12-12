@@ -346,14 +346,11 @@ namespace HpTimeStamps
             int penultimateChar = Math.DivRem(fractionalSeconds, 10, out int ultimateChar);
             if (ultimateChar != 0)
             {
-                result[result.Length - 1] = Convert.ToChar(penultimateChar);
-                result.Append(Convert.ToChar(ultimateChar));
-                result.Append('Z');
+                result.Insert(result.Length - 1, fractionalSeconds.ToString());
             }
             else if (penultimateChar != 0)
             {
-                result[result.Length - 1] = Convert.ToChar(penultimateChar);
-                result.Append('Z');
+                result.Insert(result.Length - 1, penultimateChar.ToString());
             }
             return result.ToString();
         }
