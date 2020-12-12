@@ -185,8 +185,8 @@ namespace UnitTests
             const long timespanTicks = -8_356_803_867_519_737_568;
             TimeSpan originalTs = TimeSpan.FromTicks(timespanTicks);
             PortableDuration pd = originalTs;
-            Assert.True(pd.Ticks == (originalTs.Ticks * PortableDuration.TicksPerSecondInternal / TimeSpan.TicksPerSecond));
-            Assert.True(originalTs.Ticks == (pd.Ticks * TimeSpan.TicksPerSecond / PortableDuration.TicksPerSecondInternal   ));
+            Assert.True(pd.InternalTicks == (originalTs.Ticks * PortableDuration.TicksPerSecondInternal / TimeSpan.TicksPerSecond));
+            Assert.True(originalTs.Ticks == (pd.InternalTicks * TimeSpan.TicksPerSecond / PortableDuration.TicksPerSecondInternal   ));
             TimeSpan roundTripped = (TimeSpan) pd;
             Assert.True(roundTripped.Ticks == timespanTicks);
         }

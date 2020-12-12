@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -147,7 +148,8 @@ namespace HpTimeStamps
             Validate();
 
         }
-        [Conditional("DEBUG")]
+        [Conditional("DEBUG")] // DEBUG they are used // RELEASE the method doesn't get called
+        [SuppressMessage("ReSharper", "RedundantAssignment")] 
         static void Validate()
         {
             Debug.Assert(PortableDuration.TicksPerSecond == 1_000_000_000);
@@ -210,9 +212,17 @@ namespace HpTimeStamps
 
         /// <summary>
         /// Get a string representation of this value in ISO 8601 format
+        /// in UTC.
         /// </summary>
         /// <returns>A string representation.</returns>
-        public override string ToString() => BuildString();
+        public override string ToString() => BuildString(false);
+        
+        /// <summary>
+        /// Get a string representation of this value in ISO 8601 format
+        /// in UTC.
+        /// </summary>
+        /// <returns>A string representation.</returns>
+        public string ToLocalString() => BuildString(true);
         #endregion
         
         #region Equality/Comparison and Related Methods and Operators
@@ -334,24 +344,155 @@ namespace HpTimeStamps
         } 
         #endregion
 
-        #region Private Methods
+        #region Arithmetic operators
 
-        private string BuildString()
+        /// <summary>
+        /// Adds a duration to a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="ms">the stamp addend</param>
+        /// <param name="d">the duraton addend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
+        public static PortableMonotonicStamp operator +(in PortableMonotonicStamp ms, in PortableDuration d)
         {
+            Int128 sum = ms._dateTimeNanosecondOffsetFromMinValueUtc + d._ticks;
+            if (sum >= MinValueUtcDtNanoseconds && sum <= MaxValueUtcDtNanoseconds)
+            {
+                return new PortableMonotonicStamp(in sum);
+            }
+            throw new PortableTimestampOverflowException("The sum caused overflow.");
+        }
+
+        /// <summary>
+        /// Adds a duration to a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="ms">the stamp addend</param>
+        /// <param name="d">the duraton addend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>        
+        public static PortableMonotonicStamp operator +(in PortableDuration d, in PortableMonotonicStamp ms) 
+            => ms + d;
+        
+        /// <summary>
+        /// Adds a timespan to a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="ms">the stamp addend</param>
+        /// <param name="ts">the timespan addend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
+        public static PortableMonotonicStamp operator +(in PortableMonotonicStamp ms, TimeSpan ts)
+        {
+            Int128 sum = ms._dateTimeNanosecondOffsetFromMinValueUtc + ((Int128) ts.Ticks * 100);
+            if (sum >= MinValueUtcDtNanoseconds && sum <= MaxValueUtcDtNanoseconds)
+            {
+                return new PortableMonotonicStamp(in sum);
+            }
+            throw new PortableTimestampOverflowException("The sum caused overflow.");
+        }
+
+        /// <summary>
+        /// Adds a duration to a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="ms">the stamp addend</param>
+        /// <param name="ts">the timespan addend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>        
+        public static PortableMonotonicStamp operator +(TimeSpan ts, in PortableMonotonicStamp ms) 
+            => ms + ts;
+        /// <summary>
+        /// Subtracts a duration from a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="minuend">Minuend</param>
+        /// <param name="subtrahend">the subtrahend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
+        public static PortableMonotonicStamp operator -(in PortableMonotonicStamp minuend, in PortableDuration subtrahend)
+        {
+            Int128 sum = minuend._dateTimeNanosecondOffsetFromMinValueUtc + subtrahend._ticks;
+            if (sum >= MinValueUtcDtNanoseconds && sum <= MaxValueUtcDtNanoseconds)
+            {
+                return new PortableMonotonicStamp(in sum);
+            }
+            throw new PortableTimestampOverflowException("The sum caused overflow.");
+        }
+        
+        /// <summary>
+        /// Subtracts a timespan from a stamp, yielding a stamp
+        /// </summary>
+        /// <param name="minuend">Minuend</param>
+        /// <param name="subtrahend">the subtrahend</param>
+        /// <returns>the sum</returns>
+        /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
+        public static PortableMonotonicStamp operator -(in PortableMonotonicStamp minuend, TimeSpan subtrahend)
+        {
+            Int128 difference = minuend._dateTimeNanosecondOffsetFromMinValueUtc - ((Int128) subtrahend.Ticks * 100);
+            if (difference >= MinValueUtcDtNanoseconds && difference <= MaxValueUtcDtNanoseconds)
+            {
+                return new PortableMonotonicStamp(in difference);
+            }
+            throw new PortableTimestampOverflowException("The subtraction caused overflow.");
+        }
+        
+        /// <summary>
+        /// Subtracts a stamp from another stamp yielding the duration between them.
+        /// </summary>
+        /// <param name="minuend">the minuend</param>
+        /// <param name="subtrahend">the subtrahend</param>
+        /// <returns>the duration between the stamps</returns>
+        public static PortableDuration operator -(in PortableMonotonicStamp minuend,
+            in PortableMonotonicStamp subtrahend)
+        {
+            Int128 ticksDiff = minuend._dateTimeNanosecondOffsetFromMinValueUtc -
+                               subtrahend._dateTimeNanosecondOffsetFromMinValueUtc;
+            return new PortableDuration(in ticksDiff);
+        }
+
+        /// <summary>
+        /// Subtracts a DateTime from a stamp yielding the duration between them.
+        /// </summary>
+        /// <param name="minuend">the minuend</param>
+        /// <param name="subtrahend">the subtrahend</param>
+        /// <returns>the duration between the stamps</returns>
+        public static PortableDuration operator -(in PortableMonotonicStamp minuend,
+            DateTime subtrahend) => minuend - (PortableMonotonicStamp) subtrahend;
+
+        /// <summary>
+        /// Subtract a portable stamp from a date time yielding the duration between them
+        /// </summary>
+        /// <param name="minuend">the minuend</param>
+        /// <param name="subtrahend">the subtrahend</param>
+        /// <returns>the difference</returns>
+        public static PortableDuration operator -(DateTime minuend, in PortableMonotonicStamp subtrahend) =>
+            ((PortableMonotonicStamp) minuend) - subtrahend;
+        
+        #endregion
+        #region Private Methods
+        
+        private string BuildString(bool local)
+        { 
+//          0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	
+//          2	0	2	0	-	1	2	-	1	2	T	1	8	:	2	1	:	4	3	.	2	
+
+
+//          21	22	23	24	25	26	27	28	29	30	31	32
+//          5	9	2	9	0	8	-	0	5	:	0	0
+
+            const int insertBeforeIdx = 27;
             //if we have non-zero values (from nanoseconds vs datetime/timespan's tenth of a microsecond resolution), fill them in
             //otherwise, don't waste space.  Maybe reconsider this later. ... want always same width?  ... want specify width?
             //
-            var result = new StringBuilder(ToUtcDateTime().ToString("O"));
+            var result = new StringBuilder((local ? ToLocalDateTime() : ToUtcDateTime()).ToString("O"));
             int fractionalSeconds = GetFractionalSeconds() % 100;
             int penultimateChar = Math.DivRem(fractionalSeconds, 10, out int ultimateChar);
             if (ultimateChar != 0)
             {
-                result.Insert(result.Length - 1, fractionalSeconds.ToString());
+                result.Insert(insertBeforeIdx, fractionalSeconds.ToString());
             }
             else if (penultimateChar != 0)
             {
-                result.Insert(result.Length - 1, penultimateChar.ToString());
+                result.Insert(insertBeforeIdx, penultimateChar.ToString());
             }
+            
             return result.ToString();
         }
 
@@ -386,42 +527,7 @@ namespace HpTimeStamps
                     Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
             return (int)fractionalSecondsStamp;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Duration CreateLocalDurationFromNanoseconds(in Int128 nanoseconds)
-        {
-            //Assume that no system has resolution finer than nanoseconds
-            Int128 localTicks = nanoseconds * (NanosecondsFrequency / LocalStopwatchFrequency);
-            return Duration.FromStopwatchTicks(in localTicks);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Int128 CreateNanosecondsFromLocalDuration(in Duration duration) =>
-            duration._ticks * (LocalStopwatchFrequency / NanosecondsFrequency);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static DateTime CreateDateTimeFromNanoseconds(in Int128 nanoseconds)
-        {
-            TimeSpan ts = CreateTimespanFromNanoseconds(nanoseconds);
-            return DateTime.MinValue + ts;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static TimeSpan CreateTimespanFromNanoseconds(Int128 nanoseconds)
-        {
-            Int128 tsTics = nanoseconds * TimeSpan.TicksPerSecond / NanosecondsFrequency;
-            if (tsTics > TimeSpan.MaxValue.Ticks)
-            {
-                throw new ArgumentOutOfRangeException(nameof(nanoseconds), nanoseconds,
-                    "Value does not fit in a timespan.");
-            }
-            return TimeSpan.FromTicks((long)tsTics);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Int128 StopwatchTicksFromNanoseconds(in Int128 nanoseconds)
-            => nanoseconds * (LocalStopwatchFrequency / NanosecondsFrequency); 
-#endregion
+        #endregion
 
         #region Private Data
         // ReSharper disable once InconsistentNaming -- internal where private normal for efficiency
@@ -430,7 +536,6 @@ namespace HpTimeStamps
         private static readonly Int128 MinValueUtcDtNanoseconds;
         private static readonly PortableMonotonicStamp TheMinValue;
         private static readonly PortableMonotonicStamp TheMaxValue;
-        private static readonly long LocalStopwatchFrequency = Stopwatch.Frequency; 
         #endregion
     }
 }

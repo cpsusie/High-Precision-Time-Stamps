@@ -2527,6 +2527,14 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
         </member>
+        <member name="M:HpTimeStamps.PortableDuration.FromMicroseconds(System.Int64)">
+            <summary>
+            Compute a duration from a value representing microseconds
+            </summary>
+            <param name="value">Value representing milliseconds</param>
+            <returns>A duration</returns>
+            <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
         <member name="M:HpTimeStamps.PortableDuration.FromMinutes(System.Double)">
             <summary>
             Compute a duration from a value representing minutes
@@ -2550,7 +2558,7 @@
             <param name="value">ticks</param>
             <returns>the value</returns>
         </member>
-        <member name="P:HpTimeStamps.PortableDuration.Ticks">
+        <member name="P:HpTimeStamps.PortableDuration.InternalTicks">
             <summary>
             portable duration ticks
             </summary>
@@ -2604,6 +2612,13 @@
         <member name="P:HpTimeStamps.PortableDuration.TotalMicroseconds">
             <summary>
             PortableDuration represented in microseconds, including fractional parts
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableDuration.Ticks">
+            <summary>
+            Get ticks whole ticks as timespan ticks (1/10th of microsecond)
+            if value will fit in 64 bit signed integer. If not, TenthsOfMicroseconds
+            will be null.  Also get nano-seconds remainder (0-99)
             </summary>
         </member>
         <member name="P:HpTimeStamps.PortableDuration.TotalNanoseconds">
@@ -2670,7 +2685,7 @@
         </member>
         <member name="M:HpTimeStamps.PortableDuration.ToString">
             <summary>
-            Get a string representation
+            Get a string representation (nanoseconds)
             </summary>
             <returns>a string representation</returns>
         </member>
@@ -2990,6 +3005,14 @@
         <member name="M:HpTimeStamps.PortableMonotonicStamp.ToString">
             <summary>
             Get a string representation of this value in ISO 8601 format
+            in UTC.
+            </summary>
+            <returns>A string representation.</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToLocalString">
+            <summary>
+            Get a string representation of this value in ISO 8601 format
+            in UTC.
             </summary>
             <returns>A string representation.</returns>
         </member>
@@ -3094,6 +3117,84 @@
             A positive number if <paramref name="lhs"/> succeeds <paramref name="rhs"/> in the sort order.
             A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in the sort order.
             </returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Addition(HpTimeStamps.PortableMonotonicStamp@,HpTimeStamps.PortableDuration@)">
+            <summary>
+            Adds a duration to a stamp, yielding a stamp
+            </summary>
+            <param name="ms">the stamp addend</param>
+            <param name="d">the duraton addend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Addition(HpTimeStamps.PortableDuration@,HpTimeStamps.PortableMonotonicStamp@)">
+            <summary>
+            Adds a duration to a stamp, yielding a stamp
+            </summary>
+            <param name="ms">the stamp addend</param>
+            <param name="d">the duraton addend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>        
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Addition(HpTimeStamps.PortableMonotonicStamp@,System.TimeSpan)">
+            <summary>
+            Adds a timespan to a stamp, yielding a stamp
+            </summary>
+            <param name="ms">the stamp addend</param>
+            <param name="ts">the timespan addend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Addition(System.TimeSpan,HpTimeStamps.PortableMonotonicStamp@)">
+            <summary>
+            Adds a duration to a stamp, yielding a stamp
+            </summary>
+            <param name="ms">the stamp addend</param>
+            <param name="ts">the timespan addend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>        
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Subtraction(HpTimeStamps.PortableMonotonicStamp@,HpTimeStamps.PortableDuration@)">
+            <summary>
+            Subtracts a duration from a stamp, yielding a stamp
+            </summary>
+            <param name="minuend">Minuend</param>
+            <param name="subtrahend">the subtrahend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Subtraction(HpTimeStamps.PortableMonotonicStamp@,System.TimeSpan)">
+            <summary>
+            Subtracts a timespan from a stamp, yielding a stamp
+            </summary>
+            <param name="minuend">Minuend</param>
+            <param name="subtrahend">the subtrahend</param>
+            <returns>the sum</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Caused overflow</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Subtraction(HpTimeStamps.PortableMonotonicStamp@,HpTimeStamps.PortableMonotonicStamp@)">
+            <summary>
+            Subtracts a stamp from another stamp yielding the duration between them.
+            </summary>
+            <param name="minuend">the minuend</param>
+            <param name="subtrahend">the subtrahend</param>
+            <returns>the duration between the stamps</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Subtraction(HpTimeStamps.PortableMonotonicStamp@,System.DateTime)">
+            <summary>
+            Subtracts a DateTime from a stamp yielding the duration between them.
+            </summary>
+            <param name="minuend">the minuend</param>
+            <param name="subtrahend">the subtrahend</param>
+            <returns>the duration between the stamps</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Subtraction(System.DateTime,HpTimeStamps.PortableMonotonicStamp@)">
+            <summary>
+            Subtract a portable stamp from a date time yielding the duration between them
+            </summary>
+            <param name="minuend">the minuend</param>
+            <param name="subtrahend">the subtrahend</param>
+            <returns>the difference</returns>
         </member>
         <member name="T:HpTimeStamps.PortableTimestampOverflowException">
             <summary>

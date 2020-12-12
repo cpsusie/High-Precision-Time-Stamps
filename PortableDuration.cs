@@ -201,6 +201,19 @@ namespace HpTimeStamps
             double result = value * 1_000.0;
             return new PortableDuration((PdInt) result);
         }
+        
+        /// <summary>
+        /// Compute a duration from a value representing microseconds
+        /// </summary>
+        /// <param name="value">Value representing milliseconds</param>
+        /// <returns>A duration</returns>
+        /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
+        public static PortableDuration FromMicroseconds(long value)
+        {
+            Debug.Assert(TicksPerSecond == 1_000_000_000, "Expect pd tics to always be nanoseconds");
+            PdInt result = (PdInt) value * 1_000;
+            return new PortableDuration((PdInt) result);
+        }
 
         /// <summary>
         /// Compute a duration from a value representing minutes
@@ -236,7 +249,7 @@ namespace HpTimeStamps
         /// <summary>
         /// portable duration ticks
         /// </summary>
-        internal PdInt Ticks => _ticks;
+        internal PdInt InternalTicks => _ticks;
 
         /// <summary>
         /// Number of whole days represented, fractional time remaining discarded.
@@ -289,6 +302,26 @@ namespace HpTimeStamps
         /// </summary>
         public double TotalMicroseconds => (double) _ticks / (double) TicksPerMicrosecond;
 
+        /// <summary>
+        /// Get ticks whole ticks as timespan ticks (1/10th of microsecond)
+        /// if value will fit in 64 bit signed integer. If not, TenthsOfMicroseconds
+        /// will be null.  Also get nano-seconds remainder (0-99)
+        /// </summary>
+        public (long? TenthsOfMicroseconds, int NanosecondRemainder) Ticks
+        {
+            get
+            {
+                long? tsTicks=null;
+                (PdInt tenthsOfMicrosecond, PdInt nanoRem) = PdInt.DivRem(in _ticks, 100);
+                if (tenthsOfMicrosecond < long.MinValue || tenthsOfMicrosecond > long.MaxValue)
+                {
+                    tsTicks = (long) tenthsOfMicrosecond;
+                }
+
+                return (tsTicks, (int) nanoRem);
+            }
+        }
+        
         /// <summary>
         /// PortableDuration represented in nanoseconds, including fractional parts
         /// </summary>
@@ -408,11 +441,12 @@ namespace HpTimeStamps
         #endregion
 
         #region ToString Methods
+
         /// <summary>
-        /// Get a string representation
+        /// Get a string representation (nanoseconds)
         /// </summary>
         /// <returns>a string representation</returns>
-        public override string ToString() => TotalMilliseconds.ToString("N6") + " milliseconds";
+        public override string ToString() => _ticks.ToString("N") + " nanoseconds";
         #endregion
 
         #region Equatable and Comparable Methods and Operators
@@ -555,7 +589,7 @@ namespace HpTimeStamps
         /// <param name="t1">dividend</param>
         /// <param name="t2">divisor</param>
         /// <returns>quotient</returns>
-        public static double operator /(in PortableDuration t1, in PortableDuration t2) => (double)t1.Ticks / (double)t2.Ticks;
+        public static double operator /(in PortableDuration t1, in PortableDuration t2) => (double)t1.InternalTicks / (double)t2.InternalTicks;
 
         /// <summary>
         /// Multiply a duration 
@@ -574,7 +608,7 @@ namespace HpTimeStamps
 
             // Rounding to the nearest tick is as close to the result we would have with unlimited
             // precision as possible, and so likely to have the least potential to surprise.
-            double ticks = Math.Round((double)timeSpan.Ticks * factor);
+            double ticks = Math.Round((double)timeSpan.InternalTicks * factor);
             return IntervalFromDoubleTicks(ticks);
         }
 
@@ -584,7 +618,7 @@ namespace HpTimeStamps
         /// <returns>the absolute value</returns>
         public PortableDuration AbsoluteValue()
         {
-            if (Ticks == MinValue.Ticks)
+            if (InternalTicks == MinValue.InternalTicks)
                 throw new OverflowException("This value is the most negative value and has no positive 2's complement counterpart.");
             return new PortableDuration(_ticks >= 0 ? _ticks : -_ticks);
         }
@@ -596,7 +630,7 @@ namespace HpTimeStamps
         [Pure]
         public PortableDuration Negate()
         {
-            if (Ticks == MinValue.Ticks)
+            if (InternalTicks == MinValue.InternalTicks)
                 throw new OverflowException("This value is the most negative value " +
                                             "possible and has no positive counterpart in a 2's complement representation.");
             return new PortableDuration(-_ticks);
@@ -669,7 +703,7 @@ namespace HpTimeStamps
                 throw new ArgumentException("NaN is not a valid value for parameter", nameof(divisor));
             }
 
-            double ticks = Math.Round((double)timeSpan.Ticks / divisor);
+            double ticks = Math.Round((double)timeSpan.InternalTicks / divisor);
             return IntervalFromDoubleTicks(ticks);
         }
         #endregion

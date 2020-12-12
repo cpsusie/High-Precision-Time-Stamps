@@ -126,6 +126,7 @@ namespace UnitTests
 
             Helper.WriteLine("Here is the original monotonic stamp: [{0}].", stamp);
             Helper.WriteLine("Here is the portable version: [{0}].", portable);
+            Helper.WriteLine("Here is the portable version in local time: [{0}].", portable.ToLocalString());
         }
 
         [Fact]
@@ -191,7 +192,7 @@ namespace UnitTests
 
                 Helper.WriteLine(
                     "Difference between portable stamps as imported from monotonic vs imported from TS: [{0:N}].",
-                    diff.Ticks);
+                    diff.InternalTicks);
             }
             else
             {
