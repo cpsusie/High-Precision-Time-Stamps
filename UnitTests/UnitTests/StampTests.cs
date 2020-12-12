@@ -103,7 +103,22 @@ namespace UnitTests
             Helper.WriteLine("Reversed: [{0:O}]", reversed);
             Assert.True(reversed == stamp);
         }
-        
+
+        [Fact]
+        public void TestPortableStampBreakdown()
+        {
+            MonotonicStamp stamp = Fixture.MonotonicStampNow;
+            PortableMonotonicStamp portable = (PortableMonotonicStamp) stamp;
+            DateTime utcFromStamp = stamp.ToUtcDateTime();
+            DateTime utcFromPortable = portable.ToUtcDateTime();
+            int millisecondsMonoStampDateTime = utcFromStamp.Millisecond;
+            int millisecondsPortableStampDateTime = utcFromPortable.Millisecond;
+            Assert.Equal(millisecondsMonoStampDateTime, millisecondsPortableStampDateTime);
+            int portableDirectFractionalSeconds = portable.FractionalSeconds;
+            //convert to milliseconds before comparison
+            Assert.Equal(portableDirectFractionalSeconds / 1_000_000, millisecondsPortableStampDateTime);
+        }
+
         [Fact]
         public void TestPortableStamp()
         {

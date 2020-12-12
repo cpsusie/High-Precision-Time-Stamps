@@ -2901,23 +2901,6 @@
             Maximum value representable
             </summary>
         </member>
-        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToLocalDateTime">
-            <summary>
-            Convert this to a datetime in the local datetime timezone.
-            </summary>
-            <returns>A local datetime</returns>
-            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException"></exception>
-            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Cannot be converted to
-            DateTime because of overflow.</exception>
-        </member>
-        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToUtcDateTime">
-            <summary>
-            Convert this into a utc datetime
-            </summary>
-            <returns>a utc datetime</returns>
-            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Cannot be converted to
-            DateTime because of overflow.</exception>
-        </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Explicit(HpTimeStamps.MonotonicTimeStamp{HpTimeStamps.MonotonicStampContext}@)~HpTimeStamps.PortableMonotonicStamp">
             <summary>
             Convert a monotonic stamp to a portable stamp
@@ -2926,12 +2909,6 @@
             <remarks>Will be roundtrippable (less timezone info ... will be made UTC)
             unless the factors for conversion between monotonic stamps and nanoseconds are
             not conducive to even division.  <see cref="P:HpTimeStamps.MonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.</remarks>
-        </member>
-        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToString">
-            <summary>
-            Get a string representation of this value
-            </summary>
-            <returns>A string representation.</returns>
         </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Implicit(System.DateTime)~HpTimeStamps.PortableMonotonicStamp">
             <summary>
@@ -2946,6 +2923,75 @@
             Convert a monotonic stamp into a date time
             </summary>
             <param name="monotonicStamp"></param>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.NanosecondsSinceUtcEpoch">
+            <summary>
+            Amount of time in nanoseconds since the .NET UTC Epoch.
+            </summary>
+            <remarks>Value of .NET UTC epoch is calculated by calling <see cref="M:System.DateTime.ToUniversalTime"/>
+            on <see cref="F:System.DateTime.MinValue"/></remarks>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Year">
+            <summary>
+            The year (A.D. 0001 - 9999)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Month">
+            <summary>
+            The month (1-12)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Day">
+            <summary>
+            The day (1-28, 1-29, 1-30, 1-31 depending on <see cref="P:HpTimeStamps.PortableMonotonicStamp.Month"/>)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Hour">
+            <summary>
+            The hour (0-23)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Minutes">
+            <summary>
+            Then minutes (0-59)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.Seconds">
+            <summary>
+            The seconds (0-59)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.FractionalSeconds">
+            <summary>
+            The fractional seconds (1 - 9,999,999)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.TimeSinceEpoch">
+            <summary>
+            Amount of time elapsed since epoch
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToLocalDateTime">
+            <summary>
+            Convert this to a datetime in the local datetime timezone.
+            </summary>
+            <returns>A local datetime</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Cannot be converted to
+            DateTime because of overflow.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToUtcDateTime">
+            <summary>
+            Convert this into a utc datetime
+            </summary>
+            <returns>a utc datetime</returns>
+            <exception cref="T:HpTimeStamps.PortableTimestampOverflowException">Cannot be converted to
+            DateTime because of overflow.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.ToString">
+            <summary>
+            Get a string representation of this value in ISO 8601 format
+            </summary>
+            <returns>A string representation.</returns>
         </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Equality(HpTimeStamps.PortableMonotonicStamp@,HpTimeStamps.PortableMonotonicStamp@)">
             <summary>
