@@ -63,6 +63,13 @@ namespace UnitTests
             MonotonicStamp now = Fixture.StampNow;
             Helper.WriteLine("Initial local stamp: [{0:O}].", now.ToLocalDateTime());
             Helper.WriteLine("Initial utc stamp: [{0:O}].", now.ToUtcDateTime());
+            Helper.WriteLine("Earliest instant representable as a monotonic timestamp in this process: [{0}].", MonotonicStamp.MinValue);
+            Helper.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MinValue.ToUtcDateTime());
+            Helper.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MinValue.ToLocalDateTime());
+            Helper.WriteLine("Latest instant representable as a monotonic timestamp in this process: [{0}]", MonotonicStamp.MaxValue);
+            Helper.WriteLine("Same value converted to a UTC DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToUtcDateTime());
+            Helper.WriteLine("Same value converted to a Local DateTime: [{0:O}].", MonotonicStamp.MaxValue.ToLocalDateTime());
+            
         }
 
         [Fact]
