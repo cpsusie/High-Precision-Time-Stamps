@@ -8,7 +8,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.0.5.4-beta</Version>
+    <Version>0.1.0.0</Version>
     <Description>It is well known that DateTime.Now is often used inappropriately.  For example, it may be used together with TimeSpan to produce a task's timeout point or subtracted from another DateTime to calculate a duration.  This can cause subtle bugs because DateTime is not monotonic: the system clock can change, making the result of the subtraction inaccurate -- potentially causing a premature timeout or an infinite loop.  Yet, DateTime is an incredibly convenient and widely used value type in .NET code and is especially useful when printed in ISO-8601 format (with the "O" format specifier).  
 
 With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
@@ -22,8 +22,8 @@ Create ExampleCode project.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps DateTime Duration Monotonic-Clock TimeSpan High-Resolution ISO-8601</PackageTags>
-    <AssemblyVersion>0.0.5.4</AssemblyVersion>
-    <FileVersion>0.0.5.4</FileVersion>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
     <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -70,6 +70,7 @@ Create ExampleCode project.</PackageReleaseNotes>
 
   <ItemGroup>
     <Content Include="LICENSE" />
+    <Content Include="Readme.md"/>
   </ItemGroup>
 
   <ItemGroup>
