@@ -2531,9 +2531,16 @@
             <summary>
             Compute a duration from a value representing microseconds
             </summary>
-            <param name="value">Value representing milliseconds</param>
+            <param name="value">Value representing microseconds</param>
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableDuration.FromNanoseconds(System.Int64)">
+            <summary>
+            Compute a duration from a value representing nanoseconds
+            </summary>
+            <param name="nanoseconds">Value representing nanoseconds</param>
+            <returns>A duration</returns>
         </member>
         <member name="M:HpTimeStamps.PortableDuration.FromMinutes(System.Double)">
             <summary>

@@ -486,7 +486,10 @@ namespace HpTimeStamps
             int penultimateChar = Math.DivRem(fractionalSeconds, 10, out int ultimateChar);
             if (ultimateChar != 0)
             {
-                result.Insert(insertBeforeIdx, fractionalSeconds.ToString());
+                string insertMe = penultimateChar == 0
+                    ? "0" + fractionalSeconds
+                    : fractionalSeconds.ToString();
+                result.Insert(insertBeforeIdx, insertMe);
             }
             else if (penultimateChar != 0)
             {

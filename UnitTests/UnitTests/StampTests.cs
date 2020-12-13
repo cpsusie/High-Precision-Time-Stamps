@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using HpTimeStamps;
-using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -137,19 +134,49 @@ namespace UnitTests
             DateTime withFractionalSecondsJan = noFractionalSecondsJan + TimeSpan.FromMilliseconds(123.4567);
             int wFrcSJanLength = GetLength(withFractionalSecondsJan);
             DateTime noFractionalSecondsDec = new DateTime(1919, 12, 12, 17, 17, 59, DateTimeKind.Utc);
-            int noFrSD = GetLength(noFractionalSecondsDec);
+            int noFrSd = GetLength(noFractionalSecondsDec);
             DateTime withFracSecDec = noFractionalSecondsDec + TimeSpan.FromMilliseconds(999.9999);
-            int wFrSD = GetLength(withFracSecDec);
+            int wFrSd = GetLength(withFracSecDec);
             
             Assert.True(noFrSecJanLength == wFrcSJanLength &&
-                        wFrcSJanLength == noFrSD &&
-                        noFrSD == wFrSD);
+                        wFrcSJanLength == noFrSd &&
+                        noFrSd == wFrSd);
 
             Helper.WriteLine("All 8601 datetime stamps are {0:N0} characters long.", noFrSecJanLength);
 
             static int GetLength(DateTime dt) => dt.ToString("O").Length;
         }
 
+        [Fact]
+        public void TestArithmetic()
+        {
+            DateTime myDt = new DateTime(2069, 06, 10, 18, 42, 49, 333, DateTimeKind.Utc);
+            PortableMonotonicStamp stamp = myDt;
+            Helper.WriteLine("Date time: \t[{0:O}].", myDt);
+            Helper.WriteLine("stamp: \t\t[{0}].", stamp);
+            PortableMonotonicStamp plusNano = stamp + PortableDuration.FromNanoseconds(1);
+            Helper.WriteLine("Plus nano: \t[{0}].", plusNano);
+            Assert.True(plusNano - stamp == PortableDuration.FromNanoseconds(1));
+            Assert.True(plusNano > stamp && stamp < plusNano && PortableMonotonicStamp.Compare(in plusNano, in stamp)>0);
+            PortableDuration oneMicrosecond = PortableDuration.FromMicroseconds(1);
+            TimeSpan oneMicroSecond = (TimeSpan) oneMicrosecond;
+            Assert.True(oneMicrosecond == oneMicroSecond);
+            PortableMonotonicStamp upOneMicro = plusNano + PortableDuration.FromNanoseconds(999);
+            Assert.True(stamp + oneMicrosecond == upOneMicro);
+            myDt += oneMicroSecond;
+            Assert.True(upOneMicro == myDt);
+            string utcDtUpMicro = myDt.ToString("O");
+            string localDtUpMicro = myDt.ToLocalTime().ToString("O");
+            string utcStampUpMicro = upOneMicro.ToString();
+            string localStampUpMicro = upOneMicro.ToLocalString();
+            Assert.Equal(localDtUpMicro, localStampUpMicro);
+            Assert.Equal(utcDtUpMicro, utcStampUpMicro);
+            Helper.WriteLine($"{nameof(utcDtUpMicro)}:\t\t\t[{utcDtUpMicro}].");
+            Helper.WriteLine($"{nameof(localDtUpMicro)}:\t\t\t[{localDtUpMicro}].");
+            Helper.WriteLine($"{nameof(utcStampUpMicro)}:\t\t[{utcStampUpMicro}].");
+            Helper.WriteLine($"{nameof(localStampUpMicro)}:\t\t[{localStampUpMicro}].");
+
+        }
         [Fact]
         public void TestPortableStamp()
         {

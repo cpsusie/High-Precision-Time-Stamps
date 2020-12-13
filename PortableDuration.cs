@@ -205,7 +205,7 @@ namespace HpTimeStamps
         /// <summary>
         /// Compute a duration from a value representing microseconds
         /// </summary>
-        /// <param name="value">Value representing milliseconds</param>
+        /// <param name="value">Value representing microseconds</param>
         /// <returns>A duration</returns>
         /// <exception cref="ArgumentException">Value not representable as a PortableDuration.</exception>
         public static PortableDuration FromMicroseconds(long value)
@@ -214,6 +214,12 @@ namespace HpTimeStamps
             PdInt result = (PdInt) value * 1_000;
             return new PortableDuration((PdInt) result);
         }
+        /// <summary>
+        /// Compute a duration from a value representing nanoseconds
+        /// </summary>
+        /// <param name="nanoseconds">Value representing nanoseconds</param>
+        /// <returns>A duration</returns>
+        public static PortableDuration FromNanoseconds(long nanoseconds) => new PortableDuration(nanoseconds);
 
         /// <summary>
         /// Compute a duration from a value representing minutes
