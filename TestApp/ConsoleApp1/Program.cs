@@ -788,23 +788,16 @@ namespace TestApp
             var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<MonotonicStamp>();
             try
             {
-                int noYieldCount = 0;
                 while (DateTime.Now <= quitAfter)
                 {
                     token.ThrowIfCancellationRequested();
                     for (int i = 0; i < 10; ++i)
                     {
                         builder.Add(MonotonicSource.StampNow);
+                        Thread.SpinWait(2500);
                     }
 
-                    if (!Thread.Yield())
-                    {
-                        if (++noYieldCount > 10)
-                        {
-                            noYieldCount = 0;
-                            SleepFor(_sleepInterval, in token);
-                        }
-                    }
+                    SleepFor(_sleepInterval, in token);
                     token.ThrowIfCancellationRequested();
                     
                 }
@@ -1049,23 +1042,16 @@ namespace TestApp
             var builder = _gathered?.ToBuilder() ?? ImmutableList.CreateBuilder<DateTime>();
             try
             {
-                int noYieldCount = 0;
                 while (DateTime.Now <= quitAfter)
                 {
                     token.ThrowIfCancellationRequested();
                     for (int i = 0; i < 10; ++i)
                     {
                         builder.Add(TimeStampSource.Now);
+                        Thread.SpinWait(2500);
                     }
                     token.ThrowIfCancellationRequested();
-                    if (!Thread.Yield())
-                    {
-                        if (++noYieldCount >= 10)
-                        {
-                            noYieldCount = 0;
-                            SleepFor(_sleepInterval, in token);
-                        }
-                    }
+                    SleepFor(_sleepInterval, in token);
                 }
             }
             finally
