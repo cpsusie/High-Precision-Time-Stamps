@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "High Precision Time Stamps"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApp", "TestApp\ConsoleApp1\TestApp.csproj", "{AECB9BDF-27C9-43C9-AA00-DE4DF334CCA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests\UnitTests.csproj", "{C8C0D164-A1B6-4E2A-A9B2-FB5FFD10D191}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\UnitTests\UnitTests.csproj", "{C8C0D164-A1B6-4E2A-A9B2-FB5FFD10D191}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleCode", "ExampleCode\ExampleCode.csproj", "{0FBDB31A-6D95-42C2-AF1E-70FC7DD9D88D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{C8C0D164-A1B6-4E2A-A9B2-FB5FFD10D191}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8C0D164-A1B6-4E2A-A9B2-FB5FFD10D191}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8C0D164-A1B6-4E2A-A9B2-FB5FFD10D191}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FBDB31A-6D95-42C2-AF1E-70FC7DD9D88D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FBDB31A-6D95-42C2-AF1E-70FC7DD9D88D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FBDB31A-6D95-42C2-AF1E-70FC7DD9D88D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FBDB31A-6D95-42C2-AF1E-70FC7DD9D88D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -48,12 +48,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ExampleCode\**" />
     <Compile Remove="Int128_Test_Helper\**" />
     <Compile Remove="TestApp\**" />
     <Compile Remove="UnitTests\**" />
+    <EmbeddedResource Remove="ExampleCode\**" />
     <EmbeddedResource Remove="Int128_Test_Helper\**" />
     <EmbeddedResource Remove="TestApp\**" />
     <EmbeddedResource Remove="UnitTests\**" />
+    <None Remove="ExampleCode\**" />
     <None Remove="Int128_Test_Helper\**" />
     <None Remove="TestApp\**" />
     <None Remove="UnitTests\**" />
