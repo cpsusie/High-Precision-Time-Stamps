@@ -2,7 +2,7 @@
 using HpTimeStamps;
 using HpTimeStamp = System.DateTime;
 using HpTsSource = HpTimeStamps.TimeStampSource;
-using WallStamp = System.DateTime;
+using WallStampSource= System.DateTime;
 using MonotonicStampSource = HpTimeStamps.MonotonicTimeStampUtil<HpTimeStamps.MonotonicStampContext>;
 using MonotonicStamp = HpTimeStamps.MonotonicTimeStamp<HpTimeStamps.MonotonicStampContext>;
 namespace Timestamps
@@ -15,12 +15,12 @@ namespace Timestamps
     {
 
         public static DateTime Now => MonoNow.ToLocalDateTime();
-        public static DateTime UtcNow => MonoNow.ToLocalDateTime();
+        public static DateTime UtcNow => MonoNow.ToUtcDateTime();
         public static MonotonicStamp MonoNow => MonotonicStampSource.StampNow;
         public static HpTimeStamp HpNow => HpTsSource.Now;
         public static HpTimeStamp HpUtcNow => HpTsSource.UtcNow;
-        public static WallStamp WallNow => WallStamp.Now;
-        public static WallStamp WallUtcNow => WallStamp.UtcNow;
+        public static DateTime WallNow => WallStampSource.Now;
+        public static DateTime WallUtcNow => WallStampSource.UtcNow;
 
         public static bool HpNeedsCalibration => HpTsSource.NeedsCalibration;
         public static TimeSpan TimeSinceLastCalibration => HpTsSource.TimeSinceCalibration;
