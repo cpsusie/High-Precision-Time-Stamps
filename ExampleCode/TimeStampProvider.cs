@@ -46,7 +46,7 @@ namespace ExampleTimestamps
         /// <summary>
         /// Use the default provider to get a timestamp expressed in local time
         /// </summary>
-        public static HpStamp Now
+        public static DateTime Now
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => s_defaultProvider.DefaultNow;
@@ -55,7 +55,7 @@ namespace ExampleTimestamps
         /// <summary>
         /// Use the default provider to get a timestamp in UTC time
         /// </summary>
-        public static HpStamp UtcNow
+        public static DateTime UtcNow
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => s_defaultProvider.DefaultUtcNow;

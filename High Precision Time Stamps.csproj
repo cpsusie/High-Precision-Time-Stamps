@@ -9,21 +9,19 @@
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
     <Version>0.0.5.4-beta</Version>
-    <Description>
-      This pre-release alpha package provides timestamps in a similar manner to DateTime.Now except it uses the hardware's high precision event timer, where available.  Time stamps are more precise and, when retrieved on the same thread within a short time of each other, can be expected to be more accurate relative to each other than those retrieved by DateTime.Now.  They may be less accurate in reference to offical UTC time or system time, but, under most circumstances, should remain approximately accurate.
+    <Description>It is well known that DateTime.Now is often used inappropriately.  For example, it may be used together with TimeSpan to produce a task's timeout point or subtracted from another DateTime to calculate a duration.  This can cause subtle bugs because DateTime is not monotonic: the system clock can change, making the result of the subtraction inaccurate -- potentially causing a premature timeout or an infinite loop.  Yet, DateTime is an incredibly convenient and widely used value type in .NET code and is especially useful when printed in ISO-8601 format (with the "O" format specifier).  
 
-      The use-case for this project is when approximately accurate timestamps are needed for purposes of identifying when an event happened, but are also used to measure elapsed time between events that happen on a scale of milliseconds or microseconds.
-    </Description>
+With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
+  
+This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high peformance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events or to calculate how long to perform a programmatic task.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>This release resolved some major problems with int128 arithmetic.  Now the code is based on the work of Google/Abseil in their C++ int128 library.  Also, multiplication and division are now faster.  Unit test project significantly updated.  Unit test utility written in C++ that generates Int128 operations and their results using Abseil, which the C# unit tests use to verify that the calculations produce the same value.  The unit test utility is not very user friendly at this point, but is really only intended to produce data the C# unit test project can use.
-      This release 0.0.5.1 fixes a misspelled namespace: HpTimesStamps -&gt; HpTimeStamps.  This is a breaking change and client code must refactor.  Hopefully, there will not be any more breaking changes that require code refactors.
-      It also adds a unit test project that focuses on conversions.  More tests will be forthcoming.
-      SourceLink support will be attempted.   It may not work correctly on this release but it is a goal.
-      Also, a dependency to System.Memory Nuget package has been added.  I hope to get rid of dynamic array allocations in the Int128 multiplication, division and modulus operations.
-</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial (non-beta) Release.  
+Update Readme.md. 
+Update Project description.
+Create ExampleCode project.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
-    <PackageTags>Timestamps</PackageTags>
+    <PackageTags>Timestamps DateTime Duration Monotonic-Clock TimeSpan High-Resolution ISO-8601</PackageTags>
     <AssemblyVersion>0.0.5.4</AssemblyVersion>
     <FileVersion>0.0.5.4</FileVersion>
     <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>

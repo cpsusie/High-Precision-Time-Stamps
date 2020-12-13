@@ -322,9 +322,7 @@ namespace ExampleTimestamps
             }
 
             Console.WriteLine($"Elapsed time since last calibration: {TimeStampProvider.TimeSinceLastCalibration}.");
-
             
-
             var stamps = GetStamps(10);
             Console.WriteLine("Going to print timestamps: ");
             int stampCount = 0;
