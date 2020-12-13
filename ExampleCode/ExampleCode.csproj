@@ -3,6 +3,20 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>ExampleTimestamps</AssemblyName>
+    <RootNamespace>ExampleTimestamps</RootNamespace>
+    <Authors>Christopher Susie</Authors>
+    <Company>CJM Screws, LLC</Company>
+    <Product>High Precision Time Stamps</Product>
+    <Description>Example code</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High-Precision-Time-Stamps\ExampleCode\ExampleTimestamps.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>C:\Users\Christopher Susie\Source\Repos\High-Precision-Time-Stamps\ExampleCode\ExampleTimestamps.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

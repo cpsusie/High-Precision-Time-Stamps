@@ -1,0 +1,316 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ExampleTimestamps</name>
+    </assembly>
+    <members>
+        <member name="T:ExampleTimestamps.DefaultStampProvider">
+            <summary>
+            Implementations hereof used by <see cref="T:ExampleTimestamps.TimeStampProvider"/> to provide default
+            DateTime format timestamps;
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.DefaultStampProvider.DefaultStamp">
+            <summary>
+            The source the <see cref="T:ExampleTimestamps.TimeStampProvider"/> uses to produce its
+            default timestamps via the <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and
+            <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/>
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.DefaultStampProvider.DefaultNow">
+            <summary>
+            Get a timestamp expressing the current local time
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.DefaultStampProvider.DefaultUtcNow">
+            <summary>
+            Get a timestamp expressing the current utc time
+            </summary>
+        </member>
+        <member name="T:ExampleTimestamps.DefaultStampType">
+            <summary>
+            Indicates which clock <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/>
+            use.
+            </summary>
+        </member>
+        <member name="F:ExampleTimestamps.DefaultStampType.Monotonic">
+            <summary>
+            Default stamps are values of <see cref="T:System.DateTime"/> retrieved
+            from a monotonic source.
+            </summary>
+        </member>
+        <member name="F:ExampleTimestamps.DefaultStampType.HighPrecision">
+            <summary>
+            Default stamps are values of <see cref="T:System.DateTime"/> retrieved
+            from a High Precision (per-thread calibrated, periodically recalibrating,
+            non-monotonic source).
+            </summary>
+        </member>
+        <member name="F:ExampleTimestamps.DefaultStampType.Wall">
+            <summary>
+            Default stamps are values of <see cref="T:System.DateTime"/> that reflect the
+            Wall clock: not monotonic, not high precision, subject to change
+            based on timezone, synchronization with time server, daylights savings time,
+            etc.
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.Program.DefaultStampExamples">
+             <summary>
+             It is recommended that you stop using DateTime.Now and DateTime.UtcNow
+             and use a static class like <see cref="T:ExampleTimestamps.TimeStampProvider"/> or similar arrangement.
+            
+             From the <see cref="T:ExampleTimestamps.TimeStampProvider"/> you can get DateTimes and monotonic stamps
+             from a variety of clocks based on your needs.  You can also retrieve "default" datetimes
+             and configure defaults based on wall clock, hp clock, monotonic clock or another clock depending
+             on your use cases.  If the default turns out to be the wrong choice, it is then easy to reconfigure
+             what clock the default <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/>
+             work off of.  If you want the wall clock for sure, you use the wall clock via <see cref="P:ExampleTimestamps.TimeStampProvider.WallNow"/> or
+             <see cref="P:ExampleTimestamps.TimeStampProvider.WallUtcNow"/>.  If you are doing a timing sensitive
+             task with a deadline, use a <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/>.  If you are profiling a performance of a single thread
+             over a period of a couple minutes, use <see cref="P:ExampleTimestamps.TimeStampProvider.HpNow"/> or <see cref="P:ExampleTimestamps.TimeStampProvider.HpUtcNow"/>.
+            
+             Using the system clock as the default source of DateTime stamps is a bad idea for the type of work I do ... but there may
+             be cases and domains where it truly is the best.  Configure the <see cref="T:ExampleTimestamps.TimeStampProvider"/> or similar creation accordingly.
+             If you change your mind about defaults, it will be easy to change and in one place.  
+             </summary>
+        </member>
+        <member name="M:ExampleTimestamps.Program.WallClockExample">
+             <summary>
+             You should use the wall clock (i.e. DateTime now)
+             when you need a calendar-based timestamp without needing to use
+             the stamps later to determine how much time has elapsed between two events.
+            
+             DateTime (and TimeSpan) have a resolution of a tenth of a microsecond, but
+             much of that is actually junk/garbage data.
+            
+             Advantages of WallClock (i.e. <see cref="P:System.DateTime.Now"/> and <see cref="P:System.DateTime.UtcNow"/>:
+                    Most accurate (assuming machine has synchronization with time server) expression
+                    of calendar date time for a thing.
+             Disadvantages:
+                    Not suitable for accurately measuring (particular on the scale relevant to a computer program)
+                    time elapsed between events.  For example, system clock may be adjusted by user, admininstrator,
+                    time server.  Daylights savings transitions may happen.  Leap seconds.
+            
+                    Most of the resolution available is not actually accurate: beyond several milliseconds (may vary based on environment),
+                    values should not be relied on.
+             </summary>
+        </member>
+        <member name="M:ExampleTimestamps.Program.MonotonicClockExample">
+             <summary>
+             Monotonic clocks are suitable for measuring the time elapsed between events and 
+             use <see cref="T:System.Diagnostics.Stopwatch"/> (which uses a high resolution event timer
+             if available).  On systems where it is available as a High Resolution clock
+             (at least Linux and Windows right now) , it is also monotonic.  This means that the clock always
+             moves forward ... unlike the wall clock, you can never take two readings and have the later reading
+             yield an earlier time.  Unlike the wall clock, it is STEADY.  It is not subject to changes.  Using
+             Stopwatch directly is often possible, but it does not give you a timestamp -- just elapsed time.
+            
+             In many scenarios (in my line of work) it is desirable to have a "dual use" timestamp: one that
+             is suitable for displaying the date/time of events AND being safely usable to calculate elapsed time between events.
+             
+             This stamp is designed to serve in this dual-use scenario (suitable to say what time something happened AND
+             to use with other stamps to measure elapsed time).  Unlike the high precision clock provided, these stamps
+             are calibrated once per process (across all threads) and thus can be used to establish at least a rough
+             ordering of events across multiple threads.
+             
+             Advantages: (note some advantages can also be disadvantages and vice versa)
+                 1- It is safe to rely on this to measure intervals.
+                 2- It is (usually) more accurate (vis-a-vis time elapsed between events), down to the precision and accuracy
+                     of the hardware's high precision event time.
+                 3- Unlike just using stopwatch you can still use these to log the time something happened AND use it to measure elapsed time
+                 4- It is convertible to a DateTime.
+                 5- It can safely be used to express a "timeout" deadline without fear that system clock will change, causing incorrect behavior.
+             Disadvantages:
+                 1- Because these (of necessity) are calibrated only once per process, over time there will likely be drift
+                    between the system clock and this clock.  The system clock is usually synchronized and updated for daylights savings,
+                    timezone changes, etc.  Thus, if (for example) it becomes daylight savings time while a process is running,
+                    these stamps (when expressed as a DateTime or printed to ISO-8601) will not accurately reflect the actual time at which the event occurred.
+                     a. Example.
+                         -You start using these stamps at midnight on a day when transitioning to standard from daylight savings time.
+                         -At what would normally be 3 am, the system clock moves back one hour for a "second" 2am.
+                         -These timestamps will now not accurately reflect the local time at which something happened
+                 2- These are not suitable for use across process boundaries or for serialization.  To keep the data in each value
+                    small, calibration data is static (which correlates high precision performance counter ticks to a wall clock time once).  Thus
+                    each value contains only an offset in stopwatch ticks from the reference time.  The reference time will be different for every process
+                    and high precision event counter resolution varies by system.  Outside of current process, these values are meaningless
+                 3- Some systems have very peculiar frequencies for the high performance event counter (as accessed via <see cref="T:System.Diagnostics.Stopwatch"/>).
+                    On most Windows 10 systems I have tested this project on, the resolution of the <see cref="T:System.Diagnostics.Stopwatch"/> (and thus
+                    this clock) is 10,000,000 ticks per second (i.e. 1 tick per tenth of a microsecond -- the same as <see cref="T:System.DateTime"/> and <see cref="T:System.TimeSpan"/>)
+                    thus making conversions to and from DateTime and TimeSpan straightforward and without data loss.  On the Linux systems I have tested (Amazon Linux 2 and Ubuntu 20.04),
+                    the resolution of stopwatch is 1,000,000,000.  This conversion is relatively straight forward and round: you lose hundredths and thousandths of microsecond resolution
+                    when converting to DateTime and TimeSpan.  On other systems, however, the high precision event counter may have a resolution (though presumably a higher accuracy) LOWER than DateTime
+                    and TimeSpan and have very non-round conversion factors (for example, on Windows Server hosted by Amazon AWS Work spaces, my test machine has a frequency of  2,441,366), which
+                    complicated this project far beyond what I had originally anticipated.
+            
+             Note that is clock is unique in that it does not directly produce <see cref="T:System.DateTime"/> values.  Rather, it produces objects that express the time in terms of <see cref="T:System.Diagnostics.Stopwatch"/>
+             ticks.  This keeps the actual size of individual values quite small.  They are fully convertible to DateTime but may lose precision based on the relative resolution of <see cref="T:System.DateTime"/> and <see cref="T:System.TimeSpan"/>
+             and <see cref="T:System.Diagnostics.Stopwatch"/>.  Because which direction the loss will occur in and whether there will be loss due to rounding cannot be determined, conversions between this and datetime have to be explicit.
+             These stamps provide <see cref="M:HpTimeStamps.MonotonicTimeStamp`1.ToLocalDateTime"/> and <see cref="M:HpTimeStamps.MonotonicTimeStamp`1.ToUtcDateTime"/> method for conversion as well as explicit casts.  Also, if not converting to DateTime before usage,
+             this type has a companion analog to <see cref="T:System.TimeSpan"/> called <see cref="T:HpTimeStamps.Duration"/>.  <see cref="T:HpTimeStamps.Duration"/> is represented in terms of the same frequency as <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/> so arithmetic
+             is not complex.  
+            
+             If you wish to serialize this data, you can:
+            
+                  1- convert <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/> to <see cref="T:System.DateTime"/> or <see cref="T:HpTimeStamps.Duration"/> to <see cref="T:System.TimeSpan"/> first and save those values.  This may involve loss of precision depending
+                     on frequencies.
+                  2- convert <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/> to <see cref="T:HpTimeStamps.PortableMonotonicStamp"/> or <see cref="T:HpTimeStamps.Duration"/> to <see cref="T:HpTimeStamps.PortableDuration"/>.  <see cref="T:HpTimeStamps.PortableDuration"/> and <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>
+                     (across ALL systems) have nanoseconds resolution -- unless your system's <see cref="T:System.Diagnostics.Stopwatch"/> has a resolution finer than nanoseconds, there will not be lost precision .... EXCEPT perhaps some slight loss
+                     if the <see cref="T:System.Diagnostics.Stopwatch"/> frequency does not lend itself to clean conversion.  This is minimal in my experience.       
+             
+             </summary>
+        </member>
+        <member name="M:ExampleTimestamps.Program.HighPrecisionClockExample">
+             <summary>
+             Like the wall clock and unlike the monotonic clock, this source simply provides regular DateTimes but it used the <see cref="T:System.Diagnostics.Stopwatch"/>
+             rather than wall clock.  Like <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/>, there is an association of a stopwatch reading with a wall clock reading
+             used to translate results from calls to <see cref="M:System.Diagnostics.Stopwatch.GetTimestamp"/> to date times.  UNLIKE the monotonic clock, the calibration here is done on
+             a PER THREAD basis.  Also, the calibration is for a limited duration .... after a time limit expires the stamps will be re-calibrated to the wall clock.
+            
+             Advantages:
+                 1- Unlike monotonic clock, periodic recalibration reduces chance of significant drift between system clock and this clock.
+                 2- On a per-thread basis within a given calibration period (assuming no system clock change) the stamps produced will be
+                    more accurate (as far as <see cref="T:System.Diagnostics.Stopwatch"/> and hardware allow) than stamps obtained with DateTime.Now.
+                 3- They can thus be used for benchmarks or within smaller time windows to measure performance / benchmark as well
+                    as serve as reasonably accurate timestamps (assuming one calibration period, no system clock change during it).
+             Disadvantages:
+                 1- Per thread.  Cannot be used to reliably relate relative occurrence of events on different threads.
+                 2- Recalibration overhead (call <see cref="M:ExampleTimestamps.TimeStampProvider.CalibrateNow"/> before use to minimize possibility)
+                 3- If a big adjustment to system clock happens after calibration but timestamps are read BEFORE next recalibration, stamps will not be accurate
+                    vis-a-vis wall clock
+                 4. If some stamps are gathered during calibration period A, then calibration period A ends and a big change is made to system clock, then recalibration happens
+                    at period B, then more stamps are read, the stamps from period A cannot be used with stamps from period B to accurately measure elapsed time.
+             </summary>
+        </member>
+        <member name="T:ExampleTimestamps.TimeStampProvider">
+            <summary>
+            Static class used for obtaining DateTimes and other timestamps
+            </summary>
+            <remarks>In a non-demo implementation, <see cref="F:ExampleTimestamps.TimeStampProvider.s_defaultProvider"/> should be WriteOnce (with thread-safe initializer)
+            or readonly if you don't need to dynamically change default at runtime.
+            </remarks>
+            <summary>
+            Contains nested typedefs
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.DefaultStampType">
+            <summary>
+            Indicates type of stamps retrieved by <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/>
+            properties.
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.Now">
+            <summary>
+            Use the default provider to get a timestamp expressed in local time
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.UtcNow">
+            <summary>
+            Use the default provider to get a timestamp in UTC time
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonoNow">
+            <summary>
+            Get a monotonic timestamp
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonoUtcNow">
+            <summary>
+            Get a monotonic timestamp expressed as a utc datetime
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonoLocalNow">
+            <summary>
+            Get a monotonic timestamp expressed as a local datetime
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HpNow">
+            <summary>
+            Get a high precision timestamp expressed as a local time
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HpUtcNow">
+            <summary>
+            Get a high precision timestamp expressed in UTC
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.WallNow">
+            <summary>
+            Get the wall clock time expressed as local time
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.WallUtcNow">
+            <summary>
+            Get the wall clock time expressed in utc
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HpNeedsCalibration">
+            <summary>
+            True if, on this thread, the high precision clock needs calibration.
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.TimeSinceLastCalibration">
+            <summary>
+            The amount of time elapsed since the High Precision clock's
+            last calibration on this thread.
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonotonicContext">
+            <summary>
+            Monotonic stamp context used by monotonic clock.  Contains
+            information about frequencies, conversions, a reference time, etc.
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.TimeStampProvider.CalibrateNow">
+            <summary>
+            Calibrate the high precision clock now
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.TimeStampProvider.UseMonotonicDefaultStamps">
+            <summary>
+            Make <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/> use a monotonic clock as their source
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.TimeStampProvider.UseHighPrecisionDefaultStamps">
+            <summary>
+            Make <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/> use a high precision clock as their source
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.TimeStampProvider.UseWallClockDefaultStamps">
+            <summary>
+            Make <see cref="P:ExampleTimestamps.TimeStampProvider.Now"/> and <see cref="P:ExampleTimestamps.TimeStampProvider.UtcNow"/> use the wall clock as their source.
+            </summary>
+        </member>
+        <member name="M:ExampleTimestamps.TimeStampProvider.#cctor">
+            <summary>
+            Adjust 
+            </summary>
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.WallClockProvider.DefaultStamp">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.WallClockProvider.DefaultNow">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.WallClockProvider.DefaultUtcNow">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonotonicClockProvider.DefaultStamp">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonotonicClockProvider.DefaultNow">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.MonotonicClockProvider.DefaultUtcNow">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HighPrecisionClockProvider.DefaultStamp">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HighPrecisionClockProvider.DefaultNow">
+            <inheritdoc />
+        </member>
+        <member name="P:ExampleTimestamps.TimeStampProvider.HighPrecisionClockProvider.DefaultUtcNow">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

@@ -24,7 +24,7 @@ namespace HpTimeStamps
         /// <summary>
         /// True if calibration is needed on THIS thread, false otherwise
         /// </summary>
-        public static bool NeedsCalibration => TheUtil.IsCalibrated;
+        public static bool NeedsCalibration => !TheUtil.IsCalibrated;
         /// <summary>
         /// How long has it been since calibration (on THIS thread)
         /// </summary>
