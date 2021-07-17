@@ -61,11 +61,11 @@ namespace UnitTests {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &lt;ByRefRoListOfIssue13StampTestPacketV2H0oy0p xmlns=&quot;http://schemas.datacontract.org/2004/07/UnitTests&quot; xmlns:i=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;&lt;_array&gt;&lt;Issue13StampTestPacket&gt;&lt;_acqSysRefTicks&gt;6786159194&lt;/_acqSysRefTicks&gt;&lt;_acqSysTicksPerSecond&gt;2441422&lt;/_acqSysTicksPerSecond&gt;&lt;_acquiredSystemWallClockDateTime&gt;2021-07-17T17:53:59.6695867-04:00&lt;/_acquiredSystemWallClockDateTime&gt;&lt;_portableCastFromMonotonic xmlns:a=&quot;http://schemas.datacontract.org/2004/07/HpTimeStamps&quot;&gt;&lt;a:_dateTimeNanosecondOffsetFromM [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to &lt;ByRefRoListOfIssue13StampTestPacketV2H0oy0p xmlns=&quot;http://schemas.datacontract.org/2004/07/UnitTests&quot; xmlns:i=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;&lt;_array&gt;&lt;Issue13StampTestPacket&gt;&lt;_acqSysRefTicks&gt;23028915615&lt;/_acqSysRefTicks&gt;&lt;_acqSysTicksPerSecond&gt;2441422&lt;/_acqSysTicksPerSecond&gt;&lt;_acquiredSystemWallClockDateTime&gt;2021-07-17T19:44:52.7028914-04:00&lt;/_acquiredSystemWallClockDateTime&gt;&lt;_portableCastFromMonotonic xmlns:a=&quot;http://schemas.datacontract.org/2004/07/HpTimeStamps&quot;&gt;&lt;a:_dateTimeNanosecondOffsetFrom [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static string Win10x64_2_441_442_tps_2021_07_17T17_53_59_6774022_04_00 {
+        internal static string Win10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00 {
             get {
-                return ResourceManager.GetString("Win10x64_2_441_442_tps_2021_07_17T17_53_59_6774022_04_00", resourceCulture);
+                return ResourceManager.GetString("Win10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00", resourceCulture);
             }
         }
     }

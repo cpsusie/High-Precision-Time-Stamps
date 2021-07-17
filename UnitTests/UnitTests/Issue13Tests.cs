@@ -22,6 +22,15 @@ namespace UnitTests
         //}
 
         [Fact]
+        public void TestIdenticalConversionMethods()
+        {
+            Issue13StampTestPacket packet = Issue13StampTestPacket.CreateNewTestPacket();
+            Helper.WriteLine("Testing packet [{0}]: ", packet);
+            ValidateSamePortableStamps(in packet);
+            Helper.WriteLine("Packet has same portable stamps.");
+        }
+
+        [Fact]
         public void TryDeser()
         {
             var testSource = from item in Fixture.AllTestPackages
@@ -49,7 +58,6 @@ namespace UnitTests
                     Helper.WriteLine(string.Empty);
                     throw;
                 }
-                Helper.WriteLine("END TEST NAMED {0}", item.Title);
                 Helper.WriteLine(string.Empty);
             }
         }
@@ -79,21 +87,10 @@ namespace UnitTests
             
         }
 
-        private ByRefRoList<Issue13StampTestPacket> DeserializeFromFile(FileInfo fi)
+        private void ValidateSamePortableStamps(in Issue13StampTestPacket packet)
         {
-            string xml = ReadXmlFile(fi);
-            return DeserXmlStr(xml);
-        }
-
-        private string ReadXmlFile(FileInfo fi)
-        {
-            string xml;
-            {
-                using var sr = fi.OpenText();
-                xml = sr.ReadToEnd();
-            }
-            Assert.False(string.IsNullOrWhiteSpace(xml));
-            return xml;
+            Assert.False(packet == default);
+            Assert.True(packet.PortableCastFromMonotonic == packet.PortableToPortabledFromMonotonic);
         }
 
         private ByRefRoList<Issue13StampTestPacket> DeserXmlStr(string xml)
@@ -112,6 +109,7 @@ namespace UnitTests
             return packets;
         }
 
+        // ReSharper disable once UnusedMember.Local -- used hwen TryIt uncommented
         private void GenerateAndSaveRoRefStuffToFile()
         {
             const int count = 100;

@@ -445,29 +445,8 @@ namespace HpTimeStamps
         /// <returns>A portable timestamp.</returns>
         [Pure]
         public PortableMonotonicStamp ToPortableStamp()
-        {
-            Duration referenceTimeSinceEpoch =
-                (Duration) TimeSpan.FromTicks(Context.UtcDateTimeBeginReference.ToUniversalTime().Ticks);
-            referenceTimeSinceEpoch += Duration.FromStopwatchTicks(_stopWatchTicks);
-
-            PortableDuration pd = (PortableDuration) referenceTimeSinceEpoch;
- 
-            return new PortableMonotonicStamp(in pd._ticks);
-
-            //static Int128 ConvertTimeStampTicksToNanoseconds(Int128 timespanTicks)
-            //{
-            //    timespanTicks *= 1_000_000_000;
-            //    timespanTicks /= TimeSpan.TicksPerSecond;
-            //    return timespanTicks;
-            //}
-
-            //static Int128 ConvertDurationTicksToNanoseconds(Int128 durationTicks)
-            //{
-            //    durationTicks *= 1_000_000_000;
-            //    durationTicks /= Duration.TicksPerSecond;
-            //    return durationTicks;
-            //}
-        }
+            => MonoToPortableConversionHelper<TStampContext>.ConvertToPortableMonotonicStamp(this);
+        
 
         /// <summary>
         /// Convert 

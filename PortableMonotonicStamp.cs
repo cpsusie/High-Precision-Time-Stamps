@@ -45,14 +45,9 @@ namespace HpTimeStamps
         /// unless the factors for conversion between monotonic stamps and nanoseconds are
         /// not conducive to even division.  <see cref="MonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.</remarks>
         public static explicit operator PortableMonotonicStamp(
-            in MonotonicTimeStamp<MonotonicStampContext> monotonicStamp)
-        {
-            var (utcReferenceTime, offsetFromReference, _) = monotonicStamp.Value;
-            Debug.Assert(utcReferenceTime.Kind == DateTimeKind.Utc);
-            Int128 refTimeNanosecondsSinceMin = (((Int128)utcReferenceTime.Ticks * 100) - MinValueUtcDtNanoseconds);
-            PortableDuration pd = (PortableDuration)offsetFromReference;
-            return new PortableMonotonicStamp(pd._ticks + refTimeNanosecondsSinceMin);
-        }
+            in MonotonicTimeStamp<MonotonicStampContext> monotonicStamp) =>
+            MonoToPortableConversionHelper<MonotonicStampContext>
+                .ConvertToPortableMonotonicStamp(monotonicStamp);
 
         /// <summary>
         /// Convert a date time to a portable timestamp
@@ -536,9 +531,22 @@ namespace HpTimeStamps
         // ReSharper disable once InconsistentNaming -- internal where private normal for efficiency
         [DataMember] internal readonly Int128 _dateTimeNanosecondOffsetFromMinValueUtc;
         private static readonly Int128 MaxValueUtcDtNanoseconds;
-        private static readonly Int128 MinValueUtcDtNanoseconds;
+        internal static readonly Int128 MinValueUtcDtNanoseconds;
         private static readonly PortableMonotonicStamp TheMinValue;
         private static readonly PortableMonotonicStamp TheMaxValue;
         #endregion
+    }
+
+    internal static class MonoToPortableConversionHelper<TStampContext> where TStampContext : struct, IEquatable<TStampContext>,IComparable<TStampContext>, IMonotonicStampContext
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static PortableMonotonicStamp ConvertToPortableMonotonicStamp(MonotonicTimeStamp<TStampContext> monotonicStamp)
+        {
+            var (utcReferenceTime, offsetFromReference, _) = monotonicStamp.Value;
+            Debug.Assert(utcReferenceTime.Kind == DateTimeKind.Utc);
+            Int128 refTimeNanosecondsSinceMin = (((Int128)utcReferenceTime.Ticks * 100) - PortableMonotonicStamp.MinValueUtcDtNanoseconds);
+            PortableDuration pd = (PortableDuration)offsetFromReference;
+            return new PortableMonotonicStamp(pd._ticks + refTimeNanosecondsSinceMin);
+        }
     }
 }
