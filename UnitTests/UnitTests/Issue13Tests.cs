@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,48 +10,56 @@ namespace UnitTests
 {
     using MonotonicStamp = HpTimeStamps.MonotonicTimeStamp<MonotonicContext>;
     using MonotonicStampProvider = HpTimeStamps.MonotonicTimeStampUtil<MonotonicContext>;
-    public class Issue13Tests : TestOutputHelperHavingTests
+    public class Issue13Tests : FixtureAndTestOutHelperHavingTests<Issue13TextFixture>
     {
-        /// <inheritdoc />
-        public Issue13Tests([NotNull] ITestOutputHelper helper) : base(helper)
-        {
-        }
+        public Issue13Tests([NotNull] ITestOutputHelper helper, 
+            [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        [Fact]
-        public void TryIt()
-        {
-            GenerateAndSaveRoRefStuffToFile();
-        }
+        //[Fact]
+        //public void TryIt()
+        //{
+        //    GenerateAndSaveRoRefStuffToFile();
+        //}
 
         [Fact]
         public void TryDeser()
         {
-            FileInfo fi =
-                new FileInfo(
-                    @"Z:\Documents\repos\hp_timestamps\UnitTests\UnitTests\bin\Debug\netcoreapp3.1\Win10x64_10_000_000_tps_2021-07-17T13-33-21.1377508-04-00.xml");
-            Assert.True(fi.Exists);
-            RetrieveAndCheck(fi);
+            var testSource = from item in Fixture.AllTestPackages
+                let title = item.Title
+                let xml = item.XmlContents
+                orderby title
+                select (Title: title, TestPackage: DeserXmlStr(xml));
+            int itemCount = 0;
+            foreach (var item in testSource)
+            {
+                ++itemCount;
+                Helper.WriteLine("Executing test named: {0} with {1} test packets:", item.Title,
+                    item.TestPackage.Count);
+                try
+                {
+                    Check(item.TestPackage, item.TestPackage.Count);
+                    Helper.WriteLine("\tTest #{0} PASSED.", itemCount );
+                    Helper.WriteLine("END TEST NAMED {0}", item.Title);
+                }
+                catch (Exception ex)
+                {
+                    Helper.WriteLine("\tItem #{0} FAILED!.  Exception msg: \"{1}\".", itemCount, ex.Message);
+                    Helper.WriteLine("\tTest {0} FAILED", item.Title);
+                    Helper.WriteLine("END TEST NAMED {0}", item.Title);
+                    Helper.WriteLine(string.Empty);
+                    throw;
+                }
+                Helper.WriteLine("END TEST NAMED {0}", item.Title);
+                Helper.WriteLine(string.Empty);
+            }
         }
 
-        private void RetrieveAndCheck(FileInfo fi)
+        private void Check(ByRefRoList<Issue13StampTestPacket> packets, int expectCount)
         {
-            const int expectCount = 100;
-            const int expectedStampMatch = 0;
-            const int expectedStrMatch = 100;
-            string xml;
-            {
-                using var sr = fi.OpenText();
-                xml = sr.ReadToEnd();
-            }
-            ByRefRoList<Issue13StampTestPacket> packets; 
-            {
-                using var stream = new MemoryStream();
-                byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
-                stream.Write(data, 0, data.Length);
-                stream.Position = 0;
-                DataContractSerializer deserializer = new DataContractSerializer(typeof(ByRefRoList<Issue13StampTestPacket>));
-                packets = (ByRefRoList < Issue13StampTestPacket >) deserializer.ReadObject(stream);
-            }
+            int expectedStampMatch = expectCount;
+            int expectedStrMatch = expectCount;
+            
+            
             Assert.Equal(expectCount, packets.Count);
 
             int numCastEqualsToPortable = 0;
@@ -66,11 +72,44 @@ namespace UnitTests
                 if (item.CastMatchesString && item.PortabledMatchesString)
                     ++numStringsMatch;
             }
-
+            Helper.WriteLine("\tFirst deserialized item: [{0}].", packets[0]);
             Assert.Equal(expectedStampMatch, numCastEqualsToPortable);
             Assert.Equal(expectedStrMatch, numStringsMatch);
 
-            Helper.WriteLine("First deserialized item: [{0}].", packets[0]);
+            
+        }
+
+        private ByRefRoList<Issue13StampTestPacket> DeserializeFromFile(FileInfo fi)
+        {
+            string xml = ReadXmlFile(fi);
+            return DeserXmlStr(xml);
+        }
+
+        private string ReadXmlFile(FileInfo fi)
+        {
+            string xml;
+            {
+                using var sr = fi.OpenText();
+                xml = sr.ReadToEnd();
+            }
+            Assert.False(string.IsNullOrWhiteSpace(xml));
+            return xml;
+        }
+
+        private ByRefRoList<Issue13StampTestPacket> DeserXmlStr(string xml)
+        {
+            ByRefRoList<Issue13StampTestPacket> packets;
+            {
+                using var stream = new MemoryStream();
+                byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
+                stream.Write(data, 0, data.Length);
+                stream.Position = 0;
+                DataContractSerializer deserializer = new DataContractSerializer(typeof(ByRefRoList<Issue13StampTestPacket>));
+                packets = (ByRefRoList<Issue13StampTestPacket>)deserializer.ReadObject(stream);
+            }
+            Assert.NotNull(packets);
+            Assert.True(packets.All(itm => itm != default));
+            return packets;
         }
 
         private void GenerateAndSaveRoRefStuffToFile()
@@ -118,7 +157,8 @@ namespace UnitTests
         private FileInfo GetStampedFileInfo()
         {
             var stamp = MonotonicStampProvider.StampNow;
-            var context = stamp.Context;
+            ref readonly var context = ref stamp.Context;
+            Helper.WriteLine("Ticks per second: {0}; Reference Time: {1:O}", context.TicksPerSecond, context.UtcDateTimeBeginReference);
             string pathAttemptNoExt = $"{SysName}_{stamp.ToString().Replace(':', '-')}";
             FileInfo testMe = new FileInfo(pathAttemptNoExt + Extension);
             const int max = 100;
@@ -136,9 +176,9 @@ namespace UnitTests
             return testMe;
         }
 
-        
 
-        private const string SysName = "Win10x64_10_000_000_tps";
+        private const string SysName = "Win10x64_2_441_442_tps";
+        //private const string SysName = "Win10x64_10_000_000_tps";
         private const string Extension = ".xml";
     }
 }
