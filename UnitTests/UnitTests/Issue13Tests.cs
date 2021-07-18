@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using HpTimeStamps;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,11 +16,11 @@ namespace UnitTests
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
             [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        //[Fact]
-        //public void TryIt()
-        //{
-        //    GenerateAndSaveRoRefStuffToFile();
-        //}
+        // [Fact]
+        // public void TryIt()
+        // {
+        //     GenerateAndSaveRoRefStuffToFile();
+        // }
 
         [Fact]
         public void TestIdenticalConversionMethods()
@@ -27,6 +28,7 @@ namespace UnitTests
             Issue13StampTestPacket packet = Issue13StampTestPacket.CreateNewTestPacket();
             Helper.WriteLine("Testing packet [{0}]: ", packet);
             ValidateSamePortableStamps(in packet);
+            ValidateRoundTripMonostamp(in packet);
             Helper.WriteLine("Packet has same portable stamps.");
         }
 
@@ -62,6 +64,15 @@ namespace UnitTests
             }
         }
 
+        private void ValidateRoundTripMonostamp(in Issue13StampTestPacket packet)
+        {
+            MonotonicStamp stamp = (MonotonicStamp) packet.PortableCastFromMonotonic;
+            PortableMonotonicStamp rtPms = (PortableMonotonicStamp) stamp;
+            Assert.True(rtPms == packet.PortableCastFromMonotonic);
+            Assert.True(StringComparer.Ordinal.Equals(packet.StringifiedMonotonicStamp, stamp.ToString()));
+        }
+        
+        
         private void Check(ByRefRoList<Issue13StampTestPacket> packets, int expectCount)
         {
             int expectedStampMatch = expectCount;
@@ -174,8 +185,8 @@ namespace UnitTests
             return testMe;
         }
 
-
-        private const string SysName = "Win10x64_2_441_442_tps";
+        private const string SysName = "AmznLinux2_1_000_000_000tps";
+        //private const string SysName = "Win10x64_2_441_442_tps";
         //private const string SysName = "Win10x64_10_000_000_tps";
         private const string Extension = ".xml";
     }

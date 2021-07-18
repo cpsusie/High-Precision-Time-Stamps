@@ -455,6 +455,7 @@ namespace HpTimeStamps
         /// <returns></returns>
         public static MonotonicTimeStamp<TStampContext> ImportPortableTimestamp(in PortableMonotonicStamp stamp)
         {
+            //todo fixit investigate
             Int128 nanosecondsSinceUtcEpoch =
                 ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
             Int128 refTimeAsUtcNanosecondsSinceEpoch =
