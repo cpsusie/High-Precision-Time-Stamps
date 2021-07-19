@@ -455,6 +455,11 @@ namespace HpTimeStamps
         /// <returns></returns>
         public static MonotonicTimeStamp<TStampContext> ImportPortableTimestamp(in PortableMonotonicStamp stamp)
         {
+            DateTime convertedDt = (DateTime)stamp;
+            PortableMonotonicStamp roundTripped = (PortableMonotonicStamp)convertedDt;
+            PortableDuration difference = roundTripped - stamp;
+            Debug.WriteLine(difference);
+
             //todo fixit investigate
             Int128 nanosecondsSinceUtcEpoch =
                 ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
@@ -463,7 +468,7 @@ namespace HpTimeStamps
             Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
             Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
             Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
-            return CreateFromRefTicks((long) timeSinceLocalTime._ticks);
+            return CreateFromRefTicks((long)timeSinceLocalTime._ticks);
         }
         
          internal static Duration ConvertNanosecondsToDuration(in Int128 nanoSeconds)

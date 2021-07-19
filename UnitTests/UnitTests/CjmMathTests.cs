@@ -202,6 +202,14 @@ namespace UnitTests
 
             TestConversionArithmetic(rawMs, durationTicksPerSecond, tsTicksPerSecond);
         }
+
+        [Fact]
+        public void TestNegativeNarrowingCast()
+        {
+            Int128 negativeSixBillion = -6_000_000_000;
+            long narrowed = (long) negativeSixBillion;
+            Assert.True(narrowed == negativeSixBillion);
+        }
         
         [Fact]
         public void TestPrintWithSeparators()
