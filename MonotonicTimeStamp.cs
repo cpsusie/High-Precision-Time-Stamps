@@ -70,6 +70,11 @@ namespace HpTimeStamps
         public static DateTime MinimumImportableDateTime { get; }
 
         /// <summary>
+        /// The timestamp that represents the reference time exactly.  It's <see cref="Value"/> property
+        /// should have it's "OffsetFromReference" property set to exactly zero.
+        /// </summary>
+        public static MonotonicTimeStamp<TStampContext> ReferenceTimeStamp { get; }
+        /// <summary>
         /// The maximum value of the monotonic timestamp in the current process.
         /// </summary>
         /// <remarks>
@@ -166,7 +171,7 @@ namespace HpTimeStamps
             UtcLocalOffsetPeriod = context.UtcLocalTimeOffset;
             ReferenceTicksAsDuration = Duration.FromStopwatchTicks(referenceTicks);
             (MaximumImportableDateTime, MinimumImportableDateTime, MaxValue, MinValue) = CalculateMaximumAndMinimumImportableDateTimes();
-
+            ReferenceTimeStamp = new MonotonicTimeStamp<TStampContext>(referenceTicks);
         }
 
 
@@ -445,7 +450,7 @@ namespace HpTimeStamps
         /// <returns>A portable timestamp.</returns>
         [Pure]
         public PortableMonotonicStamp ToPortableStamp()
-            => MonoToPortableConversionHelper<TStampContext>.ConvertToPortableMonotonicStamp(this);
+            => MonoPortableConversionHelper<TStampContext>.ConvertToPortableMonotonicStamp(this);
         
 
         /// <summary>
@@ -460,20 +465,23 @@ namespace HpTimeStamps
             PortableDuration difference = roundTripped - stamp;
             Debug.WriteLine(difference);
 
-            //todo fixit investigate
-            Int128 nanosecondsSinceUtcEpoch =
-                ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
-            Int128 refTimeAsUtcNanosecondsSinceEpoch =
-                ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
-            Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
-            Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
-            Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
-            return CreateFromRefTicks((long)timeSinceLocalTime._ticks);
+
+            return MonoPortableConversionHelper<TStampContext>.ConvertPortableToMonotonic(in stamp);
+
+            ////todo fixit investigate
+            //Int128 nanosecondsSinceUtcEpoch =
+            //    ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
+            //Int128 refTimeAsUtcNanosecondsSinceEpoch =
+            //    ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
+            //Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
+            //Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
+            //Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
+            //return CreateFromRefTicks((long)timeSinceLocalTime._ticks);
         }
         
          internal static Duration ConvertNanosecondsToDuration(in Int128 nanoSeconds)
         {
-            Int128 stopwatchTicks = nanoSeconds * (StatContext.NanosecondsFrequency / StatContext.TicksPerSecond);
+            Int128 stopwatchTicks = nanoSeconds * StatContext.NanosecondsFrequency / StatContext.TicksPerSecond;
             return new Duration(in stopwatchTicks);
         }
 
@@ -495,16 +503,16 @@ namespace HpTimeStamps
             TimeSpan ts = TimeSpan.FromTicks(timespanTicksSinceEpoch);
             return (DateTime.MinValue.ToUniversalTime() + ts);
         }
-
+        
         internal static Int128 ConvertStopwatchTicksToTimespanTicks(in Int128 stopwatchTicks) =>
-            stopwatchTicks * (TimeSpan.TicksPerSecond / StatContext.TicksPerSecond);
+            stopwatchTicks * TimeSpan.TicksPerSecond / StatContext.TicksPerSecond;
         
         internal static Int128 ConvertTimeSpanTicksToStopwatchTicks(in Int128 timespanTicks) =>
-            timespanTicks * (StatContext.TicksPerSecond / TimeSpan.TicksPerSecond);
+            timespanTicks * StatContext.TicksPerSecond / TimeSpan.TicksPerSecond;
         
         internal static Int128 ConvertNanosecondsToStopwatchTicks(in Int128 nanoseconds)
         {
-            Int128 stopwatchTicks = nanoseconds * (StatContext.TicksPerSecond / StatContext.NanosecondsFrequency);
+            Int128 stopwatchTicks = nanoseconds * StatContext.TicksPerSecond / StatContext.NanosecondsFrequency;
             return stopwatchTicks;
         }
         

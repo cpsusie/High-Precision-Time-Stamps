@@ -46,7 +46,7 @@ namespace HpTimeStamps
         /// not conducive to even division.  <see cref="MonotonicStampContext.EasyConversionToAndFromNanoseconds"/>.</remarks>
         public static explicit operator PortableMonotonicStamp(
             in MonotonicTimeStamp<MonotonicStampContext> monotonicStamp) =>
-            MonoToPortableConversionHelper<MonotonicStampContext>
+            MonoPortableConversionHelper<MonotonicStampContext>
                 .ConvertToPortableMonotonicStamp(monotonicStamp);
 
         /// <summary>
@@ -537,7 +537,7 @@ namespace HpTimeStamps
         #endregion
     }
 
-    internal static class MonoToPortableConversionHelper<TStampContext> where TStampContext : struct, IEquatable<TStampContext>,IComparable<TStampContext>, IMonotonicStampContext
+    internal static class MonoPortableConversionHelper<TStampContext> where TStampContext : struct, IEquatable<TStampContext>,IComparable<TStampContext>, IMonotonicStampContext
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static PortableMonotonicStamp ConvertToPortableMonotonicStamp(MonotonicTimeStamp<TStampContext> monotonicStamp)
@@ -548,5 +548,24 @@ namespace HpTimeStamps
             PortableDuration pd = (PortableDuration)offsetFromReference;
             return new PortableMonotonicStamp(pd._ticks + refTimeNanosecondsSinceMin);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static MonotonicTimeStamp<TStampContext> ConvertPortableToMonotonic(in PortableMonotonicStamp ps)
+        {
+            MonotonicTimeStamp<TStampContext> referenceMonoStamp = MonotonicTimeStamp<TStampContext>.ReferenceTimeStamp;
+            PortableMonotonicStamp portableReferenceMonoStamp = ConvertToPortableMonotonicStamp(referenceMonoStamp);
+            Int128 importedOffsetSinceUtcMinimumNanoseconds = ps._dateTimeNanosecondOffsetFromMinValueUtc;
+            Int128 referenceOffsetSinceUtcMinimumNanoseconds =
+                portableReferenceMonoStamp._dateTimeNanosecondOffsetFromMinValueUtc;
+            Int128 differenceNanoseconds = referenceOffsetSinceUtcMinimumNanoseconds - importedOffsetSinceUtcMinimumNanoseconds;
+            Duration differenceDuration =
+                MonotonicTimeStamp<TStampContext>.ConvertNanosecondsToDuration(differenceNanoseconds);
+            return referenceMonoStamp + differenceDuration;
+        }
+
+        static MonoPortableConversionHelper() => TheContext = MonotonicTimeStampUtil<TStampContext>.StampNow.Context;
+
+        private static readonly TStampContext TheContext;
+
     }
 }

@@ -2078,6 +2078,12 @@
             some systems.
             </remarks>
         </member>
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.ReferenceTimeStamp">
+            <summary>
+            The timestamp that represents the reference time exactly.  It's <see cref="P:HpTimeStamps.MonotonicTimeStamp`1.Value"/> property
+            should have it's "OffsetFromReference" property set to exactly zero.
+            </summary>
+        </member>
         <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MaxValue">
             <summary>
             The maximum value of the monotonic timestamp in the current process.

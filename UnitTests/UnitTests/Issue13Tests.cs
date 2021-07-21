@@ -28,8 +28,64 @@ namespace UnitTests
             Issue13StampTestPacket packet = Issue13StampTestPacket.CreateNewTestPacket();
             Helper.WriteLine("Testing packet [{0}]: ", packet);
             ValidateSamePortableStamps(in packet);
+            ValidateRoundTripDateTime(in packet);
             ValidateRoundTripMonostamp(in packet);
             Helper.WriteLine("Packet has same portable stamps.");
+        }
+
+        [Fact]
+        public void TestMonostampRoundTripConversion()
+        {
+            MonotonicStamp stamp = MonotonicStampProvider.StampNow;
+            string stringifiedLocal = stamp.ToString();
+            PortableMonotonicStamp portable = (PortableMonotonicStamp) stamp;
+            DateTime dtFromPortable = (DateTime) portable;
+            PortableMonotonicStamp portableRtdFromDateTime = dtFromPortable;
+            MonotonicStamp monRtFromPortable = (MonotonicStamp) portable;
+            PortableMonotonicStamp rtdBack = (PortableMonotonicStamp) monRtFromPortable;
+            PortableDuration rtdBackVsOrig = rtdBack - portable;
+            string print = rtdBackVsOrig switch
+            {
+                var x when x == PortableDuration.Zero => "Round tripped is correct.",
+                var x when x < PortableDuration.Zero => $"Round tripped is too small by {x.AbsoluteValue()}",
+                var x when x > PortableDuration.Zero => $"Round tripped is too big by {x}",
+                _ => throw new ArithmeticException("Round tripped value is not correct but it is also not too big or too small.")
+            };
+
+            Helper.WriteLine(print);
+            PrintLabelValue(nameof(stamp), stamp);
+            PrintLabelValue(nameof(stringifiedLocal), stringifiedLocal);
+            PrintLabelValue(nameof(portable), portable);
+            PrintLabelValue(nameof(dtFromPortable), dtFromPortable.ToString("O"));
+            PrintLabelValue(nameof(portableRtdFromDateTime), portableRtdFromDateTime);
+            PrintLabelValue(nameof(monRtFromPortable), monRtFromPortable);
+            PrintLabelValue(nameof(rtdBack), rtdBack);
+                
+            Assert.True(portable == dtFromPortable);
+            Assert.True(string.Equals(portable.ToLocalString(), stringifiedLocal, StringComparison.Ordinal));
+            Assert.True(portableRtdFromDateTime == portable);
+            Assert.True(rtdBack == portable);
+            Assert.True(monRtFromPortable == stamp);
+
+        }
+
+        [Fact]
+        public void TestMonotonicReferenceStamp()
+        {
+            var refStamp = MonotonicStamp.ReferenceTimeStamp;
+            (DateTime referenceTime, Duration sinceReferenceTime, TimeSpan utcOffset) = refStamp.Value;
+            Assert.True(referenceTime == refStamp.Context.UtcDateTimeBeginReference);
+            Assert.Equal(Duration.Zero, sinceReferenceTime);
+        }
+
+        void PrintLabelValue<T>(string label, T value) where T : unmanaged
+        {
+            Helper.WriteLine("{0}: \t{1}", label, value.ToString());
+        }
+
+        void PrintLabelValue(string label, string value) 
+        {
+            Helper.WriteLine("{0}: \t{1}", label, value);
         }
 
         [Fact]
@@ -117,6 +173,15 @@ namespace UnitTests
                 }
                 Helper.WriteLine(string.Empty);
             }
+        }
+
+        private void ValidateRoundTripDateTime(in Issue13StampTestPacket packet)
+        {
+            DateTime dt = packet.PortableCastFromMonotonic.ToLocalDateTime();
+            PortableMonotonicStamp rtPms = dt;
+            PortableDuration difference = (rtPms - packet.PortableCastFromMonotonic).AbsoluteValue();
+            Helper.WriteLine("Difference on round trip with date time: {0:N6} milliseconds.", difference.TotalMilliseconds);
+            Assert.True(difference <= PortableDuration.FromMilliseconds(1));
         }
 
         private void ValidateRoundTripMonostamp(in Issue13StampTestPacket packet)
