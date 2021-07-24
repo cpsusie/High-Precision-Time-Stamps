@@ -224,7 +224,9 @@ namespace HpTimeStamps
 
             TimeSpan roundTrippingMin = (TimeSpan) minDurationOffset;
             TimeSpan roundTrippingMax = (TimeSpan) maxDurationOffset;
-            Debug.Assert(roundTrippingMin <= minDurationOffsetAsTimeSpan);
+            //Debug.Assert(roundTrippingMin <= minDurationOffsetAsTimeSpan);
+            Debug.Assert(ValidateMin(roundTrippingMin, minDurationOffsetAsTimeSpan));
+            Debug.Assert(ValidateMax(roundTrippingMax, maxDurationOffsetAsTimeSpan));
 
             Debug.Assert((TimeSpan)maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
             Debug.Assert((TimeSpan)minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
@@ -234,6 +236,26 @@ namespace HpTimeStamps
             MonotonicTimeStamp<TStampContext> min =
                 new MonotonicTimeStamp<TStampContext>((long) minDurationOffset.Ticks);
             return (max.ToUtcDateTime(), min.ToUtcDateTime(), max, min);
+
+            static bool ValidateMin(TimeSpan test, TimeSpan testRef)
+            {
+                TimeSpan tolerance = StatContext.EasyConversionToAndFromTimespanTicks
+                    ? TimeSpan.Zero
+                    : TimeSpan.FromMilliseconds(1);
+
+                TimeSpan diff = test <= testRef ? TimeSpan.Zero : test - testRef;
+                return diff <= tolerance;
+            }
+
+            static bool ValidateMax(TimeSpan test, TimeSpan testRef)
+            {
+                TimeSpan tolerance = StatContext.EasyConversionToAndFromTimespanTicks
+                    ? TimeSpan.Zero
+                    : TimeSpan.FromMilliseconds(1);
+
+                TimeSpan diff = test >= testRef ? TimeSpan.Zero : (test - testRef).Duration();
+                return diff <= tolerance;
+            }
         }
 
         /// <summary>

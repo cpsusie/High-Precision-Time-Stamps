@@ -78,13 +78,30 @@ namespace UnitTests
             PrintLabelValue(nameof(portableRtdFromDateTime), portableRtdFromDateTime);
             PrintLabelValue(nameof(monRtFromPortable), monRtFromPortable);
             PrintLabelValue(nameof(rtdBack), rtdBack);
-                
-            Assert.True(portable == dtFromPortable);
-            Assert.True(string.Equals(portable.ToLocalString(), stringifiedLocal, StringComparison.Ordinal));
-            Assert.True(portableRtdFromDateTime == portable);
-            Assert.True(rtdBack == portable);
-            Assert.True(monRtFromPortable == stamp);
 
+            if (stamp.Context.EasyConversionAllWays)
+            {
+                Assert.True(portable == dtFromPortable);
+                Assert.True(string.Equals(portable.ToLocalString(), stringifiedLocal, StringComparison.Ordinal));
+                Assert.True(portableRtdFromDateTime == portable);
+                Assert.True(rtdBack == portable);
+                Assert.True(monRtFromPortable == stamp);
+            }
+            else
+            {
+                PortableDuration dtPortableTolerance = PortableDuration.FromMicroseconds(50);
+                Duration monoTolerance = Duration.FromMilliseconds(1);
+                TimeSpan monoToleranceTs = TimeSpan.FromMilliseconds(1);
+
+                var diff = (portable - dtFromPortable).AbsoluteValue();
+                Assert.True(diff <= dtPortableTolerance);
+
+                DateTime fromStringifiedLocal = DateTime.Parse(portable.ToLocalString());
+                DateTime fromStringifiedStamp = DateTime.Parse(stamp.ToString());
+                Assert.True((fromStringifiedStamp - fromStringifiedLocal).Duration() <= monoToleranceTs);
+                Assert.True((stamp - monRtFromPortable).AbsoluteValue() <= monoTolerance);
+                Assert.True( ((Duration) (rtdBack - portable).AbsoluteValue()) <= monoTolerance);
+            }
         }
 
         [Fact]
@@ -206,8 +223,24 @@ namespace UnitTests
         {
             MonotonicStamp stamp = (MonotonicStamp) packet.PortableCastFromMonotonic;
             PortableMonotonicStamp rtPms = (PortableMonotonicStamp) stamp;
-            Assert.True(rtPms == packet.PortableCastFromMonotonic);
-            Assert.True(StringComparer.Ordinal.Equals(packet.StringifiedMonotonicStamp, stamp.ToString()));
+            string monoStampStringifiedHere = stamp.ToString();
+            Helper.WriteLine("Mono stamp stringified here: {0}", monoStampStringifiedHere);
+            Helper.WriteLine("Mono stamp stringified there: {0}", packet.StringifiedMonotonicStamp);
+            if (stamp.Context.EasyConversionToAndFromNanoseconds)
+            {
+                Assert.True(rtPms == packet.PortableCastFromMonotonic);
+                Assert.True(StringComparer.Ordinal.Equals(packet.StringifiedMonotonicStamp, stamp.ToString()));
+            }
+            else
+            {
+                PortableDuration difference = rtPms - packet.PortableCastFromMonotonic;
+                Assert.True(difference.AbsoluteValue() <= PortableDuration.FromMicroseconds(10));
+                DateTime fromStringified = DateTime.Parse(packet.StringifiedMonotonicStamp);
+                DateTime fromStamp = stamp.ToLocalDateTime();
+                Assert.True((fromStamp - fromStringified).Duration() <= TimeSpan.FromMilliseconds(1));
+            }
+            
+            
         }
         
         
