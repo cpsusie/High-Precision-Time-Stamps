@@ -74,7 +74,7 @@ namespace UnitTests
 
 
         private const string StringificationMismatchAmzn2ToWinX64TenMilXmlFile =
-            @"../../../Resources/StringMismatch_2021-07-19T16-47-26.5170050-04-00.xml";
+            @"../../../Resources/StringMismatch_2021-07-24T08-03-16.8566018-04-00.xml";
 
         private static readonly Issue13StampTestPacket TheStringificationMismatchAmzn2ToWinX64TenMil;
         //home/cpsusie/RiderProjects/High-Precision-Time-Stamps/UnitTests/UnitTests/bin/Debug/netcoreapp3.1/Resources

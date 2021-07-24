@@ -553,14 +553,12 @@ namespace HpTimeStamps
         internal static MonotonicTimeStamp<TStampContext> ConvertPortableToMonotonic(in PortableMonotonicStamp ps)
         {
             MonotonicTimeStamp<TStampContext> referenceMonoStamp = MonotonicTimeStamp<TStampContext>.ReferenceTimeStamp;
-            PortableMonotonicStamp portableReferenceMonoStamp = ConvertToPortableMonotonicStamp(referenceMonoStamp);
-            Int128 importedOffsetSinceUtcMinimumNanoseconds = ps._dateTimeNanosecondOffsetFromMinValueUtc;
-            Int128 referenceOffsetSinceUtcMinimumNanoseconds =
-                portableReferenceMonoStamp._dateTimeNanosecondOffsetFromMinValueUtc;
-            Int128 differenceNanoseconds = referenceOffsetSinceUtcMinimumNanoseconds - importedOffsetSinceUtcMinimumNanoseconds;
-            Duration differenceDuration =
-                MonotonicTimeStamp<TStampContext>.ConvertNanosecondsToDuration(differenceNanoseconds);
-            return referenceMonoStamp + differenceDuration;
+            PortableDuration portableStampTimeSinceEpoch = new PortableDuration(PortableMonotonicStamp.MinValueUtcDtNanoseconds +
+                                          ps._dateTimeNanosecondOffsetFromMinValueUtc);
+            PortableDuration referenceStampTimeSinceEpoch =
+                new PortableDuration((Int128) referenceMonoStamp.Value.UtcReferenceTime.Ticks * 100);
+            PortableDuration difference = portableStampTimeSinceEpoch - referenceStampTimeSinceEpoch;
+            return referenceMonoStamp + ((Duration) difference);
         }
 
         static MonoPortableConversionHelper() => TheContext = MonotonicTimeStampUtil<TStampContext>.StampNow.Context;

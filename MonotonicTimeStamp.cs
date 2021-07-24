@@ -460,10 +460,10 @@ namespace HpTimeStamps
         /// <returns></returns>
         public static MonotonicTimeStamp<TStampContext> ImportPortableTimestamp(in PortableMonotonicStamp stamp)
         {
-            DateTime convertedDt = (DateTime)stamp;
-            PortableMonotonicStamp roundTripped = (PortableMonotonicStamp)convertedDt;
-            PortableDuration difference = roundTripped - stamp;
-            Debug.WriteLine(difference);
+            //DateTime convertedDt = (DateTime)stamp;
+            //PortableMonotonicStamp roundTripped = (PortableMonotonicStamp)convertedDt;
+            //PortableDuration difference = roundTripped - stamp;
+            //Debug.WriteLine(difference);
 
 
             return MonoPortableConversionHelper<TStampContext>.ConvertPortableToMonotonic(in stamp);

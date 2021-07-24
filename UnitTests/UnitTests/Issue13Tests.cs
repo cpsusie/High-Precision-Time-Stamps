@@ -9,8 +9,8 @@ using Xunit.Abstractions;
 using MonotonicContext = HpTimeStamps.MonotonicStampContext;
 namespace UnitTests
 {
-    using MonotonicStamp = HpTimeStamps.MonotonicTimeStamp<MonotonicContext>;
-    using MonotonicStampProvider = HpTimeStamps.MonotonicTimeStampUtil<MonotonicContext>;
+    using MonotonicStamp = MonotonicTimeStamp<MonotonicContext>;
+    using MonotonicStampProvider = MonotonicTimeStampUtil<MonotonicContext>;
     public class Issue13Tests : FixtureAndTestOutHelperHavingTests<Issue13TextFixture>
     {
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
