@@ -21,6 +21,24 @@ namespace UnitTests
         //{
         //    GenerateAndSaveRoRefStuffToFile();
         //}
+        [Fact]
+        public void LogSystemAndContextInfo()
+        {
+            ref readonly var context = ref StampTestFixture.StampContext;
+            DateTime minValDtUtc = DateTime.MinValue.ToUniversalTime();
+            PortableMonotonicStamp minValuePortable = PortableMonotonicStamp.MinValue;
+            MonotonicStamp minValue = MonotonicStamp.MinValue;
+            
+            var env = Environment.OSVersion;
+            Helper.WriteLine("Environment: {0}, 64-bit: {1}", env, Environment.Is64BitOperatingSystem ? "YES" : "NO");
+            Helper.WriteLine("\tMin DateTime UTC: [{0:O}]", minValDtUtc);
+            Helper.WriteLine("\tPortable Stamp {0}: [{1}]", nameof(PortableMonotonicStamp.MinValueUtcDtNanoseconds),
+                PortableMonotonicStamp.MinValueUtcDtNanoseconds.ToString("N"));
+            Helper.WriteLine("\tTicks per second: [{0:N}]", context.TicksPerSecond);
+            Helper.WriteLine("\tUTC Offset: [{0:N}]", context.UtcLocalTimeOffset.TotalHours);
+            Helper.WriteLine("\tPortable stamp min value: {0}", minValuePortable);
+            Helper.WriteLine("\tMono stamp min value: {0}", minValue);
+        }
 
         [Fact]
         public void TestIdenticalConversionMethods()
