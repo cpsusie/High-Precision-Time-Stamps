@@ -2913,6 +2913,24 @@
               Represented internally as a 128 bit signed integer that represents nanoseconds elapsed
               since <see cref="F:System.DateTime.MinValue"/>, which is January 1, 0001 AD (UTC).
              </summary>
+             <remarks>
+             For issue 12/13 had to make not immutable so adjustment can be made on deserializing where
+             sources and this system's time stamp have mismatched DateTime.MinValue.ToUniversalTime() values.
+             The ONLY methods that cause mutation are serialization and deserialization callbacks.
+            
+             The offset from 0001-01-01T05:00:00.000000Z is only WRITTEN on serialization
+             IF abs(offset) > 0
+            
+             On deserialization, offset read in -- if differs from this system -- applied
+             to the value field then set to this system's offset.
+            
+             The offset does not participate other than storing the offset on serializing
+             and adjusting the stored ticks on deser to accomodate new environment.
+            
+             The hash code is a non issue: only the actual ticks are used in hashing, equality testing
+             or ordering operations.  the ticks are only mutated (possibly) on deserialization ... before they are ever
+             evaluated.
+             </remarks>
         </member>
         <member name="F:HpTimeStamps.PortableMonotonicStamp.NanosecondsFrequency">
             <summary>
