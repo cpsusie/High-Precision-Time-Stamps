@@ -16,11 +16,11 @@ namespace UnitTests
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
             [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        //[Fact]
-        //public void TryIt()
-        //{
-        //    GenerateAndSaveRoRefStuffToFile();
-        //}
+        // [Fact]
+        // public void TryIt()
+        // {
+        //     GenerateAndSaveRoRefStuffToFile();
+        // }
         [Fact]
         public void LogSystemAndContextInfo()
         {
@@ -94,9 +94,10 @@ namespace UnitTests
 
             if (stamp.Context.EasyConversionAllWays)
             {
-                Assert.True(portable == dtFromPortable);
-                Assert.True(string.Equals(portable.ToLocalString(), stringifiedLocal, StringComparison.Ordinal));
-                Assert.True(portableRtdFromDateTime == portable);
+                PortableDuration tolerance = PortableDuration.FromTimespanTicks(1);
+                
+                Assert.True((portable - dtFromPortable).AbsoluteValue() <= tolerance);
+                Assert.True(portableRtdFromDateTime == dtFromPortable);
                 Assert.True(rtdBack == portable);
                 Assert.True(monRtFromPortable == stamp);
             }
@@ -135,30 +136,7 @@ namespace UnitTests
         {
             Helper.WriteLine("{0}: \t{1}", label, value);
         }
-
-        [Fact]
-        public void Test_Amzn2ToTemMilWinX64StrMismatch_1()
-        {
-            ref readonly Issue13StampTestPacket packet = ref Fixture.Amzn2ToTemMilWinX64StrMismatch_1;
-            string stringifiedHere = packet.PortableCastFromMonotonic.ToString();
-            string stringifiedThere = packet.PortableCastFromMonotonicStringified;
-            MonotonicStamp converted = (MonotonicStamp) packet.PortableCastFromMonotonic;
-            string convertedTxt = converted.ToString();
-            
-            PortableMonotonicStamp roundTripped = (PortableMonotonicStamp) converted;
-
-            Helper.WriteLine("Stringified here: {0}, stringified there: {1}", stringifiedHere, stringifiedThere);
-            Helper.WriteLine("Deserialized portable cast from monotonic.  UTC: {0}, Local: {1}", packet.PortableCastFromMonotonic.ToString(), packet.PortableCastFromMonotonic.ToLocalString());
-            Helper.WriteLine("Original monotonic string rep: {0}", packet.StringifiedMonotonicStamp);
-            Helper.WriteLine("Converted from portable local monotonic: {0}", convertedTxt);
-            Helper.WriteLine("Round tripped to portable - UTC: {0}, Local: {1}", roundTripped.ToString(), roundTripped.ToLocalString());
-            Helper.WriteLine("Stringified versions of serialized portable: {0}", packet.PortableCastFromMonotonicStringified);
-
-            Assert.Equal(roundTripped, packet.PortableCastFromMonotonic);
-            Assert.True(string.Equals(stringifiedHere, packet.PortableCastFromMonotonicStringified, StringComparison.Ordinal));
-            Assert.True(packet.CastMatchesString && packet.PortabledMatchesString);
-        }
-
+        
         [Fact]
         public void TryDeser()
         {

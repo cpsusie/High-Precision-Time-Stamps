@@ -28,7 +28,7 @@ namespace UnitTests
                 "Windows 10 x64: 2,441,442 ticks per second.");
         
         public (string XmlContents, string Title) AmznLinux2_x64_1_000_000_000_Tps { get; } =
-            (ReadXmlFromPath(TheAmznLinux2_1_000_000_000tps_2021_07_17T21_26_46_2535718_04_00_XmlPath),
+            (ReadXmlFromPath(TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath),
                 "Amazon Linux 2 x64:  1,000,000,000 ticks per second.");
 
         public (string XmlContents, string Title) Win10_x64_10_000_000_Tps { get; } =
@@ -67,8 +67,8 @@ namespace UnitTests
         
         private const string TheWin10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00_XmlPath =
             @"../../../Resources/Win10x64_2_441_442_tps_2021-07-17T19-44-52.7102099-04-00.xml";
-        private const string TheAmznLinux2_1_000_000_000tps_2021_07_17T21_26_46_2535718_04_00_XmlPath =
-            @"../../../Resources/AmznLinux2_1_000_000_000tps_2021-07-17T21-26-46.2535718-04-00.xml";
+        private const string TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath =
+            @"../../../Resources/AmznLnx2_1_000_000_000_tps_2021-07-25T13-58-11.8479424-04-00.xml";
         private const string TheWin10x64_10_000_000tps__tps_2021_07_19T15_15_42_8424752_04_00_XmlPath =
             @"../../../Resources/Win10x64_10_000_000_tps_2021-07-19T15-15-42.8424752-04-00.xml";
 

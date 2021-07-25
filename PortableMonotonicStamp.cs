@@ -620,7 +620,7 @@ namespace HpTimeStamps
             if (_nanosecondsOffsetFromUsualMinUtcNanoseconds != SystemOffsetFromUsualMinValueUtcInNanoseconds)
             {
                 Int128 difference = SystemOffsetFromUsualMinValueUtcInNanoseconds - _nanosecondsOffsetFromUsualMinUtcNanoseconds;
-                _dateTimeNanosecondOffsetFromMinValueUtc += difference;
+                _dateTimeNanosecondOffsetFromMinValueUtc -= difference;
                 _nanosecondsOffsetFromUsualMinUtcNanoseconds = SystemOffsetFromUsualMinValueUtcInNanoseconds;
             }
         }
