@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using HpTimeStamps.BigMath;
+using JetBrains.Annotations;
 
 namespace HpTimeStamps
 {
@@ -17,10 +18,12 @@ namespace HpTimeStamps
     ///  since <see cref="DateTime.MinValue"/>, which is January 1, 0001 AD (UTC).
     /// </summary>
     [DataContract]
-    public readonly struct PortableMonotonicStamp : IEquatable<PortableMonotonicStamp>,
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+    public struct PortableMonotonicStamp : IEquatable<PortableMonotonicStamp>,
         IComparable<PortableMonotonicStamp>
     {
         #region Static Values
+
         /// <summary>
         /// Number of nanoseconds in a second
         /// </summary>
@@ -30,13 +33,16 @@ namespace HpTimeStamps
         /// Minimum value representable 
         /// </summary>
         public static ref readonly PortableMonotonicStamp MinValue => ref TheMinValue;
+
         /// <summary>
         /// Maximum value representable
         /// </summary>
         public static ref readonly PortableMonotonicStamp MaxValue => ref TheMaxValue;
+
         #endregion
 
         #region Conversion Operators
+
         /// <summary>
         /// Convert a monotonic stamp to a portable stamp
         /// </summary>
@@ -58,8 +64,9 @@ namespace HpTimeStamps
         public static implicit operator PortableMonotonicStamp(DateTime convertMe)
         {
             Int128 ticksSinceUtcDotNetEpoch =
-                ((Int128)convertMe.ToUniversalTime().Ticks * 100) - MinValueUtcDtNanoseconds;
-            Debug.Assert(ticksSinceUtcDotNetEpoch >= MinValueUtcDtNanoseconds && ticksSinceUtcDotNetEpoch <= MaxValueUtcDtNanoseconds);
+                ((Int128) convertMe.ToUniversalTime().Ticks * 100) - MinValueUtcDtNanoseconds;
+            Debug.Assert(ticksSinceUtcDotNetEpoch >= MinValueUtcDtNanoseconds &&
+                         ticksSinceUtcDotNetEpoch <= MaxValueUtcDtNanoseconds);
             return new PortableMonotonicStamp(in ticksSinceUtcDotNetEpoch);
         }
 
@@ -75,10 +82,13 @@ namespace HpTimeStamps
                 throw new ArgumentOutOfRangeException(nameof(monotonicStamp), monotonicStamp,
                     "The portable monotonic stamp is too big or too small to be expressed as a datetime.");
             }
-            Int128 elapsedSinceEpoch = (MinValueUtcDtNanoseconds + monotonicStamp._dateTimeNanosecondOffsetFromMinValueUtc) / 100;
+
+            Int128 elapsedSinceEpoch =
+                (MinValueUtcDtNanoseconds + monotonicStamp._dateTimeNanosecondOffsetFromMinValueUtc) / 100;
             Debug.Assert(elapsedSinceEpoch >= long.MinValue && elapsedSinceEpoch <= long.MaxValue);
-            return new DateTime((long)elapsedSinceEpoch, DateTimeKind.Utc);
-        } 
+            return new DateTime((long) elapsedSinceEpoch, DateTimeKind.Utc);
+        }
+
         #endregion
 
         /// <summary>
@@ -86,44 +96,51 @@ namespace HpTimeStamps
         /// </summary>
         /// <remarks>Value of .NET UTC epoch is calculated by calling <see cref="DateTime.ToUniversalTime"/>
         /// on <see cref="DateTime.MinValue"/></remarks>
-        public string NanosecondsSinceUtcEpoch =>
+        public readonly string NanosecondsSinceUtcEpoch =>
             $"{_dateTimeNanosecondOffsetFromMinValueUtc:N} nanoseconds since epoch.";
 
         /// <summary>
         /// The year (A.D. 0001 - 9999)
         /// </summary>
-        public int Year => GetComponents().Year;
+        public readonly int Year => GetComponents().Year;
+
         /// <summary>
         /// The month (1-12)
         /// </summary>
-        public int Month => GetComponents().Month;
+        public readonly int Month => GetComponents().Month;
+
         /// <summary>
         /// The day (1-28, 1-29, 1-30, 1-31 depending on <see cref="Month"/>)
         /// </summary>
-        public int Day => GetComponents().Day;
+        public readonly int Day => GetComponents().Day;
+
         /// <summary>
         /// The hour (0-23)
         /// </summary>
-        public int Hour => GetComponents().Hour;
+        public readonly int Hour => GetComponents().Hour;
+
         /// <summary>
         /// Then minutes (0-59)
         /// </summary>
-        public int Minutes => GetComponents().Minute;
+        public readonly int Minutes => GetComponents().Minute;
+
         /// <summary>
         /// The seconds (0-59)
         /// </summary>
-        public int Seconds => GetComponents().WholeSeconds;
+        public readonly int Seconds => GetComponents().WholeSeconds;
+
         /// <summary>
         /// The fractional seconds (1 - 9,999,999)
         /// </summary>
-        public int FractionalSeconds => GetFractionalSeconds();
+        public readonly int FractionalSeconds => GetFractionalSeconds();
 
         /// <summary>
         /// Amount of time elapsed since epoch
         /// </summary>
-        public PortableDuration TimeSinceEpoch => new PortableDuration(in _dateTimeNanosecondOffsetFromMinValueUtc);
+        public readonly PortableDuration TimeSinceEpoch => new PortableDuration(in _dateTimeNanosecondOffsetFromMinValueUtc);
 
         #region CTORS and related
+
         internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch)
         {
             if (nanosecondSinceDtUtcEpoch > MaxValueUtcDtNanoseconds ||
@@ -132,19 +149,24 @@ namespace HpTimeStamps
                     nanosecondSinceDtUtcEpoch.ToString("N"),
                     "The offset supplied places this stamp outside the supported range of .NET time.");
             _dateTimeNanosecondOffsetFromMinValueUtc = nanosecondSinceDtUtcEpoch;
+            _nanosecondsOffsetFromUsualMinUtcNanoseconds = 0;
         }
 
         static PortableMonotonicStamp()
         {
-            MaxValueUtcDtNanoseconds = DateTime.MaxValue.ToUniversalTime().Ticks * (Int128)100;
-            MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128)100;
+            Int128 offset = CalculateOffsetFromUsualMinValUtcNanoseconds();
+            Debug.Assert(offset >= long.MinValue && offset <= long.MaxValue &&
+                         PortableDuration.FromNanoseconds((long) offset).TotalDays <= 31);
+            SystemOffsetFromUsualMinValueUtcInNanoseconds = (long) offset;
+            MaxValueUtcDtNanoseconds = DateTime.MaxValue.ToUniversalTime().Ticks * (Int128) 100;
+            MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128) 100;
             TheMinValue = new PortableMonotonicStamp(MinValueUtcDtNanoseconds);
             TheMaxValue = new PortableMonotonicStamp(MaxValueUtcDtNanoseconds);
             Validate();
-
         }
+
         [Conditional("DEBUG")] // DEBUG they are used // RELEASE the method doesn't get called
-        [SuppressMessage("ReSharper", "RedundantAssignment")] 
+        [SuppressMessage("ReSharper", "RedundantAssignment")]
         static void Validate()
         {
             Debug.Assert(PortableDuration.TicksPerSecond == 1_000_000_000);
@@ -156,14 +178,16 @@ namespace HpTimeStamps
             Int128 toTimeSpanTicksMax = maxValueNanoseconds / 100;
             Debug.Assert(toTimeSpanTicksMin >= long.MinValue);
             Debug.Assert(toTimeSpanTicksMax <= long.MaxValue);
-            DateTime min = new DateTime((long)toTimeSpanTicksMin, DateTimeKind.Utc);
-            DateTime max = new DateTime((long)toTimeSpanTicksMax, DateTimeKind.Utc);
-            Debug.Assert(min == DateTime.MinValue.ToUniversalTime() && max == 
+            DateTime min = new DateTime((long) toTimeSpanTicksMin, DateTimeKind.Utc);
+            DateTime max = new DateTime((long) toTimeSpanTicksMax, DateTimeKind.Utc);
+            Debug.Assert(min == DateTime.MinValue.ToUniversalTime() && max ==
                 DateTime.MaxValue.ToUniversalTime());
         }
+
         #endregion
 
         #region Public Methods
+
         /// <summary>
         /// Convert this to a datetime in the local datetime timezone.
         /// </summary>
@@ -172,7 +196,7 @@ namespace HpTimeStamps
         /// DateTime because of overflow.</exception>
         [System.Diagnostics.Contracts.Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DateTime ToLocalDateTime()
+        public readonly DateTime ToLocalDateTime()
         {
             try
             {
@@ -193,15 +217,16 @@ namespace HpTimeStamps
         /// DateTime because of overflow.</exception>
         [System.Diagnostics.Contracts.Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DateTime ToUtcDateTime()
+        public readonly DateTime ToUtcDateTime()
         {
             try
             {
-                return (DateTime)this;
+                return (DateTime) this;
             }
             catch (ArgumentOutOfRangeException inner)
             {
-                throw new PortableTimestampOverflowException("Overflow prevented conversion of portable monotonic stamp to a UTC DateTime.", inner);
+                throw new PortableTimestampOverflowException(
+                    "Overflow prevented conversion of portable monotonic stamp to a UTC DateTime.", inner);
             }
         }
 
@@ -210,17 +235,19 @@ namespace HpTimeStamps
         /// in UTC.
         /// </summary>
         /// <returns>A string representation.</returns>
-        public override string ToString() => BuildString(false);
-        
+        public readonly override string ToString() => BuildString(false);
+
         /// <summary>
         /// Get a string representation of this value in ISO 8601 format
         /// in UTC.
         /// </summary>
         /// <returns>A string representation.</returns>
-        public string ToLocalString() => BuildString(true);
+        public readonly string ToLocalString() => BuildString(true);
+
         #endregion
-        
+
         #region Equality/Comparison and Related Methods and Operators
+
         /// <summary>
         /// Test two portable monotonic stamps for value equality
         /// </summary>
@@ -230,6 +257,7 @@ namespace HpTimeStamps
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(in PortableMonotonicStamp lhs, in PortableMonotonicStamp rhs) =>
             lhs._dateTimeNanosecondOffsetFromMinValueUtc == rhs._dateTimeNanosecondOffsetFromMinValueUtc;
+
         /// <summary>
         /// Test two portable monotonic stamps for value inequality
         /// </summary>
@@ -239,6 +267,7 @@ namespace HpTimeStamps
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(in PortableMonotonicStamp lhs, in PortableMonotonicStamp rhs) =>
             !(lhs == rhs);
+
         /// <summary>
         /// Test two portable monotonic stamps to see if <paramref name="lhs"/> is greater than
         /// <paramref name="rhs"/>.
@@ -292,7 +321,7 @@ namespace HpTimeStamps
         /// </summary>
         /// <returns>a hash code</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override int GetHashCode() => _dateTimeNanosecondOffsetFromMinValueUtc.GetHashCode();
+        public override readonly int GetHashCode() => _dateTimeNanosecondOffsetFromMinValueUtc.GetHashCode();
 
         /// <summary>
         /// Check to see if this value has the same value as another object
@@ -301,14 +330,15 @@ namespace HpTimeStamps
         /// <returns>True if the other object is a <see cref="PortableMonotonicStamp"/>
         /// that has the same value as this one.  False otherwise
         /// </returns>
-        public override bool Equals(object obj) => obj is PortableMonotonicStamp pmts && pmts == this;
+        public override readonly bool Equals(object obj) => obj is PortableMonotonicStamp pmts && pmts == this;
+
         /// <summary>
         /// Test to see whether this value is the same as another value
         /// of the same type.
         /// </summary>
         /// <param name="other">the other value</param>
         /// <returns>True if the other value has the same value as this one, false otherwise.</returns>
-        public bool Equals(PortableMonotonicStamp other) => other == this;
+        public readonly bool Equals(PortableMonotonicStamp other) => other == this;
 
         /// <summary>
         /// Compare this value to another value of the same type to establish the ordering relation between them.
@@ -319,7 +349,7 @@ namespace HpTimeStamps
         /// A positive number if this value succeeds <paramref name="other"/> in the sort order.
         /// A negative number if this value precedes <paramref name="other"/> in the sort order.
         /// </returns>
-        public int CompareTo(PortableMonotonicStamp other) => Compare(in this, in other);
+        public readonly int CompareTo(PortableMonotonicStamp other) => Compare(in this, in other);
 
 
         /// <summary>
@@ -336,7 +366,8 @@ namespace HpTimeStamps
         {
             if (lhs == rhs) return 0;
             return lhs > rhs ? 1 : -1;
-        } 
+        }
+
         #endregion
 
         #region Arithmetic operators
@@ -355,6 +386,7 @@ namespace HpTimeStamps
             {
                 return new PortableMonotonicStamp(in sum);
             }
+
             throw new PortableTimestampOverflowException("The sum caused overflow.");
         }
 
@@ -365,9 +397,9 @@ namespace HpTimeStamps
         /// <param name="d">the duraton addend</param>
         /// <returns>the sum</returns>
         /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>        
-        public static PortableMonotonicStamp operator +(in PortableDuration d, in PortableMonotonicStamp ms) 
+        public static PortableMonotonicStamp operator +(in PortableDuration d, in PortableMonotonicStamp ms)
             => ms + d;
-        
+
         /// <summary>
         /// Adds a timespan to a stamp, yielding a stamp
         /// </summary>
@@ -382,6 +414,7 @@ namespace HpTimeStamps
             {
                 return new PortableMonotonicStamp(in sum);
             }
+
             throw new PortableTimestampOverflowException("The sum caused overflow.");
         }
 
@@ -392,8 +425,9 @@ namespace HpTimeStamps
         /// <param name="ts">the timespan addend</param>
         /// <returns>the sum</returns>
         /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>        
-        public static PortableMonotonicStamp operator +(TimeSpan ts, in PortableMonotonicStamp ms) 
+        public static PortableMonotonicStamp operator +(TimeSpan ts, in PortableMonotonicStamp ms)
             => ms + ts;
+
         /// <summary>
         /// Subtracts a duration from a stamp, yielding a stamp
         /// </summary>
@@ -401,16 +435,18 @@ namespace HpTimeStamps
         /// <param name="subtrahend">the subtrahend</param>
         /// <returns>the sum</returns>
         /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
-        public static PortableMonotonicStamp operator -(in PortableMonotonicStamp minuend, in PortableDuration subtrahend)
+        public static PortableMonotonicStamp operator -(in PortableMonotonicStamp minuend,
+            in PortableDuration subtrahend)
         {
             Int128 sum = minuend._dateTimeNanosecondOffsetFromMinValueUtc + subtrahend._ticks;
             if (sum >= MinValueUtcDtNanoseconds && sum <= MaxValueUtcDtNanoseconds)
             {
                 return new PortableMonotonicStamp(in sum);
             }
+
             throw new PortableTimestampOverflowException("The sum caused overflow.");
         }
-        
+
         /// <summary>
         /// Subtracts a timespan from a stamp, yielding a stamp
         /// </summary>
@@ -425,9 +461,10 @@ namespace HpTimeStamps
             {
                 return new PortableMonotonicStamp(in difference);
             }
+
             throw new PortableTimestampOverflowException("The subtraction caused overflow.");
         }
-        
+
         /// <summary>
         /// Subtracts a stamp from another stamp yielding the duration between them.
         /// </summary>
@@ -459,12 +496,13 @@ namespace HpTimeStamps
         /// <returns>the difference</returns>
         public static PortableDuration operator -(DateTime minuend, in PortableMonotonicStamp subtrahend) =>
             ((PortableMonotonicStamp) minuend) - subtrahend;
-        
+
         #endregion
+
         #region Private Methods
-        
-        private string BuildString(bool local)
-        { 
+
+        private readonly string BuildString(bool local)
+        {
 //          0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	
 //          2	0	2	0	-	1	2	-	1	2	T	1	8	:	2	1	:	4	3	.	2	
 
@@ -490,18 +528,18 @@ namespace HpTimeStamps
             {
                 result.Insert(insertBeforeIdx, penultimateChar.ToString());
             }
-            
+
             return result.ToString();
         }
 
-        private (short Year, byte Month, byte Day, byte Hour, byte Minute, short WholeSeconds) GetComponents()
+        private readonly (short Year, byte Month, byte Day, byte Hour, byte Minute, short WholeSeconds) GetComponents()
         {
             DateTime utc = ToUtcDateTime();
             short year, wholeSeconds;
             byte month, day, hour, minute;
             unchecked
             {
-                year = (short)utc.Year;
+                year = (short) utc.Year;
                 month = (byte) utc.Month;
                 day = (byte) utc.Day;
                 hour = (byte) utc.Hour;
@@ -516,36 +554,108 @@ namespace HpTimeStamps
 //#endif
 //                fractionalSeconds = (int) fractionalSecondsStamp;
             }
+
             return (year, month, day, hour, minute, wholeSeconds);
         }
+        static Int128 CalculateOffsetFromUsualMinValUtcNanoseconds()
+        {
+            DateTime minValUtc = DateTime.MinValue.ToUniversalTime();
+            //for some reason on MOST systems the min value of a date time in utc is 0001-1-1T05:00:00.00000Z
+            //but on other systems it may vary .... I have observed it to vary by three minutes.  
+            //this causes portable timestamps transferred between systems to be off by three minutes (plus any 
+            //rounding errors if doing mono-portable or dt-portable hard conversion).  Therefore, will store 
+            //an offset of amount of time difference in milliseconds, capping it at one month.  
+            if (minValUtc.Year != 1)
+                throw new UnsupportedDateTimeRangeException(
+                    $"Supported systems have the {nameof(DateTime.Year)} of expression \"DateTime.MinValue.ToUniversalTime()\" equal to 1.  On this system the value is: {minValUtc.Year}.");
+            if (minValUtc.Month != 1)
+                throw new UnsupportedDateTimeRangeException(
+                    $"Supported systems have the {nameof(DateTime.Month)} property of expression \"DateTime.MinValue.ToUniversalTime()\" equal to 1.  On this system the value is: {minValUtc.Year}.");
 
-        private int GetFractionalSeconds()
+
+            //Because we are screwing around with min values, to calculate offset, we will adjust (after validating min)
+            //the min val for calc purposes to 1970.
+            DateTime janOne1970At0500HoursUtc = new DateTime(1970, 1, 1, 5, 0, 0, DateTimeKind.Utc);
+
+            DateTime minUtcAdjustedTo1970 = new DateTime(1970, minValUtc.Month, minValUtc.Day, minValUtc.Hour,
+                minValUtc.Minute, minValUtc.Second);
+
+            minUtcAdjustedTo1970 += TimeSpan.FromMilliseconds(minValUtc.Millisecond);
+
+            TimeSpan difference = minUtcAdjustedTo1970 - janOne1970At0500HoursUtc;
+
+            string logMessage =
+                difference switch
+                {
+                    var x when x.Duration().TotalDays > 31 => throw new UnsupportedDateTimeRangeException(
+                        $"This system's minimum utc date time value is ahead of the usual value ({minValUtc:O}) in excess of 31 days and is therefore unsupported."),
+                    var x when x == TimeSpan.Zero =>
+                        $"This system's minimum value utc date time is exactly equal to the usual value of {minValUtc:O}.",
+                    var x when x < TimeSpan.Zero =>
+                        $"This system's minimum value utc date time is ahead of the usual value of ({minValUtc:O}) by {difference.Duration().TotalMilliseconds} milliseconds.",
+                    _ =>
+                        $"This system's minimum value utc date time is behind the usual value of ({minValUtc:O}) by {difference.Duration().TotalMilliseconds} milliseconds.",
+                };
+
+            Debug.WriteLine(logMessage);
+            return ((Int128) difference.Ticks * 100);
+        }
+        private readonly int GetFractionalSeconds()
         {
             (Int128 _, Int128 fractionalSecondsStamp) =
-                    Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
-            return (int)fractionalSecondsStamp;
+                Int128.DivRem(in _dateTimeNanosecondOffsetFromMinValueUtc, NanosecondsFrequency);
+            return (int) fractionalSecondsStamp;
         }
+
+
+        [OnSerializing]
+        private void OnSerializing(StreamingContext context)
+        {
+            _nanosecondsOffsetFromUsualMinUtcNanoseconds = SystemOffsetFromUsualMinValueUtcInNanoseconds;
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            if (_nanosecondsOffsetFromUsualMinUtcNanoseconds != SystemOffsetFromUsualMinValueUtcInNanoseconds)
+            {
+                Int128 difference = SystemOffsetFromUsualMinValueUtcInNanoseconds - _nanosecondsOffsetFromUsualMinUtcNanoseconds;
+                _dateTimeNanosecondOffsetFromMinValueUtc += difference;
+                _nanosecondsOffsetFromUsualMinUtcNanoseconds = SystemOffsetFromUsualMinValueUtcInNanoseconds;
+            }
+        }
+
         #endregion
 
         #region Private Data
-        // ReSharper disable once InconsistentNaming -- internal where private normal for efficiency
-        [DataMember] internal readonly Int128 _dateTimeNanosecondOffsetFromMinValueUtc;
+
+       
+        // ReSharper disable InconsistentNaming -- would be private but for efficiency
+        [DataMember] internal Int128 _dateTimeNanosecondOffsetFromMinValueUtc;
+        [DataMember] internal long _nanosecondsOffsetFromUsualMinUtcNanoseconds;
+        // ReSharper restore InconsistentNaming
+        
+        internal static readonly long SystemOffsetFromUsualMinValueUtcInNanoseconds;
         private static readonly Int128 MaxValueUtcDtNanoseconds;
         internal static readonly Int128 MinValueUtcDtNanoseconds;
         private static readonly PortableMonotonicStamp TheMinValue;
         private static readonly PortableMonotonicStamp TheMaxValue;
+
         #endregion
     }
 
-    internal static class MonoPortableConversionHelper<TStampContext> where TStampContext : struct, IEquatable<TStampContext>,IComparable<TStampContext>, IMonotonicStampContext
+    internal static class MonoPortableConversionHelper<TStampContext>
+        where TStampContext : struct, IEquatable<TStampContext>, IComparable<TStampContext>, IMonotonicStampContext
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static PortableMonotonicStamp ConvertToPortableMonotonicStamp(MonotonicTimeStamp<TStampContext> monotonicStamp)
+        internal static PortableMonotonicStamp ConvertToPortableMonotonicStamp(
+            MonotonicTimeStamp<TStampContext> monotonicStamp)
         {
             var (utcReferenceTime, offsetFromReference, _) = monotonicStamp.Value;
             Debug.Assert(utcReferenceTime.Kind == DateTimeKind.Utc);
-            Int128 refTimeNanosecondsSinceMin = (((Int128)utcReferenceTime.Ticks * 100) - PortableMonotonicStamp.MinValueUtcDtNanoseconds);
-            PortableDuration pd = (PortableDuration)offsetFromReference;
+            Int128 refTimeNanosecondsSinceMin = (((Int128) utcReferenceTime.Ticks * 100) -
+                                                 PortableMonotonicStamp.MinValueUtcDtNanoseconds);
+            PortableDuration pd = (PortableDuration) offsetFromReference;
             return new PortableMonotonicStamp(pd._ticks + refTimeNanosecondsSinceMin);
         }
 
@@ -553,8 +663,9 @@ namespace HpTimeStamps
         internal static MonotonicTimeStamp<TStampContext> ConvertPortableToMonotonic(in PortableMonotonicStamp ps)
         {
             MonotonicTimeStamp<TStampContext> referenceMonoStamp = MonotonicTimeStamp<TStampContext>.ReferenceTimeStamp;
-            PortableDuration portableStampTimeSinceEpoch = new PortableDuration(PortableMonotonicStamp.MinValueUtcDtNanoseconds +
-                                          ps._dateTimeNanosecondOffsetFromMinValueUtc);
+            PortableDuration portableStampTimeSinceEpoch = new PortableDuration(
+                PortableMonotonicStamp.MinValueUtcDtNanoseconds +
+                ps._dateTimeNanosecondOffsetFromMinValueUtc);
             PortableDuration referenceStampTimeSinceEpoch =
                 new PortableDuration((Int128) referenceMonoStamp.Value.UtcReferenceTime.Ticks * 100);
             PortableDuration difference = portableStampTimeSinceEpoch - referenceStampTimeSinceEpoch;
@@ -564,6 +675,20 @@ namespace HpTimeStamps
         static MonoPortableConversionHelper() => TheContext = MonotonicTimeStampUtil<TStampContext>.StampNow.Context;
 
         private static readonly TStampContext TheContext;
+
+    }
+
+    
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public sealed class UnsupportedDateTimeRangeException : Exception
+    {
+        internal UnsupportedDateTimeRangeException([NotNull] string message)
+            : base(message)
+        {
+        }
 
     }
 }

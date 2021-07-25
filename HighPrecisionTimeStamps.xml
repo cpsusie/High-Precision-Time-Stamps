@@ -3209,6 +3209,11 @@
             <param name="subtrahend">the subtrahend</param>
             <returns>the difference</returns>
         </member>
+        <member name="T:HpTimeStamps.UnsupportedDateTimeRangeException">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="T:HpTimeStamps.PortableTimestampOverflowException">
             <summary>
             Indicates that a portable timestamp cannot be converted to a local

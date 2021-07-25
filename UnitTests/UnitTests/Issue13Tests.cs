@@ -38,6 +38,19 @@ namespace UnitTests
             Helper.WriteLine("\tUTC Offset: [{0:N}]", context.UtcLocalTimeOffset.TotalHours);
             Helper.WriteLine("\tPortable stamp min value: {0}", minValuePortable);
             Helper.WriteLine("\tMono stamp min value: {0}", minValue);
+            PortableDuration pmOffsetFromUsual = PortableDuration.FromNanoseconds(PortableMonotonicStamp.SystemOffsetFromUsualMinValueUtcInNanoseconds);
+            PortableDuration pmOffAbs = pmOffsetFromUsual.AbsoluteValue();
+            string logMessage = pmOffsetFromUsual switch
+            {
+                var off when off == PortableDuration.Zero =>
+                    $"This system's min value utc date time matches the usual value of ({minValDtUtc:O}) exactly.",
+                var off when off < PortableDuration.Zero =>
+                    $"This system's min value utc date time is behind the usual value of (0001-01-01T05:00:00.00000Z) by {pmOffAbs.Days} days, {pmOffAbs.Hours} hours, {pmOffAbs.Minutes} minutes, {pmOffAbs.Seconds} and {pmOffAbs.Milliseconds} milliseconds.",
+                _ =>
+                    $"This system's min value utc date time is ahead of the usual value of (0001-01-01T05:00:00.00000Z) by {pmOffAbs.Days} days, {pmOffAbs.Hours} hours, {pmOffAbs.Minutes} minutes, {pmOffAbs.Seconds} and {pmOffAbs.Milliseconds} milliseconds.",
+
+            };
+            Helper.WriteLine(logMessage);
         }
 
         [Fact]
