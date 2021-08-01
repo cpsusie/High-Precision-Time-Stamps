@@ -211,13 +211,21 @@ namespace HpTimeStamps
             Debug.Assert((TimeSpan) maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
             Debug.Assert((TimeSpan) minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
 
+            Int128 maxDsAsTsTicks = ConvertStopwatchTicksToTimespanTicks(maxDurationOffset.Ticks);
+            Int128 minDsAsTsTics = ConvertStopwatchTicksToTimespanTicks(minDurationOffset.Ticks);
 
-            if (maxDurationOffset.Ticks > long.MaxValue)
+            
+            //monotonic range is limited to representable by long even if duration may not be.
+            bool tooBigForMonoTs = maxDurationOffset.Ticks > long.MaxValue;
+            bool tooSmallForMonoTs = minDurationOffset.Ticks < long.MinValue;
+
+
+            if (maxDsAsTsTicks > long.MaxValue)
             {
                 maxDurationOffset = Duration.FromStopwatchTicks(long.MaxValue);
             }
 
-            if (minDurationOffset.Ticks < long.MinValue)
+            if (minDsAsTsTics < long.MinValue)
             {
                 minDurationOffset = Duration.FromStopwatchTicks(long.MinValue);
             }
@@ -232,9 +240,9 @@ namespace HpTimeStamps
             Debug.Assert((TimeSpan)minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
 
             MonotonicTimeStamp<TStampContext> max =
-                new MonotonicTimeStamp<TStampContext>((long) maxDurationOffset.Ticks);
+                new MonotonicTimeStamp<TStampContext>(tooBigForMonoTs ? long.MaxValue : (long) maxDurationOffset.Ticks);
             MonotonicTimeStamp<TStampContext> min =
-                new MonotonicTimeStamp<TStampContext>((long) minDurationOffset.Ticks);
+                new MonotonicTimeStamp<TStampContext>( tooSmallForMonoTs ? long.MinValue : (long) minDurationOffset.Ticks);
             return (max.ToUtcDateTime(), min.ToUtcDateTime(), max, min);
 
             static bool ValidateMin(TimeSpan test, TimeSpan testRef)

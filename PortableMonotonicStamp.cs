@@ -593,7 +593,7 @@ namespace HpTimeStamps
                     $"Supported systems Supported systems have the {nameof(DateTime.Day)} property of expression \"DateTime.MinValue.ToUniversalTime()\" equal to 1.  On this system the value is: {minValUtc.Day}.");
 
             TimeSpan utcOffsetStandardTime = TimeZoneInfo.Local.BaseUtcOffset;
-            Debug.Assert(utcOffsetStandardTime == TimeSpan.FromHours(-5));
+            //Debug.Assert(utcOffsetStandardTime == TimeSpan.FromHours(-5));
             
             //Because we are screwing around with min values, to calculate offset, we will adjust (after validating min)
             //the min val for calc purposes to 1970.

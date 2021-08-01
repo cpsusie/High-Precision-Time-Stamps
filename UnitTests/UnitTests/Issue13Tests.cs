@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using HpTimeStamps;
+using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,6 +22,26 @@ namespace UnitTests
         // {
         //     GenerateAndSaveRoRefStuffToFile();
         // }
+
+        [Fact]
+        public void TestRtTickConv()
+        {
+            const long ticks = -637627868439080888; //ts ticks
+            if (Duration.TicksPerSecond == PortableDuration.TicksPerSecond)
+            {
+                TimeSpan t = TimeSpan.FromTicks(ticks);
+                Duration d = (Duration) t;      
+                TimeSpan rt = (TimeSpan) d;
+                bool lessThanMin = ((((Int128) ticks) * 100) < (Int128) long.MinValue);
+                Assert.True(lessThanMin);
+                
+                Int128 swTicks = MonotonicStamp.ConvertTimeSpanTicksToStopwatchTicks(ticks);
+                long rtTicks = (long) MonotonicStamp.ConvertStopwatchTicksToTimespanTicks(swTicks);
+                Assert.Equal(ticks, rtTicks);
+                Assert.Equal(rt, t);
+            }
+        }
+        
         [Fact]
         public void LogSystemAndContextInfo()
         {

@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.Serialization;
+using HpTimeStamps;
 using Xunit;
 
 namespace UnitTests
@@ -37,6 +38,8 @@ namespace UnitTests
 
         static Issue13TextFixture()
         {
+            var context = MonotonicTimeStampUtil<MonotonicStampContext>.StampNow.Context;
+            Assert.False(context.IsInvalid);
             string stringError1Xml = ReadXmlFromPath(StringificationMismatchAmzn2ToWinX64TenMilXmlFile);
             TheStringificationMismatchAmzn2ToWinX64TenMil = Deser(stringError1Xml);
 
