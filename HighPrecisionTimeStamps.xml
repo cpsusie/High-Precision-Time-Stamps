@@ -3227,11 +3227,6 @@
             <param name="subtrahend">the subtrahend</param>
             <returns>the difference</returns>
         </member>
-        <member name="T:HpTimeStamps.UnsupportedDateTimeRangeException">
-            <summary>
-            
-            </summary>
-        </member>
         <member name="T:HpTimeStamps.PortableTimestampOverflowException">
             <summary>
             Indicates that a portable timestamp cannot be converted to a local
@@ -3434,6 +3429,17 @@
             <param name="other">Another object implementing this interface</param>
             <returns>True if <paramref name="other"/> is a not null and is of type <see cref="T:HpTimeStamps.TimeStampUtil"/>,
             false otherwise.</returns>
+        </member>
+        <member name="T:HpTimeStamps.UnsupportedDateTimeRangeException">
+             <summary>
+             This exception is thrown to indicate that on the current system,
+             calling <see cref="M:System.DateTime.ToUniversalTime"/> on <see cref="F:System.DateTime.MinValue"/>
+             yields a result outside of a range this library supports.
+            
+             Currently, to be supported, <see cref="T:System.DateTime"/>'s minimum value, converted to
+             universal time, must be Year: 0001, Month: January.  Thus any value after January 0001
+             will be out of range and unsupported.
+             </summary>
         </member>
         <member name="T:HpTimeStamps.UnsupportedStopwatchResolutionException">
             <summary>

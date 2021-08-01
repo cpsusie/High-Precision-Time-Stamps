@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using HpTimeStamps.BigMath;
-using JetBrains.Annotations;
 
 namespace HpTimeStamps
 {
@@ -589,8 +588,13 @@ namespace HpTimeStamps
             if (minValUtc.Month != 1)
                 throw new UnsupportedDateTimeRangeException(
                     $"Supported systems have the {nameof(DateTime.Month)} property of expression \"DateTime.MinValue.ToUniversalTime()\" equal to 1.  On this system the value is: {minValUtc.Year}.");
+            if (minValUtc.Day != 1)
+                throw new UnsupportedDateTimeRangeException(
+                    $"Supported systems Supported systems have the {nameof(DateTime.Day)} property of expression \"DateTime.MinValue.ToUniversalTime()\" equal to 1.  On this system the value is: {minValUtc.Day}.");
 
-
+            TimeSpan utcOffsetStandardTime = TimeZoneInfo.Local.BaseUtcOffset;
+            Debug.Assert(utcOffsetStandardTime == TimeSpan.FromHours(-5));
+            
             //Because we are screwing around with min values, to calculate offset, we will adjust (after validating min)
             //the min val for calc purposes to 1970.
             DateTime janOne1970At0500HoursUtc = new DateTime(1970, 1, 1, 5, 0, 0, DateTimeKind.Utc);
@@ -602,6 +606,16 @@ namespace HpTimeStamps
 
             TimeSpan difference = minUtcAdjustedTo1970 - janOne1970At0500HoursUtc;
 
+            DebugLogDiff(difference, minValUtc);
+            
+            return ((Int128) difference.Ticks * 100);
+        }
+
+        [Conditional("DEBUG")]
+        [SuppressMessage("ReSharper", "RedundantAssignment")]
+        [SuppressMessage("ReSharper", "InvocationIsSkipped")]
+        static void DebugLogDiff(TimeSpan difference, DateTime minValUtc)
+        {
             string logMessage =
                 difference switch
                 {
@@ -616,8 +630,9 @@ namespace HpTimeStamps
                 };
 
             Debug.WriteLine(logMessage);
-            return ((Int128) difference.Ticks * 100);
         }
+
+
         private readonly int GetFractionalSeconds()
         {
             (Int128 _, Int128 fractionalSecondsStamp) =
@@ -688,20 +703,6 @@ namespace HpTimeStamps
                 new PortableDuration((Int128) referenceMonoStamp.Value.UtcReferenceTime.Ticks * 100);
             PortableDuration difference = portableStampTimeSinceEpoch - referenceStampTimeSinceEpoch;
             return referenceMonoStamp + ((Duration) difference);
-        }
-
-    }
-
-    
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public sealed class UnsupportedDateTimeRangeException : Exception
-    {
-        internal UnsupportedDateTimeRangeException([NotNull] string message)
-            : base(message)
-        {
         }
 
     }
