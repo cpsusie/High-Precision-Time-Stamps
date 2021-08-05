@@ -18,11 +18,11 @@ namespace UnitTests
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
             [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        // [Fact]
-        // public void TryIt()
-        // {
-        //     GenerateAndSaveRoRefStuffToFile();
-        // }
+        [Fact]
+        public void TryIt()
+        {
+            GenerateAndSaveRoRefStuffToFile();
+        }
 
         [Fact]
         public void TestRtTickConv()
