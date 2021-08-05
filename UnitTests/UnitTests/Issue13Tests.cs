@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Threading;
 using HpTimeStamps;
 using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
@@ -18,12 +19,30 @@ namespace UnitTests
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
             [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        [Fact]
-        public void TryIt()
-        {
-            GenerateAndSaveRoRefStuffToFile();
-        }
+        // [Fact]
+        // public void TryIt()
+        // {
+        //     GenerateAndSaveRoRefStuffToFile();
+        // }
 
+        [Fact]
+        public void TestRtSerDesrPMonoStamp()
+        {
+            const int numTests = 1000;
+            PortableStampRng rgen = new PortableStampRng(1000, 2500);
+            int currentTestNo = 0;
+            while (++currentTestNo <= numTests)
+            {
+                var stamp = rgen.NextStamp();
+                if (currentTestNo % 50 == 0)
+                {
+                    Helper.WriteLine("On test number {0:N0} of {1:N0} testing stamp [{2}].", currentTestNo, numTests, stamp);    
+                }
+                TestPortableMonoRtSerialization(stamp);
+            }
+            Helper.WriteLine("All {0:N0} tests passed.", numTests);
+        }
+        
         [Fact]
         public void TestRtTickConv()
         {
@@ -287,7 +306,14 @@ namespace UnitTests
             
             
         }
-        
+
+
+        private void TestPortableMonoRtSerialization(PortableMonotonicStamp stamp)
+        {
+            string xml = Fixture.SerializeStamp(stamp);
+            PortableMonotonicStamp rt = Fixture.DeserializeStamp(xml);
+            Assert.True(rt == stamp && rt.GetHashCode() == stamp.GetHashCode());
+        }
         
         private void Check(ByRefRoList<Issue13StampTestPacket> packets)
         {
@@ -540,6 +566,52 @@ namespace UnitTests
         CastVersionDoesNotMatch = 0x01,
         ToPortableVersionDoesNotMatch = 0x02,
         BothMismatched = CastVersionDoesNotMatch | ToPortableVersionDoesNotMatch
+    }
+
+    internal sealed class PortableStampRng
+    {
+        public int MinimumYear => _minYear;
+        public int MaximumYear => _maxYear;
+        public PortableMonotonicStamp NextStamp()
+        {
+            int year = _maxYear == _minYear ? _maxYear : RGen.Next(_minYear, _maxYear + 1);
+            int month = RGen.Next(1, 12);
+            int maxDays = MaxDays(month, year);
+            int day = RGen.Next(1, maxDays + 1);
+            int hours = RGen.Next(0, 24);
+            int minutes = RGen.Next(0, 60);
+            int seconds = RGen.Next(0, 60);
+            PortableDuration nanoseconds = PortableDuration.FromNanoseconds(RGen.Next(0, 1_000_000_000));
+
+            PortableMonotonicStamp withoutNano = new DateTime(year, month, day, hours, minutes, seconds, DateTimeKind.Utc);
+            return withoutNano + nanoseconds;
+        }
+
+        [NotNull] private Random RGen => TheRng.Value;
+        internal PortableStampRng(int minYear, int maxYear)
+        {
+            if (minYear < 1)
+                throw new ArgumentOutOfRangeException(nameof(minYear), minYear, @"Argument must be positive.");
+            if (maxYear < 1)
+                throw new ArgumentOutOfRangeException(nameof(maxYear), maxYear, @"Argument must be positive.");
+            if (minYear > maxYear)
+                throw new ArgumentException(
+                    $"Argument {nameof(minYear)} (value: {minYear}) must be less than or equal to Argument {nameof(maxYear)} (value: {maxYear}).");
+            if (maxYear > MaxMaxYear)
+                throw new ArgumentOutOfRangeException(nameof(maxYear), maxYear,
+                    @$"Argument must be less than or equal to {MaxMaxYear}.");
+            _minYear = minYear;
+            _maxYear = maxYear;
+        }
+
+        static int MaxDays(int month, int year) =>
+            DateTime.DaysInMonth(year, month);
+        
+        
+        private const int MaxMaxYear = 3000;
+        private readonly int _maxYear;
+        private readonly int _minYear;
+        [NotNull] private static readonly ThreadLocal<Random> TheRng = new ThreadLocal<Random>(() => new Random(), false);
     }
 
     

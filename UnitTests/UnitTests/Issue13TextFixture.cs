@@ -33,12 +33,41 @@ namespace UnitTests
                 "Windows 10 x64: 2,441,442 ticks per second.");
         
         public (string XmlContents, string Title) AmznLinux2_x64_1_000_000_000_Tps { get; } =
-            (ReadXmlFromPath(TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath),
+            (ReadXmlFromPath(TheAmznLinux2_1_000_000_000tps_2021_08_05_XmlPath),
                 "Amazon Linux 2 x64:  1,000,000,000 ticks per second.");
 
         public (string XmlContents, string Title) Win10_x64_10_000_000_Tps { get; } =
             (ReadXmlFromPath(TheWin10x64_10_000_000tps__tps_2021_08_05T08_20_07_0937719_04_00_XmlPath),
                 "Windows 10 x64:  10,000,000 ticks per second.");
+
+        public string SerializeStamp(PortableMonotonicStamp serializeMe)
+        {
+            string xml;
+            {
+                using var memoryStream = new MemoryStream();
+                using var streamReader = new StreamReader(memoryStream);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(PortableMonotonicStamp));
+                serializer.WriteObject(memoryStream, serializeMe);
+                memoryStream.Position = 0;
+                xml = streamReader.ReadToEnd();
+            }
+            return xml;
+        }
+
+        public PortableMonotonicStamp DeserializeStamp([JetBrains.Annotations.NotNull] string xml)
+        {
+            if (xml == null) throw new ArgumentNullException(nameof(xml));
+            PortableMonotonicStamp ret;
+            {
+                using var stream = new MemoryStream();
+                byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
+                stream.Write(data, 0, data.Length);
+                stream.Position = 0;
+                DataContractSerializer deserializer = new DataContractSerializer(typeof(PortableMonotonicStamp));
+                ret = (PortableMonotonicStamp)deserializer.ReadObject(stream);
+            }
+            return ret;
+        }
 
         static Issue13TextFixture()
         {
@@ -104,8 +133,8 @@ namespace UnitTests
             TheDtParseTestCasesArr;
         private const string TheWin10x64_2_441_442_tps_2021_08_05T08_39_20_6886102_04_00_XmlPath =
             @"../../../Resources/Win10x64_2_441_442_tps_2021-08-05T08-39-20.6866102-04-00.xml";
-        private const string TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath =
-            @"../../../Resources/AmznLnx2_1_000_000_000_tps_2021-07-25T13-58-11.8479424-04-00.xml";
+        private const string TheAmznLinux2_1_000_000_000tps_2021_08_05_XmlPath =
+            @"../../../Resources/AmznLinux2_1_000_000_000tps_2021-08-05T09-06-50.3661107-04-00.xml";
         private const string TheWin10x64_10_000_000tps__tps_2021_08_05T08_20_07_0937719_04_00_XmlPath =
             @"../../../Resources/Win10x64_10_000_000_tps_2021-08-05T08-20-07.0937719-04-00.xml";
 
