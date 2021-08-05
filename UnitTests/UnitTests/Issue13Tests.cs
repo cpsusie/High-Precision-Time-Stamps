@@ -18,11 +18,11 @@ namespace UnitTests
         public Issue13Tests([NotNull] ITestOutputHelper helper, 
             [NotNull] Issue13TextFixture fixture) : base(fixture, helper) {}
 
-        [Fact]
-        public void TryIt()
-        {
-            GenerateAndSaveRoRefStuffToFile();
-        }
+        //[Fact]
+        //public void TryIt()
+        //{
+        //    GenerateAndSaveRoRefStuffToFile();
+        //}
 
         [Fact]
         public void TestRtTickConv()
@@ -432,9 +432,9 @@ namespace UnitTests
             return testMe;
         }
 
-        //private const string SysName = "AmznLinux2_1_000_000_000tps";
+        private const string SysName = "AmznLinux2_1_000_000_000tps";
         //private const string SysName = "Win10x64_2_441_442_tps";
-        private const string SysName = "Win10x64_10_000_000_tps";
+        //private const string SysName = "Win10x64_10_000_000_tps";
         private const string Extension = ".xml";
     }
 

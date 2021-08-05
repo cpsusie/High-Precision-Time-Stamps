@@ -29,7 +29,7 @@ namespace UnitTests
             ref TheStringificationMismatchAmzn2ToWinX64TenMil;
 
         public (string XmlContents, string Title) Windows10x64_2_441_442_Tps { get; } =
-            (ReadXmlFromPath(TheWin10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00_XmlPath),
+            (ReadXmlFromPath(TheWin10x64_2_441_442_tps_2021_08_05T08_39_20_6886102_04_00_XmlPath),
                 "Windows 10 x64: 2,441,442 ticks per second.");
         
         public (string XmlContents, string Title) AmznLinux2_x64_1_000_000_000_Tps { get; } =
@@ -102,8 +102,8 @@ namespace UnitTests
         [JetBrains.Annotations.NotNull] private static readonly
             LocklessLazyWriteOnceValue<ImmutableArray<(string Input, DateTime ExpectedDt, int NanoSeconds)>>
             TheDtParseTestCasesArr;
-        private const string TheWin10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00_XmlPath =
-            @"../../../Resources/Win10x64_2_441_442_tps_2021-07-17T19-44-52.7102099-04-00.xml";
+        private const string TheWin10x64_2_441_442_tps_2021_08_05T08_39_20_6886102_04_00_XmlPath =
+            @"../../../Resources/Win10x64_2_441_442_tps_2021-08-05T08-39-20.6866102-04-00.xml";
         private const string TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath =
             @"../../../Resources/AmznLnx2_1_000_000_000_tps_2021-07-25T13-58-11.8479424-04-00.xml";
         private const string TheWin10x64_10_000_000tps__tps_2021_08_05T08_20_07_0937719_04_00_XmlPath =
