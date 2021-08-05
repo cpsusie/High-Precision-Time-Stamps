@@ -7,6 +7,7 @@ using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 using MonotonicContext = HpTimeStamps.MonotonicStampContext;
 namespace UnitTests
 {
@@ -41,7 +42,51 @@ namespace UnitTests
                 Assert.Equal(rt, t);
             }
         }
-        
+
+        [Fact]
+        public void TestDtParseMethodology()
+        {
+            var source = Fixture.DateTimeParseTestCasesArray;
+            int failures = 0;
+            int passes = 0;
+            foreach ((string input, DateTime expectedDt, int expectedNano) in source)
+            {
+                try
+                {
+                    Test(input, expectedDt, expectedNano, Helper);
+                    ++passes;
+                }
+                catch (EqualException e)
+                {
+                   ++failures;
+                   Helper.WriteLine($"Test failed for input {input}: [{e.Message}].");
+                   Helper.WriteLine(string.Empty);
+                    
+                }
+                catch (Exception ex)
+                {
+                    ++failures;
+                   Helper.WriteLine(
+                        $"Test failed for input {input}.  No exception was expected yet exception of type {ex.GetType().Name} with message {ex.Message} was thrown.  Contents: {ex}");
+                    Helper.WriteLine(string.Empty);
+                }
+            }
+
+            Assert.Equal(0, failures);
+            Assert.True(passes > 0);
+
+            static void Test(string input, DateTime expectedDt, int expectedNano, ITestOutputHelper helper)
+            {
+                (DateTime actualDt, int actualNano) = PortableTsParser.ParseStringifiedPortableStampToDtAndNano(input);
+                Assert.Equal(expectedDt, actualDt);
+                Assert.Equal(expectedNano, actualNano);
+                helper.WriteLine("Test passed for input \"{0}\". DateTime: [{1:O}], Nanoseconds: [{2:N0}].", input,
+                    actualDt, actualNano);
+                helper.WriteLine(string.Empty);
+            }
+
+        }
+
         [Fact]
         public void LogSystemAndContextInfo()
         {
@@ -59,19 +104,7 @@ namespace UnitTests
             Helper.WriteLine("\tUTC Offset: [{0:N}]", context.UtcLocalTimeOffset.TotalHours);
             Helper.WriteLine("\tPortable stamp min value: {0}", minValuePortable);
             Helper.WriteLine("\tMono stamp min value: {0}", minValue);
-            PortableDuration pmOffsetFromUsual = PortableDuration.FromNanoseconds(PortableMonotonicStamp.SystemOffsetFromUsualMinValueUtcInNanoseconds);
-            PortableDuration pmOffAbs = pmOffsetFromUsual.AbsoluteValue();
-            string logMessage = pmOffsetFromUsual switch
-            {
-                var off when off == PortableDuration.Zero =>
-                    $"This system's min value utc date time matches the usual value of ({minValDtUtc:O}) exactly.",
-                var off when off < PortableDuration.Zero =>
-                    $"This system's min value utc date time is behind the usual value of (0001-01-01T05:00:00.00000Z) by {pmOffAbs.Days} days, {pmOffAbs.Hours} hours, {pmOffAbs.Minutes} minutes, {pmOffAbs.Seconds} and {pmOffAbs.Milliseconds} milliseconds.",
-                _ =>
-                    $"This system's min value utc date time is ahead of the usual value of (0001-01-01T05:00:00.00000Z) by {pmOffAbs.Days} days, {pmOffAbs.Hours} hours, {pmOffAbs.Minutes} minutes, {pmOffAbs.Seconds} and {pmOffAbs.Milliseconds} milliseconds.",
-
-            };
-            Helper.WriteLine(logMessage);
+         
         }
 
         [Fact]
@@ -148,7 +181,7 @@ namespace UnitTests
             Assert.Equal(Duration.Zero, sinceReferenceTime);
         }
 
-        void PrintLabelValue<T>(string label, T value) where T : unmanaged
+        void PrintLabelValue<T>(string label, T value) where T : struct
         {
             Helper.WriteLine("{0}: \t{1}", label, value.ToString());
         }
@@ -508,4 +541,6 @@ namespace UnitTests
         ToPortableVersionDoesNotMatch = 0x02,
         BothMismatched = CastVersionDoesNotMatch | ToPortableVersionDoesNotMatch
     }
+
+    
 }

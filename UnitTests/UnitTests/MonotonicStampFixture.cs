@@ -46,7 +46,7 @@ namespace UnitTests
 
     }
 
-    interface IByRoRefSerializerDeserializer<T> : ISerializerDeserializer<T> where T : unmanaged
+    interface IByRoRefSerializerDeserializer<T> : ISerializerDeserializer<T> where T : struct
     {
         string SerializeToString(in T serializeMe);
     }

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.Serialization;
@@ -21,6 +23,8 @@ namespace UnitTests
             }
         }
 
+        public ImmutableArray<(string Input, DateTime ExpectedDt, int NanoSeconds)>
+            DateTimeParseTestCasesArray => TheDtParseTestCasesArr.Value;
         public ref readonly Issue13StampTestPacket Amzn2ToTemMilWinX64StrMismatch_1 =>
             ref TheStringificationMismatchAmzn2ToWinX64TenMil;
 
@@ -42,7 +46,9 @@ namespace UnitTests
             Assert.False(context.IsInvalid);
             string stringError1Xml = ReadXmlFromPath(StringificationMismatchAmzn2ToWinX64TenMilXmlFile);
             TheStringificationMismatchAmzn2ToWinX64TenMil = Deser(stringError1Xml);
-
+            TheDtParseTestCasesArr =
+                new LocklessLazyWriteOnceValue<ImmutableArray<(string Input, DateTime ExpectedDt, int NanoSeconds)>>(
+                    () => SourceForPtsDtParse.ToImmutableArray());
         }
 
         [JetBrains.Annotations.NotNull]
@@ -67,7 +73,35 @@ namespace UnitTests
             Assert.False(packet == default);
             return packet;
         }
-        
+
+        static IEnumerable<(string Input, DateTime ExpectedDt, int NanoSeconds)> SourceForPtsDtParse
+        {
+            get
+            {
+                yield return ("2021-07-25T17:57:51.0842084Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    84_208_400);
+                yield return ("2021-07-25T17:57:51Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    0);
+                yield return ("2021-07-25T17:57:51.1Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    100_000_000);
+                yield return ("2021-07-25T17:57:51.000000001Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    1);
+                yield return ("2021-07-25T17:57:51.10Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    100_000_000);
+                yield return ("2021-07-25T17:57:51.084208412Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    84_208_412);
+                yield return ("2021-07-25T17:57:51.984208412Z", new DateTime(2021, 7, 25, 17, 57, 51, DateTimeKind.Utc),
+                    984_208_412);
+                yield return ("2021-07-19T19:15:42.8303008Z", new DateTime(2021, 7, 19, 19, 15, 42, DateTimeKind.Utc),
+                    830_300_800);
+                yield return ("2021-07-17T23:44:52.702897851Z", new DateTime(2021, 7, 17, 23, 44, 52, DateTimeKind.Utc),
+                    702_897_851);
+            }
+        }
+
+        [JetBrains.Annotations.NotNull] private static readonly
+            LocklessLazyWriteOnceValue<ImmutableArray<(string Input, DateTime ExpectedDt, int NanoSeconds)>>
+            TheDtParseTestCasesArr;
         private const string TheWin10x64_2_441_442_tps_2021_07_17T19_44_52_7102099_04_00_XmlPath =
             @"../../../Resources/Win10x64_2_441_442_tps_2021-07-17T19-44-52.7102099-04-00.xml";
         private const string TheAmznLinux2_1_000_000_000tps_2021_07_25_XmlPath =

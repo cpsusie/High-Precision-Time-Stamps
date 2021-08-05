@@ -1772,6 +1772,16 @@
             Retrieve <see cref="P:HpTimeStamps.IMonotonicStampContext.UtcLocalTimeOffset"/> as a duration.
             </summary>
         </member>
+        <member name="T:HpTimeStamps.InvalidPortableStampStringException">
+            <summary>
+            Exception is thrown when there is an error parsing a serialized portable monotonic timestamp
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.InvalidPortableStampStringException.FaultySerializedText">
+            <summary>
+            The text that could not be deserialized into a portable monotonic timestamp.
+            </summary>
+        </member>
         <member name="T:HpTimeStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -2913,24 +2923,13 @@
               Represented internally as a 128 bit signed integer that represents nanoseconds elapsed
               since <see cref="F:System.DateTime.MinValue"/>, which is January 1, 0001 AD (UTC).
              </summary>
-             <remarks>
-             For issue 12/13 had to make not immutable so adjustment can be made on deserializing where
-             sources and this system's time stamp have mismatched DateTime.MinValue.ToUniversalTime() values.
-             The ONLY methods that cause mutation are serialization and deserialization callbacks.
-            
-             The offset from 0001-01-01T05:00:00.000000Z is only WRITTEN on serialization
-             IF abs(offset) > 0
-            
-             On deserialization, offset read in -- if differs from this system -- applied
-             to the value field then set to this system's offset.
-            
-             The offset does not participate other than storing the offset on serializing
-             and adjusting the stored ticks on deser to accomodate new environment.
-            
-             The hash code is a non issue: only the actual ticks are used in hashing, equality testing
-             or ordering operations.  the ticks are only mutated (possibly) on deserialization ... before they are ever
-             evaluated.
-             </remarks>
+             <remarks>  note on message suppression: although the struct is technically mutable, mutation 
+            can only occur during serialization and deserialization.  Value changing mutation can only
+            occur during deserialization.  This type is essentially immutable: EVERY publicly exposed non-static method is readonly.
+            Every static method / operator accepting values of this type accepts them by readonly-reference.  Also,
+            even if the struct WERE mutable, that would only be a problem if the value were to change
+            WHILE IT IS STORED IN A SORTED OR HASH-BASED ORDERED COLLECTION.  Since no commonly used collections 
+            return such types by mutable reference, you cannot change value while resides therein anyway.</remarks>
         </member>
         <member name="F:HpTimeStamps.PortableMonotonicStamp.NanosecondsFrequency">
             <summary>
