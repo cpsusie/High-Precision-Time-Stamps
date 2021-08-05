@@ -70,11 +70,11 @@ Create ExampleCode project.</PackageReleaseNotes>
 
   <ItemGroup>
     <Content Include="LICENSE" />
-    <Content Include="Readme.md"/>
+    <Content Include="Readme.md" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
