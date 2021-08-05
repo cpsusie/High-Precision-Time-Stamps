@@ -8,23 +8,20 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.1.0.0</Version>
+    <Version>0.1.1.0-beta</Version>
     <Description>It is well known that DateTime.Now is often used inappropriately.  For example, it may be used together with TimeSpan to produce a task's timeout point or subtracted from another DateTime to calculate a duration.  This can cause subtle bugs because DateTime is not monotonic: the system clock can change, making the result of the subtraction inaccurate -- potentially causing a premature timeout or an infinite loop.  Yet, DateTime is an incredibly convenient and widely used value type in .NET code and is especially useful when printed in ISO-8601 format (with the "O" format specifier).  
 
 With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
   
 This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high peformance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events or to calculate how long to perform a programmatic task.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Initial (non-beta) Release.  
-Update Readme.md. 
-Update Project description.
-Create ExampleCode project.</PackageReleaseNotes>
+    <PackageReleaseNotes>This beta release fixes a major problem with PortableMonotonic stamps being serialized and deserialized on different systems.  Apparently, the min value of DateTime.ToUniversalTime can differ from system to system.  Moreover, it does not seem always to be an offset around the non-daylight savings time utc offset of the current timezone: indeed, I have seen different platforms on the same timezone vary by an odd number of minutes.  I am unsure why this is.  The result was that a portable monotonic stamp serialized on one platform, then deserialized on another would be interpreted differently leading to a discrepancy in the values by sometimes bizarre amounts.  This was resolved by adding a string field to the PortableMonotonic stamp that is set during the OnSerializing callback.  When the stamp is deserialized, the string --if present-- is parsed into a portable monotonic stamp and the internal fields are adjusted accordingly.  If you were only serializing/deserializing these on similar systems in the same timezone, this fix should not affect you.  Going forward, serialized portable stamps will have both the nanoseconds offset field and the stringigied field.  After this beta is tested as used in software I maintain, I will release a non-beta version.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps DateTime Duration Monotonic-Clock TimeSpan High-Resolution ISO-8601</PackageTags>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <Copyright>Copyright (c) 2020 CJM Screws, LLC</Copyright>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
+    <Copyright>Copyright (c) 2020-2021 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
@@ -70,13 +67,20 @@ Create ExampleCode project.</PackageReleaseNotes>
 
   <ItemGroup>
     <Content Include="LICENSE" />
-    <Content Include="Readme.md"/>
+    <Content Include="Readme.md" />
+    <Content Include="Release.txt"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Release.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

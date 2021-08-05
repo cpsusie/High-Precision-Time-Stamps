@@ -451,7 +451,9 @@ Final Elapsed time since calibration: 00:00:00.0141099.
 End hp clock example.  
   
 ### Status of Testing  / Project  
-  
+
+See release notes for version 0.1.1.0-beta for a fix involving serialization and deserialization of portable monotonic timestamps.
+
 I have used this library to good effect in many projects.  It requires more unit tests and there will doubtless remain bugs.  It is, however, essentially feature complete and has been unit tested on four different systems:  
 1. A Windows 10 System with a Stopwatch frequency of 10,000,000 ticks per second.  
 2. An Ubuntu 20.04 system with a Stopwatch frequency of 1,000,000,000 ticks per second.  
