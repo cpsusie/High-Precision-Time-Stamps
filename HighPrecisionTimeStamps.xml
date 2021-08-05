@@ -1772,6 +1772,16 @@
             Retrieve <see cref="P:HpTimeStamps.IMonotonicStampContext.UtcLocalTimeOffset"/> as a duration.
             </summary>
         </member>
+        <member name="T:HpTimeStamps.InvalidPortableStampStringException">
+            <summary>
+            Exception is thrown when there is an error parsing a serialized portable monotonic timestamp
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.InvalidPortableStampStringException.FaultySerializedText">
+            <summary>
+            The text that could not be deserialized into a portable monotonic timestamp.
+            </summary>
+        </member>
         <member name="T:HpTimeStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -2077,6 +2087,12 @@
             This amount will vary depending on system configuration.  Do not make assumptions -- it can get pretty strange on
             some systems.
             </remarks>
+        </member>
+        <member name="P:HpTimeStamps.MonotonicTimeStamp`1.ReferenceTimeStamp">
+            <summary>
+            The timestamp that represents the reference time exactly.  It's <see cref="P:HpTimeStamps.MonotonicTimeStamp`1.Value"/> property
+            should have it's "OffsetFromReference" property set to exactly zero.
+            </summary>
         </member>
         <member name="P:HpTimeStamps.MonotonicTimeStamp`1.MaxValue">
             <summary>
@@ -2907,6 +2923,13 @@
               Represented internally as a 128 bit signed integer that represents nanoseconds elapsed
               since <see cref="F:System.DateTime.MinValue"/>, which is January 1, 0001 AD (UTC).
              </summary>
+             <remarks>  note on message suppression: although the struct is technically mutable, mutation 
+            can only occur during serialization and deserialization.  Value changing mutation can only
+            occur during deserialization.  This type is essentially immutable: EVERY publicly exposed non-static method is readonly.
+            Every static method / operator accepting values of this type accepts them by readonly-reference.  Also,
+            even if the struct WERE mutable, that would only be a problem if the value were to change
+            WHILE IT IS STORED IN A SORTED OR HASH-BASED ORDERED COLLECTION.  Since no commonly used collections 
+            return such types by mutable reference, you cannot change value while resides therein anyway.</remarks>
         </member>
         <member name="F:HpTimeStamps.PortableMonotonicStamp.NanosecondsFrequency">
             <summary>
@@ -3405,6 +3428,17 @@
             <param name="other">Another object implementing this interface</param>
             <returns>True if <paramref name="other"/> is a not null and is of type <see cref="T:HpTimeStamps.TimeStampUtil"/>,
             false otherwise.</returns>
+        </member>
+        <member name="T:HpTimeStamps.UnsupportedDateTimeRangeException">
+             <summary>
+             This exception is thrown to indicate that on the current system,
+             calling <see cref="M:System.DateTime.ToUniversalTime"/> on <see cref="F:System.DateTime.MinValue"/>
+             yields a result outside of a range this library supports.
+            
+             Currently, to be supported, <see cref="T:System.DateTime"/>'s minimum value, converted to
+             universal time, must be Year: 0001, Month: January.  Thus any value after January 0001
+             will be out of range and unsupported.
+             </summary>
         </member>
         <member name="T:HpTimeStamps.UnsupportedStopwatchResolutionException">
             <summary>

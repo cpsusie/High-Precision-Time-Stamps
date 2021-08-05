@@ -70,6 +70,11 @@ namespace HpTimeStamps
         public static DateTime MinimumImportableDateTime { get; }
 
         /// <summary>
+        /// The timestamp that represents the reference time exactly.  It's <see cref="Value"/> property
+        /// should have it's "OffsetFromReference" property set to exactly zero.
+        /// </summary>
+        public static MonotonicTimeStamp<TStampContext> ReferenceTimeStamp { get; }
+        /// <summary>
         /// The maximum value of the monotonic timestamp in the current process.
         /// </summary>
         /// <remarks>
@@ -166,7 +171,7 @@ namespace HpTimeStamps
             UtcLocalOffsetPeriod = context.UtcLocalTimeOffset;
             ReferenceTicksAsDuration = Duration.FromStopwatchTicks(referenceTicks);
             (MaximumImportableDateTime, MinimumImportableDateTime, MaxValue, MinValue) = CalculateMaximumAndMinimumImportableDateTimes();
-
+            ReferenceTimeStamp = new MonotonicTimeStamp<TStampContext>(referenceTicks);
         }
 
 
@@ -206,29 +211,59 @@ namespace HpTimeStamps
             Debug.Assert((TimeSpan) maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
             Debug.Assert((TimeSpan) minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
 
+            Int128 maxDsAsTsTicks = ConvertStopwatchTicksToTimespanTicks(maxDurationOffset.Ticks);
+            Int128 minDsAsTsTics = ConvertStopwatchTicksToTimespanTicks(minDurationOffset.Ticks);
 
-            if (maxDurationOffset.Ticks > long.MaxValue)
+            
+            //monotonic range is limited to representable by long even if duration may not be.
+            bool tooBigForMonoTs = maxDurationOffset.Ticks > long.MaxValue;
+            bool tooSmallForMonoTs = minDurationOffset.Ticks < long.MinValue;
+
+
+            if (maxDsAsTsTicks > long.MaxValue)
             {
                 maxDurationOffset = Duration.FromStopwatchTicks(long.MaxValue);
             }
 
-            if (minDurationOffset.Ticks < long.MinValue)
+            if (minDsAsTsTics < long.MinValue)
             {
                 minDurationOffset = Duration.FromStopwatchTicks(long.MinValue);
             }
 
             TimeSpan roundTrippingMin = (TimeSpan) minDurationOffset;
             TimeSpan roundTrippingMax = (TimeSpan) maxDurationOffset;
-            Debug.Assert(roundTrippingMin <= minDurationOffsetAsTimeSpan);
+            //Debug.Assert(roundTrippingMin <= minDurationOffsetAsTimeSpan);
+            Debug.Assert(ValidateMin(roundTrippingMin, minDurationOffsetAsTimeSpan));
+            Debug.Assert(ValidateMax(roundTrippingMax, maxDurationOffsetAsTimeSpan));
 
             Debug.Assert((TimeSpan)maxDurationOffset <= maxDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
             Debug.Assert((TimeSpan)minDurationOffset >= minDurationOffsetAsTimeSpan, "Somehow round tripping messed us up!");
 
             MonotonicTimeStamp<TStampContext> max =
-                new MonotonicTimeStamp<TStampContext>((long) maxDurationOffset.Ticks);
+                new MonotonicTimeStamp<TStampContext>(tooBigForMonoTs ? long.MaxValue : (long) maxDurationOffset.Ticks);
             MonotonicTimeStamp<TStampContext> min =
-                new MonotonicTimeStamp<TStampContext>((long) minDurationOffset.Ticks);
+                new MonotonicTimeStamp<TStampContext>( tooSmallForMonoTs ? long.MinValue : (long) minDurationOffset.Ticks);
             return (max.ToUtcDateTime(), min.ToUtcDateTime(), max, min);
+
+            static bool ValidateMin(TimeSpan test, TimeSpan testRef)
+            {
+                TimeSpan tolerance = StatContext.EasyConversionToAndFromTimespanTicks
+                    ? TimeSpan.Zero
+                    : TimeSpan.FromMilliseconds(1);
+
+                TimeSpan diff = test <= testRef ? TimeSpan.Zero : test - testRef;
+                return diff <= tolerance;
+            }
+
+            static bool ValidateMax(TimeSpan test, TimeSpan testRef)
+            {
+                TimeSpan tolerance = StatContext.EasyConversionToAndFromTimespanTicks
+                    ? TimeSpan.Zero
+                    : TimeSpan.FromMilliseconds(1);
+
+                TimeSpan diff = test >= testRef ? TimeSpan.Zero : (test - testRef).Duration();
+                return diff <= tolerance;
+            }
         }
 
         /// <summary>
@@ -445,29 +480,8 @@ namespace HpTimeStamps
         /// <returns>A portable timestamp.</returns>
         [Pure]
         public PortableMonotonicStamp ToPortableStamp()
-        {
-            Duration referenceTimeSinceEpoch =
-                (Duration) TimeSpan.FromTicks(Context.UtcDateTimeBeginReference.ToUniversalTime().Ticks);
-            referenceTimeSinceEpoch += Duration.FromStopwatchTicks(_stopWatchTicks);
-
-            PortableDuration pd = (PortableDuration) referenceTimeSinceEpoch;
- 
-            return new PortableMonotonicStamp(in pd._ticks);
-
-            //static Int128 ConvertTimeStampTicksToNanoseconds(Int128 timespanTicks)
-            //{
-            //    timespanTicks *= 1_000_000_000;
-            //    timespanTicks /= TimeSpan.TicksPerSecond;
-            //    return timespanTicks;
-            //}
-
-            //static Int128 ConvertDurationTicksToNanoseconds(Int128 durationTicks)
-            //{
-            //    durationTicks *= 1_000_000_000;
-            //    durationTicks /= Duration.TicksPerSecond;
-            //    return durationTicks;
-            //}
-        }
+            => MonoPortableConversionHelper<TStampContext>.ConvertToPortableMonotonicStamp(this);
+        
 
         /// <summary>
         /// Convert 
@@ -476,19 +490,28 @@ namespace HpTimeStamps
         /// <returns></returns>
         public static MonotonicTimeStamp<TStampContext> ImportPortableTimestamp(in PortableMonotonicStamp stamp)
         {
-            Int128 nanosecondsSinceUtcEpoch =
-                ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
-            Int128 refTimeAsUtcNanosecondsSinceEpoch =
-                ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
-            Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
-            Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
-            Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
-            return CreateFromRefTicks((long) timeSinceLocalTime._ticks);
+            //DateTime convertedDt = (DateTime)stamp;
+            //PortableMonotonicStamp roundTripped = (PortableMonotonicStamp)convertedDt;
+            //PortableDuration difference = roundTripped - stamp;
+            //Debug.WriteLine(difference);
+
+
+            return MonoPortableConversionHelper<TStampContext>.ConvertPortableToMonotonic(in stamp);
+
+            ////todo fixit investigate
+            //Int128 nanosecondsSinceUtcEpoch =
+            //    ConvertNanosecondsToStopwatchTicks(stamp._dateTimeNanosecondOffsetFromMinValueUtc);
+            //Int128 refTimeAsUtcNanosecondsSinceEpoch =
+            //    ConvertDateTimeToNanosecondsSinceUtcEpoch(StatContext.UtcDateTimeBeginReference);
+            //Int128 newNanosecondsOffset = nanosecondsSinceUtcEpoch - refTimeAsUtcNanosecondsSinceEpoch;
+            //Int128 stopwatchTicksSinceReferenceTimeUtc = ConvertNanosecondsToStopwatchTicks(nanosecondsSinceUtcEpoch);
+            //Duration timeSinceLocalTime = Duration.FromStopwatchTicks(stopwatchTicksSinceReferenceTimeUtc - StatContext.UtcLocalTimeOffsetAsDuration._ticks);
+            //return CreateFromRefTicks((long)timeSinceLocalTime._ticks);
         }
         
          internal static Duration ConvertNanosecondsToDuration(in Int128 nanoSeconds)
         {
-            Int128 stopwatchTicks = nanoSeconds * (StatContext.NanosecondsFrequency / StatContext.TicksPerSecond);
+            Int128 stopwatchTicks = nanoSeconds * StatContext.NanosecondsFrequency / StatContext.TicksPerSecond;
             return new Duration(in stopwatchTicks);
         }
 
@@ -510,16 +533,16 @@ namespace HpTimeStamps
             TimeSpan ts = TimeSpan.FromTicks(timespanTicksSinceEpoch);
             return (DateTime.MinValue.ToUniversalTime() + ts);
         }
-
+        
         internal static Int128 ConvertStopwatchTicksToTimespanTicks(in Int128 stopwatchTicks) =>
-            stopwatchTicks * (TimeSpan.TicksPerSecond / StatContext.TicksPerSecond);
+            stopwatchTicks * TimeSpan.TicksPerSecond / StatContext.TicksPerSecond;
         
         internal static Int128 ConvertTimeSpanTicksToStopwatchTicks(in Int128 timespanTicks) =>
-            timespanTicks * (StatContext.TicksPerSecond / TimeSpan.TicksPerSecond);
+            timespanTicks * StatContext.TicksPerSecond / TimeSpan.TicksPerSecond;
         
         internal static Int128 ConvertNanosecondsToStopwatchTicks(in Int128 nanoseconds)
         {
-            Int128 stopwatchTicks = nanoseconds * (StatContext.TicksPerSecond / StatContext.NanosecondsFrequency);
+            Int128 stopwatchTicks = nanoseconds * StatContext.TicksPerSecond / StatContext.NanosecondsFrequency;
             return stopwatchTicks;
         }
         

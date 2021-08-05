@@ -93,7 +93,7 @@ namespace HpTimeStamps
                 _threeStepFlag.CompleteOrThrow();
                 return true;
             }
-            return false;
+            return false;   
         }
 
         private void EnsureAvailability()
