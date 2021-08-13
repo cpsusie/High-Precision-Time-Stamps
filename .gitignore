@@ -339,3 +339,6 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /ExampleCode/C:/Users/Christopher Susie/Source/Repos/High-Precision-Time-Stamps/ExampleCode/ExampleTimestamps.xml
+
+# nuget config
+nuget.config
