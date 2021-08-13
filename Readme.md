@@ -450,14 +450,21 @@ Time between first and last stamp: 00:00:00.0002174.
 Final Elapsed time since calibration: 00:00:00.0141099.  
 End hp clock example.  
   
-### Status of Testing  / Project  
+### Testing Notes  
 
-See release notes for version 0.1.1.0-beta for a fix involving serialization and deserialization of portable monotonic timestamps.
-
-I have used this library to good effect in many projects.  It requires more unit tests and there will doubtless remain bugs.  It is, however, essentially feature complete and has been unit tested on four different systems:  
+I have used this library to good effect in many projects, even closed-source production projects.  Although the feature set I use from this project is production-ready and highly useful, not every feature of this library has been put to use at the same time -- because this is a small, currently 1-man, project. Releases are tested on the following systems (including serializing portable structures from one and verifying on all others the same value, modulo loss of precision or rounding issues):
 1. A Windows 10 System with a Stopwatch frequency of 10,000,000 ticks per second.  
 2. An Ubuntu 20.04 system with a Stopwatch frequency of 1,000,000,000 ticks per second.  
 3. An Amazon Linux 2 (based on CentOS) system with a Stopwatch frequency of 1,000,000,000 ticks per second.
-4. An Amazon Workspaces Window Server (Windows 10 based Windows server) with (most vexingly) a stopwatch frequency of 2,441,366 ticks per second.  
-  
-I have decided to make this version a release despite knowing that there remain bugs (but having used the project extensively myself) and a need for additional unit tests because I believe it is in a useful, though imperfect, state.  Please inform me of any bugs found on the issues page or via email: I intend to fix bugs.  I consider this project more or less feature complete and do not imagine any additional extensive features being added by me.  If you would like to add features, I am happy to review any pull-request or issue.  
+4. An Amazon WorkSpaces Window Server (Windows 10 based Windows server) with (most vexingly) a stopwatch frequency of 2,441,366 ticks per second.  
+
+### Release Notes  
+#### Version 1.0.0.0:
+This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][1], [issue 12][2] and [issue 13][3].  The changes to the code can be reviewed in [pull request 14][1], [commit x][5] and, most particularly around [these lines of code][6].
+
+  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
+  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
+  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
+  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540

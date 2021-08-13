@@ -8,24 +8,33 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>0.1.1.0-beta</Version>
+    <Version>1.0.0.0</Version>
     <Description>It is well known that DateTime.Now is often used inappropriately.  For example, it may be used together with TimeSpan to produce a task's timeout point or subtracted from another DateTime to calculate a duration.  This can cause subtle bugs because DateTime is not monotonic: the system clock can change, making the result of the subtraction inaccurate -- potentially causing a premature timeout or an infinite loop.  Yet, DateTime is an incredibly convenient and widely used value type in .NET code and is especially useful when printed in ISO-8601 format (with the "O" format specifier).  
 
 With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
   
 This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high peformance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events or to calculate how long to perform a programmatic task.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>This beta release fixes a major problem with PortableMonotonic stamps being serialized and deserialized on different systems.  Apparently, the min value of DateTime.ToUniversalTime can differ from system to system.  Moreover, it does not seem always to be an offset around the non-daylight savings time utc offset of the current timezone: indeed, I have seen different platforms on the same timezone vary by an odd number of minutes.  I am unsure why this is.  The result was that a portable monotonic stamp serialized on one platform, then deserialized on another would be interpreted differently leading to a discrepancy in the values by sometimes bizarre amounts.  This was resolved by adding a string field to the PortableMonotonic stamp that is set during the OnSerializing callback.  When the stamp is deserialized, the string --if present-- is parsed into a portable monotonic stamp and the internal fields are adjusted accordingly.  If you were only serializing/deserializing these on similar systems in the same timezone, this fix should not affect you.  Going forward, serialized portable stamps will have both the nanoseconds offset field and the stringigied field.  After this beta is tested as used in software I maintain, I will release a non-beta version.</PackageReleaseNotes>
+    <PackageReleaseNotes>This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in pull request 14 [1], issue 12 [2] and issue 13 [3].  The changes to the code can be reviewed in pull request 14 [1], commit x [5] and, most particularly around these lines of code [6].
+
+  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
+  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
+  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
+  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
+</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Timestamps DateTime Duration Monotonic-Clock TimeSpan High-Resolution ISO-8601</PackageTags>
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <FileVersion>0.1.1.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <Copyright>Copyright (c) 2020-2021 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageProjectUrl>https://github.com/cpsusie/High-Precision-Time-Stamps</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -65,11 +74,7 @@ This library provides timestamps (both as DateTime and as analogous value types 
     <None Remove="LICENSE" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="LICENSE" />
-    <Content Include="Readme.md" />
-    <Content Include="Release.txt"/>
-  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
@@ -78,8 +83,35 @@ This library provides timestamps (both as DateTime and as analogous value types 
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="BigMath\BIGMATH_LICENSE.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>docs</PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Update="BigMath\BIG_MATH_README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>docs</PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Update="BigMath\License_NOTES_CJM.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>docs</PackagePath>
+      <Visible>False</Visible>
+    </None>
     <None Update="Release.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>docs</PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Update="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <Visible>False</Visible>
+      <PackagePath>docs</PackagePath>
     </None>
   </ItemGroup>
 
