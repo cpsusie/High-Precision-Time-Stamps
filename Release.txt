@@ -1,8 +1,11 @@
-﻿This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in pull request 14 [1], issue 12 [2] and issue 13 [3].  The changes to the code can be reviewed in pull request 14 [1], commit x [5] and, most particularly around these lines of code [6].
+﻿Release version 1.0.0.1
+      This release contains no changes to the code itself or to program behavior.  Instead it merely fixes the repository url to refer to the source repository rather than the http page that hosts the Github repository.  Also, it enables the nuget package to be built deterministically.
+Release version 1.0
+      This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in pull request 14 [1], issue 12 [2] and issue 13 [3].  The changes to the code can be reviewed in pull request 14 [1], commit x [5] and, most particularly around these lines of code [6].
 
-  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
-  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
-  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
-  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
+      [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+      [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
+      [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
+      [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+      [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
+      [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
