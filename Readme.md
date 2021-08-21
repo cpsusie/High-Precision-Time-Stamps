@@ -459,6 +459,9 @@ I have used this library to good effect in many projects, even closed-source pro
 4. An Amazon WorkSpaces Window Server (Windows 10 based Windows server) with (most vexingly) a stopwatch frequency of 2,441,366 ticks per second.  
 
 ### Release Notes  
+#### Version 1.0.0.1:
+This release contains no changes to the code itself or to program behavior.  Instead it merely fixes the repository url to refer to the source repository rather than the http page that hosts the Github repository.  Also, it enables the nuget package to be built deterministically.
+
 #### Version 1.0.0.0:
 This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][1], [issue 12][2] and [issue 13][3].  The changes to the code can be reviewed in [pull request 14][1], [commit x][5] and, most particularly around [these lines of code][6].
 
