@@ -244,6 +244,32 @@ namespace UnitTests
             Assert.True(diff <= 1000);
         }
 
+        [Fact]
+        public void TestPortableDurationFromDaysAccuracy()
+        {
+            int totalDays = -239805;
+            TimeSpan daysAsTs = TimeSpan.FromDays(totalDays);
+            PortableDuration fromTs = daysAsTs;
+            TimeSpan andBack = (TimeSpan)fromTs;
+            Assert.True(andBack == daysAsTs);
+            
+            Int128 ticksPerSecond = 1_000_000_000;
+            //start with minute, then hour, then day
+            Int128 ticksPerDay = ticksPerSecond * 60; //per minute
+            ticksPerDay *= 60; //per hour
+            ticksPerDay *= 24; //per day
+
+            Assert.True(PortableDuration.TicksPerDay == ticksPerDay);
+            Int128 totalDaysInNanoSeconds = totalDays * ticksPerDay;
+            Int128 totalDaysInNanoSecondsFromDouble = (Int128)(((double)totalDays) * ((double)(long)ticksPerDay));
+
+            PortableDuration fromInt = PortableDuration.FromDays(totalDays);
+            
+            
+            Assert.True(fromInt == fromTs);
+
+        }
+
         private IEnumerable<TimeSpan> GetNRandomTimespans(int numSpans)
         {
             if (numSpans < 0) throw new ArgumentOutOfRangeException(nameof(numSpans), numSpans, @"Value may not be negative.");

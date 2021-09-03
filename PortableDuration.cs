@@ -740,7 +740,7 @@ namespace HpTimeStamps
             return IntervalFromDoubleTicks(ticks);
         }
 
-        private static PortableDuration IntervalFromDoubleTicks(double ticks)
+        private static PortableDuration IntervalFromDoubleTicks(double ticks) //todofixit fuck up here.
         {
             if ((ticks > (double)PdInt.MaxValue) || (ticks < (double)PdInt.MinValue) || double.IsNaN(ticks))
                 throw new OverflowException("Value cannot fit in a TimeSpan.");
