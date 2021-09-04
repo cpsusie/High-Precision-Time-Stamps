@@ -3429,6 +3429,62 @@
             <returns>True if <paramref name="other"/> is a not null and is of type <see cref="T:HpTimeStamps.TimeStampUtil"/>,
             false otherwise.</returns>
         </member>
+        <member name="T:HpTimeStamps.UndefinedEnumArgumentException`1">
+            <summary>
+            An exception raised to indicate that the value of an argument of type <typeparamref name="TEnum"/> was
+            not a valued defined by the <typeparamref name="TEnum"/> enumeration type.
+            </summary>
+            <typeparam name="TEnum">A concrete (i.e. not <see cref="T:System.Enum"/> or <see cref="T:System.ValueType"/> or <see cref="T:System.Object"/>, but an actual specific)
+            enumeration type</typeparam>
+        </member>
+        <member name="P:HpTimeStamps.UndefinedEnumArgumentException`1.UndefinedValue">
+            <summary>
+            The undefined enum value
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.UndefinedEnumArgumentException`1.ParamName">
+            <summary>
+            The name of the parameter if known.  Empty string otherwise.
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.UndefinedEnumArgumentException`1.#ctor(`0)">
+            <summary>
+            CTOR
+            </summary>
+            <param name="undefinedValue">undefined enum value</param>
+        </member>
+        <member name="M:HpTimeStamps.UndefinedEnumArgumentException`1.#ctor(`0,System.Exception)">
+            <summary>
+            Ctor
+            </summary>
+            <param name="undefinedValue">The undefined enumeration value argument.</param>
+            <param name="inner">Inner exception if any</param>
+        </member>
+        <member name="M:HpTimeStamps.UndefinedEnumArgumentException`1.#ctor(`0,System.String)">
+            <summary>
+            Ctor
+            </summary>
+            <param name="undefinedValue">The undefined enumeration value argument.</param>
+            <param name="parameterName">The name of the invalid argument parameter if known</param>
+        </member>
+        <member name="M:HpTimeStamps.UndefinedEnumArgumentException`1.#ctor(`0,System.String,System.Exception)">
+            <summary>
+            Ctor
+            </summary>
+            <param name="undefinedValue">The undefined enumeration value argument.</param>
+            <param name="parameterName">The name of the invalid argument parameter if known</param>
+            <param name="inner">inner exception if any</param>
+        </member>
+        <member name="M:HpTimeStamps.UndefinedEnumArgumentException`1.#ctor(System.String,`0,System.String,System.Exception)">
+            <summary>
+            CTOR for inheritors
+            </summary>
+            <param name="message">Desired message. MANDATORY</param>
+            <param name="undefinedValue">the undefined enum value.  MANDATORY</param>
+            <param name="parameterName">the parameter name. OPTIONAL</param>
+            <param name="inner">inner exception.  OPTIONAL</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="message"/> was null.</exception>
+        </member>
         <member name="T:HpTimeStamps.UnsupportedDateTimeRangeException">
              <summary>
              This exception is thrown to indicate that on the current system,

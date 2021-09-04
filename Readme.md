@@ -7,13 +7,13 @@ It is well known that DateTime.Now is often used inappropriately.  For example, 
 
 With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
   
-This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high peformance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events.  
+This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high performance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events.  
 
 It provides **Monotonic** timestamps and **High Resolution** timestamps.  
   
 ### High Resolution Timestamps   
 
-These timestamps are expressed as DateTime values and are derived from Stopwatch.  They are calibrated (correlating a reference tick value of the Stopwatch to a reference time value of the system clock) on a **per thread** basis and have a calibration window that expires.  These are suitable for logging times (in a way meaningful to humans) and can be used to measure the time elapsed between events *on a single thread* within **one calibration window**.  A calibration window by default lasts for fifteen minutes.  Eventually, there will be drift between the system clock and the Stopwatch, making recalibration necessary.  Nevertheless, for the resolution provided by Stopwatch, fifteen minutes should be a sufficient period for the intended use-case of these timestamps.  Also, you can always manually trigger a calibration.  
+These timestamps are expressed as DateTime values and are derived from Stopwatch.  They are calibrated (correlating a reference tick value of the Stopwatch to a reference time value of the system clock) on a **per thread** basis and have a calibration window that expires.  These are suitable for logging times (in a way meaningful to humans) and can be used to measure the time elapsed between events *on a single thread* within **one calibration window**.  A calibration window by default lasts for fifteen minutes.  Eventually, there will be drift between the system clock and the Stopwatch, making re-calibration necessary.  Nevertheless, for the resolution provided by Stopwatch, fifteen minutes should be a sufficient period for the intended use-case of these timestamps.  Also, you can always manually trigger a calibration.  
   
 ### Monotonic Timestamps  
   
@@ -458,16 +458,20 @@ I have used this library to good effect in many projects, even closed-source pro
 3. An Amazon Linux 2 (based on CentOS) system with a Stopwatch frequency of 1,000,000,000 ticks per second.
 4. An Amazon WorkSpaces Window Server (Windows 10 based Windows server) with (most vexingly) a stopwatch frequency of 2,441,366 ticks per second.  
 
-### Release Notes  
+### Release Notes
+#### Version 1.0.0.2:
+This release fixes a bug (see [Issue 19][1]) where the PortableDuration type's FromDays factory methods (and perhaps other From factory methods taking a double as a parameter) used incorrect math and incorrect validation logic.  
+
 #### Version 1.0.0.1:
 This release contains no changes to the code itself or to program behavior.  Instead it merely fixes the repository url to refer to the source repository rather than the http page that hosts the Github repository.  Also, it enables the nuget package to be built deterministically.
 
 #### Version 1.0.0.0:
-This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][1], [issue 12][2] and [issue 13][3].  The changes to the code can be reviewed in [pull request 14][1], [commit x][5] and, most particularly around [these lines of code][6].
+This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][2], [issue 12][3] and [issue 13][4].  The changes to the code can be reviewed in [pull request 14][2], [commit x][6] and, most particularly around [these lines of code][7].
 
-  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
-  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
-  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
-  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
+  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/19
+  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
+  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
+  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
+  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
+  [7]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
