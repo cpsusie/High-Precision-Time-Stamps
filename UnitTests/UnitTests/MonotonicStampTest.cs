@@ -8,6 +8,7 @@ using System.Threading;
 using HpTimeStamps;
 using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
+using Microsoft.VisualBasic.CompilerServices;
 using Xunit;
 using Xunit.Abstractions;
 using MonotonicStampContext = HpTimeStamps.MonotonicStampContext;
@@ -37,7 +38,7 @@ namespace UnitTests
                 PortableDuration.EasyConversionToAndFromDuration ? "EASY" : "HARD");
 
         }
-        internal Random RGen => _rgen.Value;
+        internal Random RGen => TheRGen.Value;
         
         [Fact]
         public void PrintContextInfo()
@@ -245,7 +246,56 @@ namespace UnitTests
         }
 
         [Fact]
-        public void TestPortableDurationFromDaysAccuracy()
+        public void Bug19_TestSimilarFromIssues()
+        {
+            const int testsEachUnit = 1000;
+            const int minDays = -365_000;
+            const int maxDays = 365_001;
+
+            const int minHours = minDays * 24;
+            const int maxHours = ((-minDays) + 1) * 24;
+
+            const int minMinutes = minHours * 60;
+            const int maxMinutes = (-minMinutes) + 1;
+
+            const int minSeconds = -1_000_000_000;
+            const int maxSeconds = 1_000_000_001;
+
+
+            const long millisecondsFinalTest = 32_198_991_461_324;
+            const double milliFinalFloat = millisecondsFinalTest;
+
+            TestUnitSpecified(testsEachUnit, DurationTestUnit.Days, minDays, maxDays);
+            TestUnitSpecified(testsEachUnit, DurationTestUnit.Hours, minHours, maxHours);
+            TestUnitSpecified(testsEachUnit, DurationTestUnit.Minutes, minMinutes, maxMinutes);
+            TestUnitSpecified(testsEachUnit, DurationTestUnit.Seconds, minSeconds, maxSeconds);
+
+            TimeSpan refTime = TimeSpan.FromMilliseconds(millisecondsFinalTest);
+            Duration dFromInt = Duration.FromMilliseconds(millisecondsFinalTest);
+            Duration dFromFloatNa = dFromInt;
+            PortableDuration pdFromInt = PortableDuration.FromMilliseconds(millisecondsFinalTest);
+            PortableDuration pdFromFloat = PortableDuration.FromMilliseconds(milliFinalFloat);
+
+            ExecuteDlTest(1, DurationTestUnit.Milliseconds, refTime, dFromInt, dFromFloatNa, in pdFromInt, in pdFromFloat);
+
+            void TestUnitSpecified(int numTests, DurationTestUnit dtu, int minUnits, int maxUnits)
+            {
+                Helper.WriteLine("Testing {0} {1} times.", dtu, numTests);
+                int currentUnits;
+                Assert.True(maxUnits -1 > minUnits);
+                int testCount = 0;
+                while (testCount++ < numTests)
+                {
+                    currentUnits = RGen.Next(minUnits, maxUnits);
+                    TestDurationLogic(currentUnits, dtu);
+                }
+                Helper.WriteLine("Done Testing {0}.", dtu);
+                Helper.WriteLine(string.Empty);
+            }
+        }
+        
+        [Fact]
+        public void Bug19_TestPortableDurationFromDaysAccuracy()
         {
             int totalDays = -239805;
             TimeSpan daysAsTs = TimeSpan.FromDays(totalDays);
@@ -260,12 +310,8 @@ namespace UnitTests
             ticksPerDay *= 24; //per day
 
             Assert.True(PortableDuration.TicksPerDay == ticksPerDay);
-            Int128 totalDaysInNanoSeconds = totalDays * ticksPerDay;
-            Int128 totalDaysInNanoSecondsFromDouble = (Int128)(((double)totalDays) * ((double)(long)ticksPerDay));
 
             PortableDuration fromInt = PortableDuration.FromDays(totalDays);
-            
-            
             Assert.True(fromInt == fromTs);
 
         }
@@ -505,6 +551,151 @@ namespace UnitTests
             Assert.True(diff < diffMustBeLessThan);
         }
 
-        private static ThreadLocal<Random> _rgen = new ThreadLocal<Random>(() => new Random(), false);
+        private void TestDurationLogic(int numUnits, DurationTestUnit dtu)
+        {
+            TimeSpan refSpan;
+            Duration dFromInt, dFromDouble;
+            PortableDuration pdFromInt, pdFromDouble;
+
+            (refSpan, dFromInt, dFromDouble, pdFromInt, pdFromDouble) = CreateTestDurationsFromUnit(numUnits, dtu);
+
+            ExecuteDlTest(numUnits, dtu, refSpan, dFromInt, dFromDouble, in pdFromInt, in pdFromDouble);
+        }
+
+        void ExecuteDlTest(int numUnits, DurationTestUnit dtu, TimeSpan refSpan, Duration dFromInt, Duration dFromDouble, in PortableDuration pdFromInt, in PortableDuration pdFromDouble)
+        {
+            try
+            {
+
+                Assert.True(dFromInt == dFromDouble);
+                Assert.True(pdFromInt == pdFromDouble);
+
+                const double epsilonDurationComp = 0.001;
+                (bool withinEpsilon, double absDiff) =
+                    QueryDoubleWithinEpsilon(dFromInt.TotalMilliseconds, dFromDouble.TotalMilliseconds, epsilonDurationComp);
+                Assert.True(withinEpsilon, $"Abs Difference between {dFromInt.TotalMilliseconds} and {dFromDouble.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({epsilonDurationComp}).");
+
+                const double foreignCompEpsilon = 0.1;
+                (withinEpsilon, absDiff) = QueryDoubleWithinEpsilon(refSpan.TotalMilliseconds, dFromInt.TotalMilliseconds,
+                    foreignCompEpsilon);
+                Assert.True(withinEpsilon, $"Abs Difference between {refSpan.TotalMilliseconds} and {dFromInt.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({foreignCompEpsilon}).");
+
+                (withinEpsilon, absDiff) = QueryDoubleWithinEpsilon(refSpan.TotalMilliseconds, pdFromDouble.TotalMilliseconds,
+                    foreignCompEpsilon);
+                Assert.True(withinEpsilon, $"Abs Difference between {refSpan.TotalMilliseconds} and {pdFromInt.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({foreignCompEpsilon}).");
+
+                (withinEpsilon, absDiff) = QueryDoubleWithinEpsilon(dFromDouble.TotalMilliseconds, pdFromDouble.TotalMilliseconds,
+                    foreignCompEpsilon);
+                Assert.True(withinEpsilon, $"Abs Difference between {dFromDouble.TotalMilliseconds} and {pdFromDouble.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({foreignCompEpsilon}).");
+
+                const double intVersusDoubleEpsilon = 0.001;
+                (withinEpsilon, absDiff) = QueryDoubleWithinEpsilon(pdFromInt.TotalMilliseconds, pdFromDouble.TotalMilliseconds,
+                    intVersusDoubleEpsilon);
+                Assert.True(withinEpsilon, $"Abs Difference between {pdFromInt.TotalMilliseconds} and {pdFromDouble.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({intVersusDoubleEpsilon}).");
+
+
+                (withinEpsilon, absDiff) = QueryDoubleWithinEpsilon(dFromInt.TotalMilliseconds, dFromDouble.TotalMilliseconds,
+                    intVersusDoubleEpsilon);
+                Assert.True(withinEpsilon, $"Abs Difference between {dFromInt.TotalMilliseconds} and {dFromDouble.TotalMilliseconds} (difference: {absDiff}) exceeded epsilon ({intVersusDoubleEpsilon}).");
+
+                Assert.True(dFromInt == dFromDouble);
+                Assert.True(pdFromDouble == pdFromInt);
+                Assert.True((pdFromDouble - refSpan).AbsoluteValue() <= PortableDuration.FromMicroseconds(500));
+            }
+            catch (Exception inner)
+            {
+                throw new Bug19TestFailedException(numUnits, dtu, refSpan, dFromInt, dFromDouble, in pdFromInt,
+                    in pdFromDouble, inner);
+            }
+        }
+
+        static (bool WithinEpsilon, double AbsVOfDiff) QueryDoubleWithinEpsilon(double d1, double d2, double epsilon)
+        {
+            
+            Assert.False(double.IsNaN(d1) || double.IsNaN(d2) || double.IsInfinity(d1) || double.IsInfinity(d2) || double.IsNaN(epsilon) || double.IsInfinity(epsilon));
+            Assert.True(epsilon > 0);
+            double absVOfDiff = Math.Abs(d1 - d2);
+            return (absVOfDiff <= epsilon, absVOfDiff);
+        }
+
+        static (TimeSpan Span, Duration DurationFromIntegerVersion, Duration DurationFromDoubleVersion, PortableDuration PortableDurationFromIntegerVersion, PortableDuration PortableDurationFromDoubleVersion) CreateTestDurationsFromUnit(int numUnits,
+            DurationTestUnit dtu)
+        {
+
+            double dUnits = numUnits;
+
+            return dtu switch
+            {
+                DurationTestUnit.Days => (TimeSpan.FromDays(dUnits), Duration.FromDays(numUnits), Duration.FromDays(dUnits), PortableDuration.FromDays(numUnits), PortableDuration.FromDays(dUnits)),
+                DurationTestUnit.Hours => (TimeSpan.FromHours(dUnits), Duration.FromHours(numUnits), Duration.FromHours(dUnits), PortableDuration.FromHours(numUnits), PortableDuration.FromHours(dUnits)),
+                DurationTestUnit.Minutes => (TimeSpan.FromMinutes(dUnits), Duration.FromMinutes(numUnits), Duration.FromMinutes(dUnits), PortableDuration.FromMinutes(numUnits), PortableDuration.FromMinutes(dUnits)),
+                DurationTestUnit.Seconds => (TimeSpan.FromSeconds(dUnits), Duration.FromSeconds(numUnits), Duration.FromSeconds(dUnits), PortableDuration.FromSeconds(numUnits), PortableDuration.FromSeconds(dUnits)),
+                _ => throw new UndefinedEnumArgumentException<DurationTestUnit>(dtu, nameof(dtu))
+            };
+        }
+
+        private void AssertPortableDurationsCloseEnough(in PortableDuration l, in PortableDuration r)
+        {
+            PortableDuration maxPermittedDiff =
+                (MonotonicStampFixture.StampContext.EasyConversionToAndFromNanoseconds &&
+                 MonotonicStampFixture.StampContext.EasyConversionToAndFromTimespanTicks)
+                    ? PortableDuration.Zero
+                    : PortableDuration.FromMilliseconds(5);
+            Assert.True(maxPermittedDiff >= PortableDuration.Zero);
+            PortableDuration absDiff = (l - r).AbsoluteValue();
+            Assert.True(absDiff <= maxPermittedDiff,
+                $"The (absolute value of the) difference between the two durations ({absDiff.TotalMilliseconds:N} milliseconds) is greater than the maximum permitted duration of {maxPermittedDiff.TotalMilliseconds:N} milliseconds.");
+
+        }
+
+        private static readonly ThreadLocal<Random> TheRGen = new ThreadLocal<Random>(() => new Random(), false);
+    }
+
+    internal sealed class Bug19TestFailedException : ApplicationException
+    {
+        public int TestUnits { get; }
+        [NotNull] public string TestUnitsType { get; }
+        public TimeSpan RefSpan { get; }
+        public Duration DurFromInt { get; }
+        public Duration DurFromDouble { get; }
+        public ref readonly PortableDuration PdFromInt => ref _pdInt;
+        public ref readonly PortableDuration PdFromDouble => ref _pdDouble;
+
+        public Bug19TestFailedException(int numUnits, DurationTestUnit dtu, TimeSpan refSpan, Duration dFromInt,
+            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, [NotNull] Exception inner) :
+            base(
+                CreateMessage(numUnits, dtu, refSpan, dFromInt, dFromDouble, in pdInt, in pdDouble,
+                    inner ?? throw new ArgumentNullException(nameof(inner))), inner)
+        {
+            TestUnitsType = dtu.ToString();
+            TestUnits = numUnits;
+            RefSpan = refSpan;
+            DurFromInt = dFromInt;
+            DurFromDouble = dFromDouble;
+            _pdInt = pdInt;
+            _pdDouble = pdDouble;
+        }
+
+
+        static string CreateMessage(int numUnits, DurationTestUnit dtu, TimeSpan refSpan, Duration dFromInt,
+            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, [NotNull] Exception inner) =>
+            $"Was testing {numUnits} units of type {dtu.ToString()}.  Failure detail: {inner.Message}.  " +
+            $"Each value type in milliseconds: {nameof(RefSpan)}- {refSpan.TotalMilliseconds}; {nameof(DurFromInt)}- {dFromInt.TotalMilliseconds}; " +
+            $"{nameof(DurFromDouble)}- {dFromDouble.TotalMilliseconds}; {nameof(PdFromInt)}- {pdInt.TotalMilliseconds}; " +
+            $"{nameof(PdFromDouble)}- {pdDouble.TotalMilliseconds}.  Consult inner exception for details.";
+
+        private readonly PortableDuration _pdDouble;
+        private readonly PortableDuration _pdInt;
+
+
+    }
+
+    enum DurationTestUnit
+    {
+        Days,
+        Hours,
+        Minutes,
+        Seconds,
+        Milliseconds,
     }
 }

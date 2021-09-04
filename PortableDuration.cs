@@ -740,13 +740,16 @@ namespace HpTimeStamps
             return IntervalFromDoubleTicks(ticks);
         }
 
-        private static PortableDuration IntervalFromDoubleTicks(double ticks) //todofixit fuck up here.
+        private static PortableDuration IntervalFromDoubleTicks(double ticks) 
         {
+            //bug 19 fix: remove useless comparison to long max and doubly useless forgetting to check for long min.  
+            //the rep here is in int128 nanoseconds ticks.  doesn't matter for portable duration purposes if 
+            //cannot fit in long.
+
             if ((ticks > (double)PdInt.MaxValue) || (ticks < (double)PdInt.MinValue) || double.IsNaN(ticks))
-                throw new OverflowException("Value cannot fit in a TimeSpan.");
-            if (ticks >= long.MaxValue)
-                return MaxValue;
-            return new PortableDuration((long)ticks);
+                throw new OverflowException("Value cannot fit in a PortableDuration.");
+            
+            return new PortableDuration((PdInt) ticks);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
