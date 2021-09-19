@@ -1,16 +1,28 @@
-﻿#### Version 1.0.0.2:
+﻿#### Version 1.0.0.4:  
+This release fixes two bugs.  
+
+First (see [Issue 21][8]), it fixes a bug where using monotonic timestamps close to the extreme values (within a month or so of 1-1-0001AD and 12-31-9999AD) was causing overflow in .NET 5.0.  The fix increased the buffer around the min/max values so that overflow does not occur in .NET 5.0.  You may have to alter your uses if you were (for some reason) storing portable monotonic stamps close to the extrema of permissible values.  
+  
+Second (see [Issue 22][9]), it fixes a bug where subtracting a portable duration from a portable monotonic stamp was executing addition, not subtraction.  
+  
+Finally, please note that unit test applications, example code and test application are now all built and run against .NET 5.0 rather than .NET Core 3.1.  
+  
+#### Version 1.0.0.2:  
 This release fixes a bug (see [Issue 19][1]) where the PortableDuration type's FromDays factory methods (and perhaps other From factory methods taking a double as a parameter) used incorrect math and incorrect validation logic.  
-
-#### Version 1.0.0.1:
-This release contains no changes to the code itself or to program behavior.  Instead it merely fixes the repository url to refer to the source repository rather than the http page that hosts the Github repository.  Also, it enables the nuget package to be built deterministically.
-
-#### Version 1.0.0.0:
-This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][2], [issue 12][3] and [issue 13][4].  The changes to the code can be reviewed in [pull request 14][2], [commit x][6] and, most particularly around [these lines of code][7].
-
-  [1]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/19
-  [2]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12
-  [4]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13
-  [5]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14
-  [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
-  [7]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
+  
+#### Version 1.0.0.1:  
+This release contains no changes to the code itself or to program behavior.  Instead it merely fixes the repository url to refer to the source repository rather than the http page that hosts the Github repository.  Also, it enables the nuget package to be built deterministically.  
+  
+#### Version 1.0.0.0:  
+This is the non-beta release of the fix introduced with beta version 0.1.1.0-beta.  The issues resolved by that release included problems with serialization and deserialization of portable monotonic stamps when serialized on a system with a different DateTime.MinValue.ToUniversalTime() value than the one on which it is deserialized.  Those changes are discussed in [pull request 14][2], [issue 12][3] and [issue 13][4].  The changes to the code can be reviewed in [pull request 14][2], [commit x][6] and, most particularly around [these lines of code][7].  
+  
+  
+	[1]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/19  
+	[2]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14  
+	[3]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/12  
+	[4]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/13  
+	[5]: https://github.com/cpsusie/High-Precision-Time-Stamps/pull/14  
+	[6]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555  
+	[7]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540  
+	[8]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/21  
+	[9]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/22  

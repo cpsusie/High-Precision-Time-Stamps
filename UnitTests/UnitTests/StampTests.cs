@@ -177,6 +177,29 @@ namespace UnitTests
             Helper.WriteLine($"{nameof(localStampUpMicro)}:\t\t[{localStampUpMicro}].");
 
         }
+        /// <summary>
+        /// Bug 22 fix unit test
+        /// </summary>
+        [Fact]
+        public void TestPortableDurationArithmetic()
+        {
+            DateTime date = new DateTime(2069, 06, 10, 18, 42, 49, 333, DateTimeKind.Utc);
+            TimeSpan span = TimeSpan.FromDays(12.912);
+            TestOperation(date, span, (d, s) => d - s, (p, d) => p-d);
+        }
+
+        private void TestOperation(DateTime dateTime, TimeSpan ts, Func<DateTime, TimeSpan, DateTime> dtOp,
+            Func<PortableMonotonicStamp, PortableDuration, PortableMonotonicStamp> stampOp)
+        {
+            Assert.NotNull(dtOp);
+            Assert.NotNull(stampOp);
+            
+            PortableMonotonicStamp stamp = dateTime;
+            PortableDuration pd = ts;
+
+            Assert.True(dtOp(dateTime, ts) == stampOp(stamp, pd));
+        }
+
         [Fact]
         public void TestPortableStamp()
         {
