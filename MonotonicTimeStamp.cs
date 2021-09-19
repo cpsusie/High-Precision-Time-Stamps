@@ -179,9 +179,9 @@ namespace HpTimeStamps
         {
             long dateTimeUtcReferenceTicks = UtcReference.Ticks;
 
-
-            DateTime effectiveMinMonotonicDateTime = DateTime.MinValue.ToUniversalTime() + TimeSpan.FromDays(7);
-            DateTime effectiveMaxMonotonicDateTime = DateTime.MaxValue.ToUniversalTime() - TimeSpan.FromDays(7);
+            //bug issue 21 fix (7 day buffer -> 30 day buffer for .NET 5.0
+            DateTime effectiveMinMonotonicDateTime = DateTime.MinValue.ToUniversalTime() + TimeSpan.FromDays(30);
+            DateTime effectiveMaxMonotonicDateTime = DateTime.MaxValue.ToUniversalTime() - TimeSpan.FromDays(30);
             //Because MIN AND MAX are apparently UNSPECIFIED rather than UTC in some versions of .NET, it can screw up min max calculations.  Since we aren't likely to ever being collecting
             //monotonic stamps anywhere around min or max value, put a week buffer time in there to prevent conflict.
             long dateTimeMaxTimeSpanTicks = effectiveMaxMonotonicDateTime.Ticks;

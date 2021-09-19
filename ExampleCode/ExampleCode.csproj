@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>ExampleTimestamps</AssemblyName>
     <RootNamespace>ExampleTimestamps</RootNamespace>
     <Authors>Christopher Susie</Authors>

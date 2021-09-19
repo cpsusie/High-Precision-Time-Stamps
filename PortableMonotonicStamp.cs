@@ -414,7 +414,8 @@ namespace HpTimeStamps
         /// <exception cref="PortableTimestampOverflowException">Caused overflow</exception>
         public static PortableMonotonicStamp operator -(in PortableMonotonicStamp minuend, in PortableDuration subtrahend)
         {
-            Int128 sum = minuend._dateTimeNanosecondOffsetFromMinValueUtc + subtrahend._ticks;
+            //issue 22 bug fix (+ -> -)
+            Int128 sum = minuend._dateTimeNanosecondOffsetFromMinValueUtc - subtrahend._ticks;
             if (sum >= MinValueUtcDtNanoseconds && sum <= MaxValueUtcDtNanoseconds)
             {
                 return new PortableMonotonicStamp(in sum);
