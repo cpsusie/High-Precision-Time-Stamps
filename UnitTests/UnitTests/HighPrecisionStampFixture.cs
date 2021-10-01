@@ -10,7 +10,7 @@ namespace UnitTests
         public const int MillisecondsPerDay = 60 * 60 * 24 * 1000;
         public HighPrecisionTimeStampSource HpStampSource => TheSource;
 
-        public BinaryOpCode AddOrSubtract => TheRGen.Value.Next(0, 2) == 0 ? BinaryOpCode.Add : BinaryOpCode.Subtract;
+        public BinaryOpCode AddOrSubtract => RGen.Next(0, 2) == 0 ? BinaryOpCode.Add : BinaryOpCode.Subtract;
 
         public (TimeSpan RandomTs, Duration RandomDuration, long Milliseconds) Between1MillisecondAndOneDay
         {
@@ -26,31 +26,31 @@ namespace UnitTests
             public DateTime Now
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.Now;
+                get => TimeStampSource.Now;
             }
 
             public DateTime UtcNow
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.UtcNow;
+                get => TimeStampSource.UtcNow;
             }
 
             public TimeSpan TimeSinceCalibrated
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.TimeSinceCalibration;
+                get => TimeStampSource.TimeSinceCalibration;
             }
 
             public bool NeedsCalibration
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.NeedsCalibration;
+                get => TimeStampSource.NeedsCalibration;
             }
 
             public bool IsHighPrecision
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.IsHighPrecision;
+                get => TimeStampSource.IsHighPrecision;
             }
             /// <summary>
             /// The offset from utc.  To get utc time from local, SUBTRACT this value from local.
@@ -59,16 +59,18 @@ namespace UnitTests
             public TimeSpan LocalOffsetFromUtc
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => HpTimeStamps.TimeStampSource.LocalUtcOffset;
+                get => TimeStampSource.LocalUtcOffset;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void CalibrateNow() => HpTimeStamps.TimeStampSource.Calibrate();
+            public void CalibrateNow() => TimeStampSource.Calibrate();
         }
 
-        private long RandomMillisecondsBetween(int min, int max) => TheRGen.Value.Next(min, max + 1);
+        private long RandomMillisecondsBetween(int min, int max) => RGen.Next(min, max + 1);
 
-        private static readonly ThreadLocal<Random> TheRGen = new ThreadLocal<Random>(() => new Random());
+        private Random RGen => TheRGen.Value!;
+
+        private static readonly ThreadLocal<Random> TheRGen = new ThreadLocal<Random>(() => new Random(), false);
         private static readonly HighPrecisionTimeStampSource TheSource = new HighPrecisionTimeStampSource();
     }
 }

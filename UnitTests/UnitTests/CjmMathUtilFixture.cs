@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using HpTimeStamps.BigMath;
 using Xunit;
@@ -19,12 +16,14 @@ namespace UnitTests
             get
             {
                 Span<byte> bytes = stackalloc byte[8] { 0, 0, 0, 0, 0, 0, 0, 0 };
-                TheRGen.Value.NextBytes(bytes);
+                RGen.NextBytes(bytes);
                 return BitConverter.ToUInt64(bytes);
             }
         }
 
-        public bool RandomSign => TheRGen.Value.Next(0, 2) == 1;
+        internal Random RGen => TheRGen.Value!;
+
+        public bool RandomSign => RGen.Next(0, 2) == 1;
 
         public long RandomNegativeOneDayToOneDayInMilliseconds
         {
@@ -51,7 +50,7 @@ namespace UnitTests
             get
             {
                 Span<byte> bytes = stackalloc byte[8] { 0, 0, 0, 0, 0, 0, 0, 0 };
-                TheRGen.Value.NextBytes(bytes);
+                RGen.NextBytes(bytes);
                 return BitConverter.ToInt64(bytes);
             }
         }

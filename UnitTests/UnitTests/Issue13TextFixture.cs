@@ -54,7 +54,7 @@ namespace UnitTests
             return xml;
         }
 
-        public PortableMonotonicStamp DeserializeStamp([JetBrains.Annotations.NotNull] string xml)
+        public PortableMonotonicStamp DeserializeStamp( string xml)
         {
             if (xml == null) throw new ArgumentNullException(nameof(xml));
             PortableMonotonicStamp ret;
@@ -64,7 +64,14 @@ namespace UnitTests
                 stream.Write(data, 0, data.Length);
                 stream.Position = 0;
                 DataContractSerializer deserializer = new DataContractSerializer(typeof(PortableMonotonicStamp));
-                ret = (PortableMonotonicStamp)deserializer.ReadObject(stream);
+                object? obj = deserializer.ReadObject(stream);
+                ret = obj switch
+                {
+                    null => throw new SerializationException("The serializer returned a null reference."),
+                    PortableMonotonicStamp m => m,
+                    { } o => throw new SerializationException(
+                        $"While expecting deserialized value of type {nameof(PortableMonotonicStamp)}, received value ({o}) of type ({o.GetType().Name}).")
+                };
             }
             return ret;
         }
@@ -97,7 +104,15 @@ namespace UnitTests
                 stream.Write(data, 0, data.Length);
                 stream.Position = 0;
                 DataContractSerializer deserializer = new DataContractSerializer(typeof(Issue13StampTestPacket));
-                packet = (Issue13StampTestPacket)deserializer.ReadObject(stream);
+                object? obj = deserializer.ReadObject(stream);
+
+                packet = obj switch
+                {
+                    null => throw new SerializationException("Deserializer returned a null reference."),
+                    Issue13StampTestPacket p => p,
+                    { } o => throw new SerializationException(
+                        $"Deserializer returned value ({o}) of type ({o.GetType().Name}) when expected type was {nameof(Issue13StampTestPacket)}."),
+                };
             }
             Assert.False(packet == default);
             return packet;

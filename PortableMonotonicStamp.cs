@@ -91,6 +91,68 @@ namespace HpTimeStamps
         }
         #endregion
 
+        #region Parse Methods
+
+        /// <summary>
+        /// Parse a stringified portable monotonic stamp back to a stamp
+        /// </summary>
+        /// <param name="text">to convert back</param>
+        /// <returns>The portable stamp</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="text"/> was null.</exception>
+        /// <exception cref="InvalidPortableStampStringException"><paramref name="text"/> could not be
+        /// deserialized to a <see cref="PortableMonotonicStamp"/>.</exception>
+        public static PortableMonotonicStamp Parse(string text) =>
+            Parse((text ?? throw new ArgumentNullException(nameof(text))).AsSpan());
+        
+        /// <summary>
+        /// Parse a stringified portable monotonic stamp back to a stamp
+        /// </summary>
+        /// <param name="text">to convert back</param>
+        /// <returns>The portable stamp</returns>
+        /// <exception cref="InvalidPortableStampStringException"><paramref name="text"/> could not be
+        /// deserialized to a <see cref="PortableMonotonicStamp"/>.</exception>
+        public static PortableMonotonicStamp Parse(in ReadOnlySpan<char> text)
+        {
+
+            (DateTime dt, int nanoSec) = PortableTsParser.ParseStringifiedPortableStampToDtAndNano(in text);
+            return (PortableMonotonicStamp)dt +
+                                           PortableDuration.FromNanoseconds(nanoSec);
+        }
+        /// <summary>
+        /// Try to parse a stringified portable monotonic stamp back to a stamp
+        /// </summary>
+        /// <param name="text">to deserialize</param>
+        /// <returns>On success, a portable monotonic stamp.  Null otherwise.</returns>
+        public static PortableMonotonicStamp? TryParse(string text)
+        {
+            try
+            {
+                return !string.IsNullOrWhiteSpace(text) ? Parse(text.AsSpan()) : null;
+            }
+            catch (InvalidPortableStampStringException)
+            {
+                return null;
+            }
+        }
+        /// <summary>
+        /// Try to parse a stringified portable monotonic stamp back to a stamp
+        /// </summary>
+        /// <param name="text">to deserialize</param>
+        /// <returns>On success, a portable monotonic stamp.  Null otherwise.</returns>
+        public static PortableMonotonicStamp? TryParse(in ReadOnlySpan<char> text)
+        {
+            try
+            {
+                return Parse(in text);
+            }
+            catch (InvalidPortableStampStringException)
+            {
+                return null;
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Amount of time in nanoseconds since the .NET UTC Epoch.
         /// </summary>
@@ -225,7 +287,7 @@ namespace HpTimeStamps
 
         /// <summary>
         /// Get a string representation of this value in ISO 8601 format
-        /// in UTC.
+        /// in LOCAL.
         /// </summary>
         /// <returns>A string representation.</returns>
         public readonly string ToLocalString() => BuildString(true);

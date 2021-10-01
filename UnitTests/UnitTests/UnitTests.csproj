@@ -4,6 +4,15 @@
     <LangVersion>8.0</LangVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TargetFramework>net5.0</TargetFramework>
+    <nullable>enable</nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

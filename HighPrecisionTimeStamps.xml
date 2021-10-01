@@ -200,7 +200,7 @@
             </param>
             <returns>true if this value was converted successfully; otherwise, false.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.String)">
+        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.ReadOnlySpan{System.Char})">
             <summary>
                 Converts the string representation of a number to its Int128 equivalent.
             </summary>
@@ -209,7 +209,7 @@
                 A value that is equivalent to the number specified in the value parameter.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.String,System.Globalization.NumberStyles)">
+        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.ReadOnlySpan{System.Char},System.Globalization.NumberStyles)">
             <summary>
                 Converts the string representation of a number in a specified style format to its Int128 equivalent.
             </summary>
@@ -219,7 +219,7 @@
                 A value that is equivalent to the number specified in the value parameter.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.String,System.IFormatProvider)">
+        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.ReadOnlySpan{System.Char},System.IFormatProvider)">
             <summary>
                 Converts the string representation of a number in a culture-specific format to its Int128 equivalent.
             </summary>
@@ -229,7 +229,7 @@
                 A value that is equivalent to the number specified in the value parameter.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.String,System.Globalization.NumberStyles,System.IFormatProvider)">
+        <member name="M:HpTimeStamps.BigMath.Int128.Parse(System.ReadOnlySpan{System.Char},System.Globalization.NumberStyles,System.IFormatProvider)">
             <summary>
                 Converts the string representation of a number in a specified style and culture-specific format to its Int128
                 equivalent.
@@ -239,7 +239,7 @@
             <param name="provider">An object that provides culture-specific formatting information about value.</param>
             <returns>A value that is equivalent to the number specified in the value parameter.</returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.TryParse(System.String,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.TryParse(System.ReadOnlySpan{System.Char},HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Tries to convert the string representation of a number to its Int128 equivalent, and returns a value that indicates
                 whether the conversion succeeded..
@@ -253,7 +253,7 @@
                 true if the value parameter was converted successfully; otherwise, false.
             </returns>
         </member>
-        <member name="M:HpTimeStamps.BigMath.Int128.TryParse(System.String,System.Globalization.NumberStyles,System.IFormatProvider,HpTimeStamps.BigMath.Int128@)">
+        <member name="M:HpTimeStamps.BigMath.Int128.TryParse(System.ReadOnlySpan{System.Char},System.Globalization.NumberStyles,System.IFormatProvider,HpTimeStamps.BigMath.Int128@)">
             <summary>
                 Tries to convert the string representation of a number in a specified style and culture-specific format to its
                 Int128 equivalent, and returns a value that indicates whether the conversion succeeded..
@@ -2477,6 +2477,39 @@
             Amount to shift a <see cref="T:HpTimeStamps.BigMath.Int128"/> right to get its sign bit.
             </summary>
         </member>
+        <member name="M:HpTimeStamps.PortableDuration.Parse(System.String)">
+            <summary>
+            Parse a stringified portable duration back to a portable duration
+            </summary>
+            <param name="text">the stringified portable duration</param>
+            <returns><paramref name="text"/>, deserialized into a <see cref="T:HpTimeStamps.PortableDuration"/>.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="text"/> was null.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="text"/> could not be parsed into a <see cref="T:HpTimeStamps.PortableDuration"/>.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableDuration.Parse(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Parse a stringified portable duration back to a portable duration
+            </summary>
+            <param name="text">the stringified portable duration</param>
+            <returns><paramref name="text"/>, deserialized into a <see cref="T:HpTimeStamps.PortableDuration"/>.</returns>
+            <exception cref="T:System.ArgumentException"><paramref name="text"/> could not be parsed into a <see cref="T:HpTimeStamps.PortableDuration"/>.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableDuration.TryParse(System.String)">
+            <summary>
+            Try to parse a stringified portable duration back to a portable duration.
+            </summary>
+            <param name="text">the stringified portable duration</param>
+            <returns>A portable duration with the value denoted by <paramref name="text"/> on success.
+            Otherwise, <see langword="null"/>.</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableDuration.TryParse(System.ReadOnlySpan{System.Char})">
+            <summary>
+            Try to parse a stringified portable duration back to a portable duration.
+            </summary>
+            <param name="text">the stringified portable duration</param>
+            <returns>A portable duration with the value denoted by <paramref name="text"/> on success.
+            Otherwise, <see langword="null"/>.</returns>
+        </member>
         <member name="M:HpTimeStamps.PortableDuration.op_Implicit(System.TimeSpan)~HpTimeStamps.PortableDuration">
             <summary>
             Convert a timespan into a duration
@@ -2969,6 +3002,39 @@
             </summary>
             <param name="monotonicStamp"></param>
         </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.Parse(System.String)">
+            <summary>
+            Parse a stringified portable monotonic stamp back to a stamp
+            </summary>
+            <param name="text">to convert back</param>
+            <returns>The portable stamp</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="text"/> was null.</exception>
+            <exception cref="T:HpTimeStamps.InvalidPortableStampStringException"><paramref name="text"/> could not be
+            deserialized to a <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.Parse(System.ReadOnlySpan{System.Char}@)">
+            <summary>
+            Parse a stringified portable monotonic stamp back to a stamp
+            </summary>
+            <param name="text">to convert back</param>
+            <returns>The portable stamp</returns>
+            <exception cref="T:HpTimeStamps.InvalidPortableStampStringException"><paramref name="text"/> could not be
+            deserialized to a <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>.</exception>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.TryParse(System.String)">
+            <summary>
+            Try to parse a stringified portable monotonic stamp back to a stamp
+            </summary>
+            <param name="text">to deserialize</param>
+            <returns>On success, a portable monotonic stamp.  Null otherwise.</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableMonotonicStamp.TryParse(System.ReadOnlySpan{System.Char}@)">
+            <summary>
+            Try to parse a stringified portable monotonic stamp back to a stamp
+            </summary>
+            <param name="text">to deserialize</param>
+            <returns>On success, a portable monotonic stamp.  Null otherwise.</returns>
+        </member>
         <member name="P:HpTimeStamps.PortableMonotonicStamp.NanosecondsSinceUtcEpoch">
             <summary>
             Amount of time in nanoseconds since the .NET UTC Epoch.
@@ -3042,7 +3108,7 @@
         <member name="M:HpTimeStamps.PortableMonotonicStamp.ToLocalString">
             <summary>
             Get a string representation of this value in ISO 8601 format
-            in UTC.
+            in LOCAL.
             </summary>
             <returns>A string representation.</returns>
         </member>

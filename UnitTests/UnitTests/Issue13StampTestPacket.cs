@@ -201,7 +201,7 @@ namespace UnitTests
             Compare(in lhs, in rhs) < 0;
         public static bool operator >=(in Issue13StampTestPacket lhs, in Issue13StampTestPacket rhs) => !(lhs < rhs);
         public static bool operator <=(in Issue13StampTestPacket lhs, in Issue13StampTestPacket rhs) => !(lhs > rhs);
-        public override bool Equals(object other) => other is Issue13StampTestPacket i13Tp && i13Tp == this;
+        public override bool Equals(object? other) => other is Issue13StampTestPacket i13Tp && i13Tp == this;
         public bool Equals(Issue13StampTestPacket other) => other == this;
         public int CompareTo(Issue13StampTestPacket other) => Compare(in this, in other);
 
