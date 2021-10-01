@@ -12,6 +12,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using TickInt = HpTimeStamps.BigMath.Int128;
 using PdInt = HpTimeStamps.BigMath.Int128;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+
 namespace HpTimeStamps
 {
     /// <summary>
@@ -109,6 +113,116 @@ namespace HpTimeStamps
 
         #endregion
 
+        #region Parsing Methods
+        /// <summary>
+        /// Parse a stringified portable duration back to a portable duration
+        /// </summary>
+        /// <param name="text">the stringified portable duration</param>
+        /// <returns><paramref name="text"/>, deserialized into a <see cref="PortableDuration"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="text"/> was null.</exception>
+        /// <exception cref="ArgumentException"><paramref name="text"/> could not be parsed into a <see cref="PortableDuration"/>.</exception>
+        public static PortableDuration Parse(string text) =>
+            Parse((text ?? throw new ArgumentNullException(nameof(text))).AsSpan());
+
+        /// <summary>
+        /// Parse a stringified portable duration back to a portable duration
+        /// </summary>
+        /// <param name="text">the stringified portable duration</param>
+        /// <returns><paramref name="text"/>, deserialized into a <see cref="PortableDuration"/>.</returns>
+        /// <exception cref="ArgumentException"><paramref name="text"/> could not be parsed into a <see cref="PortableDuration"/>.</exception>
+        public static PortableDuration Parse(ReadOnlySpan<char> text)
+        {
+            text = text.Trim();
+            text = text.UntilFirstOccurenceOf(' ');
+            string noCommas = StripCommas(text);
+
+            TickInt value = TickInt.Parse(noCommas.AsSpan());
+            return new(value);
+        }
+        private static string StripCommas(string text)
+        {
+            bool commas = HasCommas(text.AsSpan());
+            if (!commas)
+            {
+                return text;
+            }
+            StringBuilder sb = new StringBuilder(text.Length);
+            foreach (char c in text)
+            {
+                if (c != ',')
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+
+            static bool HasCommas(in ReadOnlySpan<char> t)
+            {
+                for (int i = 0; i < t.Length; ++i)
+                {
+                    if (t[i] == ',')
+                        return true;
+                }
+                return false;
+            }
+        }
+        private static string StripCommas(ReadOnlySpan<char> text)
+        {
+            bool commas = HasCommas(in text);
+            if (!commas)
+            {
+                return text.ToString();
+            }
+            StringBuilder sb = new StringBuilder(text.Length);
+            foreach (char c in text)
+            {
+                if (c != ',')
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+
+            static bool HasCommas(in ReadOnlySpan<char> t)
+            {
+                for (int i = 0; i < t.Length; ++i)
+                {
+                    if (t[i] == ',')
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Try to parse a stringified portable duration back to a portable duration.
+        /// </summary>
+        /// <param name="text">the stringified portable duration</param>
+        /// <returns>A portable duration with the value denoted by <paramref name="text"/> on success.
+        /// Otherwise, <see langword="null"/>.</returns>
+        public static PortableDuration? TryParse(string text) =>
+            !string.IsNullOrWhiteSpace(text) ? TryParse(text.AsSpan()) : null;
+        /// <summary>
+        /// Try to parse a stringified portable duration back to a portable duration.
+        /// </summary>
+        /// <param name="text">the stringified portable duration</param>
+        /// <returns>A portable duration with the value denoted by <paramref name="text"/> on success.
+        /// Otherwise, <see langword="null"/>.</returns>
+        public static PortableDuration? TryParse(ReadOnlySpan<char> text)
+        {
+            try
+            {
+                return !text.IsWhiteSpace() && !text.IsEmpty ? Parse(text) : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        } 
+        #endregion
+        
         #region Conversion Operators
 
         /// <summary>
@@ -774,5 +888,56 @@ namespace HpTimeStamps
         #endregion
 
        
+    }
+
+    internal static class CharSpanExtensions
+    {
+        public static ReadOnlySpan<char> UntilFirstOccurenceOf(this in ReadOnlySpan<char> text, char lookForMe)
+        {
+            int firstIdx = text.FirstIndexOf(lookForMe);
+            Debug.Assert(firstIdx < text.Length);
+            return firstIdx switch
+            {
+                < 0 => text,
+                0 => Span<char>.Empty,
+                _ => text.Slice(0, firstIdx)
+            };
+        }
+
+        public static int FirstIndexOf(this in ReadOnlySpan<char> text, char findMe)
+        {
+            if (text.IsEmpty)
+                return -1;
+            for (int i = 0; i < text.Length; ++i)
+            {
+                if (findMe == text[i])
+                    return i;
+            }
+            return -1;
+        }
+
+        public static Span<char> UntilFirstOccurenceOf(this in Span<char> text, char lookForMe)
+        {
+            int firstIdx = text.FirstIndexOf(lookForMe);
+            Debug.Assert(firstIdx < text.Length);
+            return firstIdx switch
+            {
+                < 0 => text,
+                0 => Span<char>.Empty,
+                _ => text.Slice(0, firstIdx)
+            };
+        }
+
+        public static int FirstIndexOf(this in Span<char> text, char findMe)
+        {
+            if (text.IsEmpty)
+                return -1;
+            for (int i = 0; i < text.Length; ++i)
+            {
+                if (findMe == text[i])
+                    return i;
+            }
+            return -1;
+        }
     }
 }

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using HpTimeStamps;
 using HpTimeStamps.BigMath;
-using JetBrains.Annotations;
 using Xunit;
 using MonotonicStampContext = HpTimeStamps.MonotonicStampContext;
 namespace UnitTests
@@ -52,7 +49,7 @@ namespace UnitTests
         private Duration RandomDurationNegSevenToPosSevenDays()
         {
             Span<byte> bytes = stackalloc byte[17];
-            TheRGen.Value.NextBytes(bytes);
+            RGen.NextBytes(bytes);
             Span<byte> low = bytes.Slice(0, 8);
             Span<byte> high = bytes.Slice(8, 8);
             byte sign = bytes[16];
@@ -65,8 +62,10 @@ namespace UnitTests
             Assert.True(ret.TotalDays <= 7.00001 && ret.TotalDays >= -7.00001);
             return ret;
         }
-        
-        [NotNull] private static readonly MonotonicStampFixture TheMsFixture;
+
+        private Random RGen => TheRGen.Value!;
+
+        private static readonly MonotonicStampFixture TheMsFixture;
         private static readonly UInt128 SevenDaysInDurationTicks;
         private static readonly ThreadLocal<Random> TheRGen = new ThreadLocal<Random>(() => new Random(), false);
     }

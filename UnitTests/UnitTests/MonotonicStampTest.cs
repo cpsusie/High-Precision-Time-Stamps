@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using HpTimeStamps;
 using HpTimeStamps.BigMath;
-using JetBrains.Annotations;
-using Microsoft.VisualBasic.CompilerServices;
 using Xunit;
 using Xunit.Abstractions;
 using MonotonicStampContext = HpTimeStamps.MonotonicStampContext;
@@ -18,7 +15,7 @@ namespace UnitTests
     using MonotonicStampSource = MonotonicTimeStampUtil<MonotonicStampContext>;
     public class MonotonicStampTest : OutputHelperAndFixtureHavingTests<MonotonicStampFixture>
     {
-        public MonotonicStampTest([NotNull] ITestOutputHelper helper, [NotNull] MonotonicStampFixture fixture)
+        public MonotonicStampTest(ITestOutputHelper helper, MonotonicStampFixture fixture)
             : base(helper, fixture)
         {
             const long portableDurationTicksPerSecond = 1_000_000_000;
@@ -38,7 +35,7 @@ namespace UnitTests
                 PortableDuration.EasyConversionToAndFromDuration ? "EASY" : "HARD");
 
         }
-        internal Random RGen => TheRGen.Value;
+        internal Random RGen => TheRGen.Value!;
         
         [Fact]
         public void PrintContextInfo()
@@ -383,7 +380,7 @@ namespace UnitTests
         private (int WholeDays, int WholeSeconds, int WholeNanoseconds, Int128 TotalNanoseconds) BreakDownDateTimeNanosecondsScale(DateTime dt)
         {
             Int128 billion = 1_000_000_000;
-            Int128 nanosecondPerDay = ((Int128) 86_400) * billion;
+            Int128 nanosecondPerDay = 86_400 * billion;
             dt = dt.ToUniversalTime();
             long dtTicks = dt.Ticks;
             Int128 ticks = dtTicks;
@@ -404,7 +401,7 @@ namespace UnitTests
             int wholeNanoseconds, Int128? verifyNanosecondsTotal = null)
         {
             Int128 billion = 1_000_000_000;
-            Int128 nanosecondPerDay = ((Int128)86_400) * billion;
+            Int128 nanosecondPerDay = 86_400 * billion;
             
             Int128 daysToNanoseconds = wholeDays * nanosecondPerDay;
             Int128 wholeSecondsNanoseconds = wholeSeconds * billion;
@@ -413,7 +410,7 @@ namespace UnitTests
             Int128 totalNanoseconds = daysToNanoseconds + wholeSecondsNanoseconds + remainingNanoseconds;
             Assert.True(verifyNanosecondsTotal == null || verifyNanosecondsTotal == totalNanoseconds);
 
-            (Int128 totalAsDateTimeTicks, Int128 discardedNanoseconds) = Int128.DivRem(in totalNanoseconds, 100);
+            (Int128 totalAsDateTimeTicks, Int128 _) = Int128.DivRem(in totalNanoseconds, 100);
             DateTime dt = new DateTime((long) totalAsDateTimeTicks, DateTimeKind.Utc);
             return dt;
 
@@ -425,7 +422,7 @@ namespace UnitTests
         private (int WholeDays, int WholeSeconds, int WholeNanoseconds, decimal FractionalNanoseconds, Int128
             TotalWholeNanoseconds)  BreakdownMonotonicStampNanosecondsScale(MonotonicStamp stamp)
         {
-            var (utcReferenceTime, offsetFromReference, localUtcOffset) = stamp.Value;
+            var (utcReferenceTime, offsetFromReference, _) = stamp.Value;
 
             DateTime stampAsUtcDateTime = stamp.ToUtcDateTime();
             Int128 durationTps = Duration.TicksPerSecond;
@@ -470,7 +467,7 @@ namespace UnitTests
             decimal fractionalNanoseconds = fractionalTicks64 / durationTpsDec;
 
             Int128 billion = 1_000_000_000;
-            Int128 nanosecondPerDay = ((Int128)86_400) * billion;
+            Int128 nanosecondPerDay = 86_400 * billion;
 
             int wholeDays = (int) (totalWholeNanoseconds / nanosecondPerDay);
             Int128 remainingNanoseconds = totalWholeNanoseconds - (wholeDays * nanosecondPerDay);
@@ -654,7 +651,7 @@ namespace UnitTests
     internal sealed class Bug19TestFailedException : ApplicationException
     {
         public int TestUnits { get; }
-        [NotNull] public string TestUnitsType { get; }
+        public string TestUnitsType { get; }
         public TimeSpan RefSpan { get; }
         public Duration DurFromInt { get; }
         public Duration DurFromDouble { get; }
@@ -662,7 +659,7 @@ namespace UnitTests
         public ref readonly PortableDuration PdFromDouble => ref _pdDouble;
 
         public Bug19TestFailedException(int numUnits, DurationTestUnit dtu, TimeSpan refSpan, Duration dFromInt,
-            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, [NotNull] Exception inner) :
+            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, Exception inner) :
             base(
                 CreateMessage(numUnits, dtu, refSpan, dFromInt, dFromDouble, in pdInt, in pdDouble,
                     inner ?? throw new ArgumentNullException(nameof(inner))), inner)
@@ -678,7 +675,7 @@ namespace UnitTests
 
 
         static string CreateMessage(int numUnits, DurationTestUnit dtu, TimeSpan refSpan, Duration dFromInt,
-            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, [NotNull] Exception inner) =>
+            Duration dFromDouble, in PortableDuration pdInt, in PortableDuration pdDouble, Exception inner) =>
             $"Was testing {numUnits} units of type {dtu.ToString()}.  Failure detail: {inner.Message}.  " +
             $"Each value type in milliseconds: {nameof(RefSpan)}- {refSpan.TotalMilliseconds}; {nameof(DurFromInt)}- {dFromInt.TotalMilliseconds}; " +
             $"{nameof(DurFromDouble)}- {dFromDouble.TotalMilliseconds}; {nameof(PdFromInt)}- {pdInt.TotalMilliseconds}; " +

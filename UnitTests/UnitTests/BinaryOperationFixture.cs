@@ -54,7 +54,7 @@ namespace UnitTests
         public static bool operator <(in BinaryOperation lhs, in BinaryOperation rhs) => Compare(in lhs, in rhs) < 0;
         public static bool operator >=(in BinaryOperation lhs, in BinaryOperation rhs) => !(lhs < rhs);
         public static bool operator <=(in BinaryOperation lhs, in BinaryOperation rhs) => !(lhs > rhs);
-        public override bool Equals(object obj) => obj is BinaryOperation bo && bo == this;
+        public override bool Equals(object? obj) => obj is BinaryOperation bo && bo == this;
         public bool Equals(BinaryOperation other) => other == this;
         public int CompareTo(BinaryOperation other) => Compare(in this, in other);
         public bool Validate() => (DoValidate()).Validated;

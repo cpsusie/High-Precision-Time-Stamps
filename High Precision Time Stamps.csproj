@@ -9,7 +9,7 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <Authors>Christopher P. Susie</Authors>
     <Company>CJM Screws, LLC</Company>
-    <Version>1.0.0.4</Version>
+    <Version>1.0.0.6</Version>
     <Description>It is well known that DateTime.Now is often used inappropriately.  For example, it may be used together with TimeSpan to produce a task's timeout point or subtracted from another DateTime to calculate a duration.  This can cause subtle bugs because DateTime is not monotonic: the system clock can change, making the result of the subtraction inaccurate -- potentially causing a premature timeout or an infinite loop.  Yet, DateTime is an incredibly convenient and widely used value type in .NET code and is especially useful when printed in ISO-8601 format (with the "O" format specifier).  
 
 With the "O" specifier, you can resolution down to tenths of a microsecond, which is nice.  Until you learn that the resolution of the system clock is usually more coarse than several *milliseconds*, making the additional decimal places misleading garbage values. For calculating durations (time between events), it is better to use a high-resolution and monotonic clock like that provided by System.Diagnostics.Stopwatch: on most computers it is far more **accurate** than DateTime.Now even though, seemingly paradoxically, on a few systems, its *resolution* is lower than that of DateTime.  Also, unsurprisingly, Stopwatch does not provide values that correlate to times of day: while it is appropriate for calculating durations, it is inappropriate for timestamping against a readable date and time.  
@@ -17,12 +17,19 @@ With the "O" specifier, you can resolution down to tenths of a microsecond, whic
 This library provides timestamps (both as DateTime and as analogous value types it defines) that use the Stopwatch (and your system's high peformance event counter) as its clock, but returns values as DateTimes or an analog thereto so that these values can be used for a mixed purpose of timestamping and providing a meaningful way to calculate time elapsed between events or to calculate how long to perform a programmatic task.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>
+      #### Version 1.0.0.6:
+      To resolve ([Issue 24][10]), add Parse and TryParse methods to parse stringified PortableMonotonicTimestamps and PortableDurations.  These methods only work with values stringified via the default ToString() methods.
+
+      Added unit tests for the methods.
+
+      Unit test application now enables the nullable reference type feature.
+
       #### Version 1.0.0.4:
       This release fixes two bugs.
 
       First (see [Issue 21][8]), it fixes a bug where using monotonic timestamps close to the extreme values (within a month or so of 1-1-0001AD and 12-31-9999AD) was causing overflow in .NET 5.0.  The fix increased the buffer around the min/max values so that overflow does not occur in .NET 5.0.  You may have to alter your uses if you were (for some reason) storing portable monotonic stamps close to the extrema of permissible values.
 
-      Second (see [Issue 22][9]), it fixes a bug where subtracting a portable duration from a portable monotonic stamp was executing addition, not subtraction.  
+      Second (see [Issue 22][9]), it fixes a bug where subtracting a portable duration from a portable monotonic stamp was executing addition, not subtraction.
 
       Finally, please note that unit test applications, example code and test application are now all built and run against .NET 5.0 rather than .NET Core 3.1.
       #### Version 1.0.0.2:
@@ -42,13 +49,14 @@ This library provides timestamps (both as DateTime and as analogous value types 
       [6]: https://github.com/cpsusie/High-Precision-Time-Stamps/commit/01670d88755a4775100f7dd9d09eef61e0775555
       [7]: https://github.com/cpsusie/High-Precision-Time-Stamps/blob/01670d88755a4775100f7dd9d09eef61e0775555/PortableMonotonicStamp.cs#L540
       [8]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/21
-      [9]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/22  
+      [9]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/22
+      [10]: https://github.com/cpsusie/High-Precision-Time-Stamps/issues/24
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/cpsusie/High-Precision-Time-Stamps.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Timestamps DateTime Duration Monotonic-Clock TimeSpan High-Resolution ISO-8601</PackageTags>
-    <AssemblyVersion>1.0.0.4</AssemblyVersion>
-    <FileVersion>1.0.0.4</FileVersion>
+    <AssemblyVersion>1.0.0.6</AssemblyVersion>
+    <FileVersion>1.0.0.6</FileVersion>
     <Copyright>Copyright (c) 2020-2021 CJM Screws, LLC</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -60,15 +68,15 @@ This library provides timestamps (both as DateTime and as analogous value types 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>./HighPrecisionTimeStamps.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <LangVersion>8.0</LangVersion>
     <WarningsAsErrors />
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>8.0</LangVersion>
     <WarningsAsErrors />
     <DocumentationFile>./HighPrecisionTimeStamps.xml</DocumentationFile>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -98,6 +106,7 @@ This library provides timestamps (both as DateTime and as analogous value types 
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>

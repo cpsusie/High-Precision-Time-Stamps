@@ -561,7 +561,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     A value that is equivalent to the number specified in the value parameter.
         /// </returns>
-        public static Int128 Parse(string value) => Parse(value, NumberStyles.Integer, NumberFormatInfo.CurrentInfo);
+        public static Int128 Parse(ReadOnlySpan<char> value) => Parse(value, NumberStyles.Integer, NumberFormatInfo.CurrentInfo);
 
         /// <summary>
         ///     Converts the string representation of a number in a specified style format to its Int128 equivalent.
@@ -571,7 +571,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     A value that is equivalent to the number specified in the value parameter.
         /// </returns>
-        public static Int128 Parse(string value, NumberStyles style) => Parse(value, style, NumberFormatInfo.CurrentInfo);
+        public static Int128 Parse(ReadOnlySpan<char> value, NumberStyles style) => Parse(value, style, NumberFormatInfo.CurrentInfo);
 
         /// <summary>
         ///     Converts the string representation of a number in a culture-specific format to its Int128 equivalent.
@@ -581,7 +581,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     A value that is equivalent to the number specified in the value parameter.
         /// </returns>
-        public static Int128 Parse(string value, IFormatProvider provider) => Parse(value, NumberStyles.Integer, NumberFormatInfo.GetInstance(provider));
+        public static Int128 Parse(ReadOnlySpan<char> value, IFormatProvider provider) => Parse(value, NumberStyles.Integer, NumberFormatInfo.GetInstance(provider));
 
         /// <summary>
         ///     Converts the string representation of a number in a specified style and culture-specific format to its Int128
@@ -591,7 +591,7 @@ namespace HpTimeStamps.BigMath
         /// <param name="style">A bitwise combination of the enumeration values that specify the permitted format of value.</param>
         /// <param name="provider">An object that provides culture-specific formatting information about value.</param>
         /// <returns>A value that is equivalent to the number specified in the value parameter.</returns>
-        public static Int128 Parse(string value, NumberStyles style, IFormatProvider provider)
+        public static Int128 Parse(ReadOnlySpan<char> value, NumberStyles style, IFormatProvider provider)
         {
             Int128 result;
             if (!TryParse(value, style, provider, out result))
@@ -614,7 +614,7 @@ namespace HpTimeStamps.BigMath
         /// <returns>
         ///     true if the value parameter was converted successfully; otherwise, false.
         /// </returns>
-        public static bool TryParse(string value, out Int128 result) => TryParse(value, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out result);
+        public static bool TryParse(ReadOnlySpan<char> value, out Int128 result) => TryParse(value, NumberStyles.Integer, NumberFormatInfo.CurrentInfo, out result);
 
         /// <summary>
         ///     Tries to convert the string representation of a number in a specified style and culture-specific format to its
@@ -634,23 +634,26 @@ namespace HpTimeStamps.BigMath
         ///     or Int128.Zero if the conversion failed. This parameter is passed uninitialized.
         /// </param>
         /// <returns>true if the value parameter was converted successfully; otherwise, false.</returns>
-        public static bool TryParse(string value, NumberStyles style, IFormatProvider provider, out Int128 result)
+        public static bool TryParse(ReadOnlySpan<char> value, NumberStyles style, IFormatProvider provider, out Int128 result)
         {
             result = Zero;
-            if (string.IsNullOrEmpty(value))
+            if (value.IsEmpty || value.IsWhiteSpace())
             {
                 return false;
             }
 
-            if (value.StartsWith("x", StringComparison.OrdinalIgnoreCase))
+            ReadOnlySpan<char> x = stackalloc char[1] { 'x' };
+            ReadOnlySpan<char> ohX = stackalloc char[2] { '0', 'x' };
+
+            if (value.StartsWith(x, StringComparison.OrdinalIgnoreCase))
             {
                 style |= NumberStyles.AllowHexSpecifier;
-                value = value.Substring(1);
+                value = value.Slice(1);
             }
-            else if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            else if (value.StartsWith(ohX, StringComparison.OrdinalIgnoreCase))
             {
                 style |= NumberStyles.AllowHexSpecifier;
-                value = value.Substring(2);
+                value = value.Slice(2);
             }
 
             if ((style & NumberStyles.AllowHexSpecifier) == NumberStyles.AllowHexSpecifier)
@@ -661,7 +664,7 @@ namespace HpTimeStamps.BigMath
             return TryParseNum(value, out result);
         }
 
-        private static bool TryParseHex(string value, out Int128 result)
+        private static bool TryParseHex(ReadOnlySpan<char> value, out Int128 result)
         {
             if (value.Length > 32)
             {
@@ -711,15 +714,25 @@ namespace HpTimeStamps.BigMath
             return true;
         }
 
-        private static bool TryParseNum(string value, out Int128 result)
+        private static bool TryParseNum(ReadOnlySpan<char> value, out Int128 result)
         {
+            ReadOnlySpan<char> dash = stackalloc char[1] { '-' };
             result = Zero;
+            bool isNegative = value.StartsWith(dash);
+            if (isNegative)
+            {
+                value = value.Slice(1);
+            }
             foreach (char ch in value)
             {
                 byte b;
                 if ((ch >= '0') && (ch <= '9'))
                 {
                     b = (byte) (ch - '0');
+                }
+                else if (ch == ',')
+                {
+                    continue;
                 }
                 else
                 {
@@ -728,6 +741,11 @@ namespace HpTimeStamps.BigMath
 
                 result = 10*result;
                 result += b;
+            }
+
+            if (isNegative)
+            {
+                result = 0 - result;
             }
             return true;
         }

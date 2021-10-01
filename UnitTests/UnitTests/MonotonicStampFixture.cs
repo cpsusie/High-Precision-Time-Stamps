@@ -71,7 +71,7 @@ namespace UnitTests
         string ISerializerDeserializer<PortableMonotonicStamp>.SerializeToString(PortableMonotonicStamp stamp) =>
             SerializeToString(in stamp);
 
-        public PortableMonotonicStamp DeserializeFromString([NotNull] string xml)
+        public PortableMonotonicStamp DeserializeFromString(string xml)
         {
             if (xml == null) throw new ArgumentNullException(nameof(xml));
             using (Stream stream = new MemoryStream())
@@ -80,7 +80,13 @@ namespace UnitTests
                 byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
                 stream.Write(data, 0, data.Length);
                 stream.Position = 0;
-                return (PortableMonotonicStamp) TheDcSerializer.ReadObject(stream);
+                object? obj = TheDcSerializer.ReadObject(stream);
+                return obj switch
+                {
+                    null => throw new SerializationException("Deserializer returned a null reference."),
+                    PortableMonotonicStamp m => m,
+                    {} o => throw new SerializationException($"Received value ({o}) of type ({o.GetType().Name}) when expected type was {nameof(PortableMonotonicStamp)}."),
+                };
             }
         }
 
@@ -102,7 +108,7 @@ namespace UnitTests
         string ISerializerDeserializer<PortableDuration>.SerializeToString(PortableDuration stamp) =>
             SerializeToString(in stamp);
 
-        public PortableDuration DeserializeFromString([NotNull] string xml)
+        public PortableDuration DeserializeFromString(string xml)
         {
             if (xml == null) throw new ArgumentNullException(nameof(xml));
             using (Stream stream = new MemoryStream())
@@ -111,7 +117,13 @@ namespace UnitTests
                 byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
                 stream.Write(data, 0, data.Length);
                 stream.Position = 0;
-                return (PortableDuration)TheDcSerializer.ReadObject(stream);
+                object? obj = TheDcSerializer.ReadObject(stream);
+                return obj switch
+                {
+                    null => throw new SerializationException("Deserializer returned a null reference."),
+                    PortableDuration d => d,
+                    { } o => throw new SerializationException($"Received value ({o}) of type ({o.GetType().Name}) when expected type was {nameof(PortableDuration)}."),
+                };
             }
         }
         

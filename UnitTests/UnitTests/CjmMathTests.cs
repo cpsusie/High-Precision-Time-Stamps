@@ -139,7 +139,7 @@ namespace UnitTests
             {
                 ref readonly Int128 lhs = ref edgeCaseFactors[item.FirstElemIdx];
                 ref readonly Int128 rhs = ref edgeCaseFactors[item.SecondElemIdx];
-                (ArithmeticException exception, Int128 slowResult, Int128 fastResult) = TestFasterMultiplication(in lhs, in rhs);
+                (ArithmeticException? exception, Int128 slowResult, Int128 fastResult) = TestFasterMultiplication(in lhs, in rhs);
                 //The code the int128 is based on (originally) is buggy as shit on edge cases.
                 Assert.True( 
                     slowResult == fastResult || (ExpectArithmeticException(in lhs, in rhs) && exception != null) ||
@@ -374,10 +374,10 @@ namespace UnitTests
             Assert.True(slowRes == fastRes, $"Results are not equal.  SlowRes: [0x{slowRes:X32}]\t\t\tFastRes: [0x{fastRes:X32}].");
         }
 
-        private (ArithmeticException Error, Int128 SlowResult, Int128 FastResult) TestFasterMultiplication(in Int128 lhs, in Int128 rhs)
+        private (ArithmeticException? Error, Int128 SlowResult, Int128 FastResult) TestFasterMultiplication(in Int128 lhs, in Int128 rhs)
         {
 
-            ArithmeticException ex = null;
+            ArithmeticException? ex = null;
             Int128 slow =
                 Int128.SlowMultiply(in lhs, in rhs);
             Int128 fast = default;

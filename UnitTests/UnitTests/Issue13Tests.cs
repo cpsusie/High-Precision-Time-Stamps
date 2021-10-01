@@ -240,7 +240,7 @@ namespace UnitTests
                     };
                     Helper.WriteLine("Test failed due to {0}: {1}", reason, ex.Message);
                     string badPacketXml = PacketToXmlString(in ex.BadPacket);
-                    FileInfo fi = null;
+                    FileInfo? fi = null;
                     try
                     {
                         fi = GetFailureTargetInfo(reason);
@@ -364,7 +364,8 @@ namespace UnitTests
                 stream.Write(data, 0, data.Length);
                 stream.Position = 0;
                 DataContractSerializer deserializer = new DataContractSerializer(typeof(ByRefRoList<Issue13StampTestPacket>));
-                packets = (ByRefRoList<Issue13StampTestPacket>)deserializer.ReadObject(stream);
+                packets = deserializer.ReadObject(stream) as ByRefRoList<Issue13StampTestPacket> ??
+                          throw new SerializationException("The deserializer returned a null reference.");
             }
             Assert.NotNull(packets);
             Assert.True(packets.All(itm => itm != default));
@@ -553,7 +554,7 @@ namespace UnitTests
     {
         public ref readonly Issue13StampTestPacket BadPacket => ref _badPacket;
 
-        protected PacketBearingException(in Issue13StampTestPacket badPacket, string msg, Exception inner) : base(msg,
+        protected PacketBearingException(in Issue13StampTestPacket badPacket, string msg, Exception? inner) : base(msg,
             inner) => _badPacket = badPacket;
 
         private readonly Issue13StampTestPacket _badPacket;
@@ -587,7 +588,7 @@ namespace UnitTests
             return withoutNano + nanoseconds;
         }
 
-        [NotNull] private Random RGen => TheRng.Value;
+        private Random RGen => TheRng.Value!;
         internal PortableStampRng(int minYear, int maxYear)
         {
             if (minYear < 1)

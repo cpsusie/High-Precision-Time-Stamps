@@ -8,13 +8,17 @@ namespace HpTimeStamps
 {
     internal ref struct PortableTsParser
     {
+        public static (DateTime StampWithoutFractionalSeconds, int Nanoseconds)
+            ParseStringifiedPortableStampToDtAndNano([NotNull] string parseMe) =>
+            ParseStringifiedPortableStampToDtAndNano((parseMe ?? throw new ArgumentNullException(nameof(parseMe)))
+                .AsSpan());
 
         public static (DateTime StampWithoutFractionalSeconds, int Nanoseconds)
-            ParseStringifiedPortableStampToDtAndNano([NotNull] string parseMe)
+            ParseStringifiedPortableStampToDtAndNano(in ReadOnlySpan<char> parseMe)
         {
             try
             {
-                var temp = new PortableTsParser(parseMe ?? throw new ArgumentNullException(nameof(parseMe)));
+                var temp = new PortableTsParser(in parseMe);
                 temp.Validate();
                 return temp.Parse;
             }
@@ -28,12 +32,12 @@ namespace HpTimeStamps
             }
             catch (ArgumentException ex)
             {
-                throw new InvalidPortableStampStringException(parseMe,
+                throw new InvalidPortableStampStringException(parseMe.ToString(),
                     $"Invalid argument passed to {nameof(ParseStringifiedPortableStampToDtAndNano)}.", ex);
             }
             catch (Exception ex)
             {
-                throw new InvalidPortableStampStringException(parseMe,
+                throw new InvalidPortableStampStringException(parseMe.ToString(),
                     "Unexpected fault parsing portable monotonic stamp.", ex);
             }
         }
@@ -207,21 +211,24 @@ namespace HpTimeStamps
         private int SecondsValue => ParseIntegerValueNoLeadingZeroNoPunctOnlyDigits(Seconds.TrimStart('0'));
         private ReadOnlySpan<char> Tail => _span.Slice(PeriodOrZIndex);
 
-        private PortableTsParser([NotNull] string portableStampString)
+        private PortableTsParser([NotNull] string portableStampString) : this(
+            (portableStampString ?? 
+             throw new ArgumentNullException(nameof(portableStampString))).AsSpan()) {}
+
+        private PortableTsParser(in ReadOnlySpan<char> portableStampString)
         {
-            if (portableStampString == null) throw new ArgumentNullException(nameof(portableStampString));
-            if (string.IsNullOrWhiteSpace(portableStampString))
+            ReadOnlySpan<char> zText = stackalloc char[1] {'Z'};
+            if (portableStampString.IsWhiteSpace() || portableStampString.IsEmpty)
                 throw new ArgumentException("Can't be empty or whitespace.", nameof(portableStampString));
             if (portableStampString.Length < MinLength || portableStampString.Length > MaxLength)
                 throw new ArgumentException(
                     $"Parameter must have at least {MinLength} characters and no more than {MaxLength} characters.  Actual char count: {portableStampString.Length}.",
                     nameof(portableStampString));
-            if (!portableStampString.EndsWith("Z", StringComparison.OrdinalIgnoreCase))
+            if (!portableStampString.EndsWith(zText, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidPortableStampStringException(portableStampString,"Does not end with Z.");
+                throw new InvalidPortableStampStringException(portableStampString.ToString(), "Does not end with Z.");
             }
-
-            _span = portableStampString.AsSpan();
+            _span = portableStampString;
             _parseRes = null;
         }
 
