@@ -44,7 +44,7 @@ namespace HpTimeStamps
 
         public void CompleteOrThrow()
         {
-            if (!TryComplete()) throw new InvalidOperationException("No in proper state to complete.");
+            if (!TryComplete()) throw new InvalidOperationException("Not in proper state to complete.");
         }
 
         public override readonly string ToString() => "ReadOnlyThreeStepFlag: [" + Code + "].";

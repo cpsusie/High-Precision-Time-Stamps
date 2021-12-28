@@ -12,8 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using TickInt = HpTimeStamps.BigMath.Int128;
 using PdInt = HpTimeStamps.BigMath.Int128;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
 namespace HpTimeStamps
@@ -325,8 +323,8 @@ namespace HpTimeStamps
         public static PortableDuration FromMicroseconds(long value)
         {
             Debug.Assert(TicksPerSecond == 1_000_000_000, "Expect pd tics to always be nanoseconds");
-            PdInt result = (PdInt) value * 1_000;
-            return new PortableDuration((PdInt) result);
+            PdInt result = ((PdInt) value) * 1_000L;
+            return new PortableDuration(in result);
         }
         /// <summary>
         /// Compute a duration from a value representing nanoseconds
@@ -395,7 +393,7 @@ namespace HpTimeStamps
         /// Number of whole nanoseconds represented, fractional time remaining discarded
         /// </summary>
         /// <exception cref="OverflowException">Nanoseconds will not fit in <see cref="long"/>.</exception>
-        public long Nanoseconds => (long) ((_ticks / TicksPerMicrosecond) % 1_000_000_000);
+        public long Nanoseconds => (long) ((_ticks / TicksPerNanosecond) % 1_000_000_000);
 
         /// <summary>
         /// Number of whole minutes represented, fractional time remaining discarded
@@ -447,6 +445,7 @@ namespace HpTimeStamps
         /// </summary>
         public double TotalNanoseconds => (double) _ticks / (double) TicksPerNanosecond;
 
+        
         /// <summary>
         /// The duration represented in milliseconds, including fractional parts
         /// </summary>
@@ -465,7 +464,7 @@ namespace HpTimeStamps
                 return temp;
             }
         }
-
+        
         /// <summary>
         /// The duration represented in minutes, including fractional parts
         /// </summary>
@@ -475,7 +474,7 @@ namespace HpTimeStamps
         /// The duration represented in seconds, including fractional parts
         /// </summary>
         public double TotalSeconds => (double) _ticks / TicksPerSecond;
-
+        
         #endregion
 
         #region CTORS
@@ -648,6 +647,42 @@ namespace HpTimeStamps
         #endregion
 
         #region Mathematical Methods and Operators
+
+        /// <summary>
+        /// For a given portable duration query the total whole seconds and the nanoseconds remainder.
+        ///  </summary>
+        /// <returns>Total whole nanoseconds (can be negative), also nanoseconds remainder.  Remainder always positive.</returns>
+        public (long TotalWholeSeconds, long RemainderNanoseconds) GetTotalWholeSecondsAndRemainder()
+        {
+            const long nanoSecsPerSec = 1_000_000_000L;
+            long wholeSeconds, remainderNanoseconds;
+            (PdInt tempQuotient, PdInt tempRemainder) = PdInt.DivRem(in _ticks, TicksPerSecond);
+            if (tempRemainder < 0 && tempQuotient < 0)
+            {
+                tempRemainder = nanoSecsPerSec - -tempRemainder;
+            }
+            checked
+            {
+                wholeSeconds = (long)tempQuotient;
+                remainderNanoseconds = (long)tempRemainder;
+            }
+            Debug.Assert(wholeSeconds == 0 || remainderNanoseconds >= 0);
+            Debug.Assert(wholeSeconds != 0 || remainderNanoseconds < nanoSecsPerSec);
+            Debug.Assert((wholeSeconds != 0 && remainderNanoseconds < nanoSecsPerSec) ||
+                         remainderNanoseconds > -nanoSecsPerSec);
+            return (wholeSeconds, remainderNanoseconds);
+        }
+
+
+        /// <summary>
+        /// Attempt to get the total nanoseconds as a 64 bit int
+        /// without any loss of precision.
+        /// </summary>
+        /// <returns>The total value of the duration expressed in nanoseconds
+        /// if value fits in <see cref="Int64"/>, null otherwise.</returns>
+        [Pure]
+        public long? TryGetTotalNanoseconds() => _ticks <= long.MaxValue ? (long)_ticks : null;
+
         /// <summary>
         /// Multiply this value by a specified factor
         /// </summary>

@@ -122,4 +122,6 @@ namespace HpTimeStamps
         private ReadOnlyThreeStepFlag _threeStepFlag;
         private readonly Func<TValue> _ctor;
     }
+
+
 }

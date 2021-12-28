@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using HpTimeStamps.BigMath;
 using JetBrains.Annotations;
-
+[assembly: InternalsVisibleTo("UnitTests")]
 namespace HpTimeStamps
 {
     /// <summary>
@@ -44,6 +44,11 @@ namespace HpTimeStamps
         /// Maximum value representable
         /// </summary>
         public static ref readonly PortableMonotonicStamp MaxValue => ref TheMaxValue;
+
+        /// <summary>
+        /// Portable stamp representing the unix epoch (Jan 1, 1970 @ midnight, UTC)
+        /// </summary>
+        public static ref readonly PortableMonotonicStamp UnixEpochStamp => ref TheUnixEpochStamp;
         #endregion
 
         #region Conversion Operators
@@ -193,7 +198,7 @@ namespace HpTimeStamps
         /// <summary>
         /// Amount of time elapsed since epoch
         /// </summary>
-        public readonly PortableDuration TimeSinceEpoch => new PortableDuration(in _dateTimeNanosecondOffsetFromMinValueUtc);
+        public readonly PortableDuration TimeSinceEpoch => new(in _dateTimeNanosecondOffsetFromMinValueUtc);
 
         #region CTORS and related
         internal PortableMonotonicStamp(in Int128 nanosecondSinceDtUtcEpoch)
@@ -213,8 +218,8 @@ namespace HpTimeStamps
             MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128)100;
             TheMinValue = new PortableMonotonicStamp(MinValueUtcDtNanoseconds);
             TheMaxValue = new PortableMonotonicStamp(MaxValueUtcDtNanoseconds);
+            TheUnixEpochStamp = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             Validate();
-
         }
         [Conditional("DEBUG")] // DEBUG they are used // RELEASE the method doesn't get called
         [SuppressMessage("ReSharper", "RedundantAssignment")]
@@ -655,6 +660,8 @@ namespace HpTimeStamps
         internal static readonly Int128 MinValueUtcDtNanoseconds;
         private static readonly PortableMonotonicStamp TheMinValue;
         private static readonly PortableMonotonicStamp TheMaxValue;
+        private static readonly PortableMonotonicStamp TheUnixEpochStamp;
+
         #endregion
     }
 

@@ -1,21 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>10</LangVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <nullable>enable</nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765; Nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1605;CS8602;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8625;CS8765; Nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.19.1" />
+    <PackageReference Include="Grpc" Version="2.42.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.42.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0" />
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
@@ -44,6 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Google\Protobuf\" />
     <Folder Include="Resources\" />
   </ItemGroup>
 
