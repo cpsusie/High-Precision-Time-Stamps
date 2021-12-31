@@ -16,26 +16,9 @@ namespace HpTimeStamps
     {
         internal static void ThrowIf(long seconds, int nanos)
         {
-            const string badNanosBase = "The nanoseconds component (value: {0:N0}) is invalid because";
-            const string nanosTooBigFormatString =
-                " it is greater than {0:N0}";
-            const string nanosNegativeFormatString =
-                " it is negative";
-            bool negative = nanos < 0;
-            bool tooBig = nanos > ProtobufFormatStamp.MaxNanos;
-
-            if (negative || tooBig)
-            {
-                string baseText = string.Format(badNanosBase, nanos);
-                string exMsg = (negative, tooBig, nanos) switch
-                {
-                    (true, false, _) => baseText + nanosNegativeFormatString + ".",
-                    (true, true, _) => baseText + string.Format(nanosNegativeFormatString) + " and" +
-                                           nanosNegativeFormatString + ".",
-                    (_, _, var n) => baseText + string.Format(nanosTooBigFormatString, n) + "."
-                };
-                throw new InvalidProtobufStampException(seconds, nanos, exMsg);
-            }
+            if ((seconds is < 0L or > 0L) && nanos < 0)
+                throw new InvalidProtobufStampException(seconds, nanos,
+                    $"{nameof(Nanos)} component is illegal: negative values not permitted unless {nameof(Seconds)} (actual value: {seconds}) == 0).");
         }
 
         /// <summary>

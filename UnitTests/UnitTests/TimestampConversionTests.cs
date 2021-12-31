@@ -125,7 +125,7 @@ namespace UnitTests
         private static string PopulateTestString(in NumberingPacket packet) =>
             $"test# {packet.TestNumber} of {packet.NumberOfTests} difference:";
 
-        private void ExecuteTest(string testName, in PortableMonotonicStamp testStamp, in PortableDuration nanoAdjust)
+        private void ExecuteTest(string testName, in PortableStamp testStamp, in PortableDuration nanoAdjust)
         {
             Helper.WriteLine($"Executing \"{testName}\" test for [" + testStamp + "]:");
 

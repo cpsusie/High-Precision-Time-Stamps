@@ -26,10 +26,18 @@ namespace HpTimeStamps
         /// <returns>An easy-to-convert-to-protobuf representation of <paramref name="stamp"/>.</returns>
         public static explicit operator ProtobufFormatStamp(in PortableMonotonicStamp stamp)
         {
-            PortableDuration sinceUnixEpoch = stamp - TheUnixEpochStamp;
-            long seconds = (long)(Math.Truncate(sinceUnixEpoch.TotalSeconds));
-            int nanos = checked((int)sinceUnixEpoch.Nanoseconds);
-            return new ProtobufFormatStamp(seconds, nanos < 0 ? -nanos : nanos);
+            (long wholeSeconds, long remainder) =
+                (stamp - PortableMonotonicStamp.UnixEpochStamp).GetTotalWholeSecondsAndRemainder();
+            (wholeSeconds, remainder) = (wholeSeconds, remainder) switch
+            {
+                (var w, var f) when w != 0 && f < 0 => throw new InvalidProtobufStampException(wholeSeconds,
+                    (int)remainder, $"Invalid Protobuf stamp value -- whole secs: {wholeSeconds:N0}; nanos: {remainder:N0}"),
+                (0, var frac) => (0, frac),
+                (var whole, 0L) => (whole, 0L),
+                (> 0, var frac) => (wholeSeconds, frac),
+                (< 0, var frac) => (wholeSeconds - 1, frac),
+            };
+            return new ProtobufFormatStamp(wholeSeconds, (int)remainder);
         }
 
         /// <summary>
@@ -41,12 +49,18 @@ namespace HpTimeStamps
         public static explicit operator PortableMonotonicStamp(in ProtobufFormatStamp myStamp)
         {
             myStamp.Validate();
-            PortableDuration sinceUnixEpoch = PortableDuration.FromSeconds(myStamp.Seconds);
-            int nanos = myStamp.Seconds < 0 ? -myStamp.Nanoseconds : myStamp.Nanoseconds;
-            sinceUnixEpoch += PortableDuration.FromNanoseconds(nanos);
-            return TheUnixEpochStamp + sinceUnixEpoch;
+            PortableDuration wholeSeconds = PortableDuration.FromSeconds(myStamp._seconds);
+            return PortableMonotonicStamp.UnixEpochStamp + wholeSeconds + (PortableDuration.Compare(in wholeSeconds, in PortableDuration.Zero), myStamp._nanos) switch
+            {
+                (0, var nano) => PortableDuration.FromNanoseconds(nano),
+                (< 0, var nano and >= 0) => PortableDuration.FromNanoseconds(nano),
+                (> 0, var nano and >= 0) => PortableDuration.FromNanoseconds(nano),
+                (> 0 or <0, var nano and < 0) => throw new InvalidProtobufStampException(
+                    (long) Math.Truncate(wholeSeconds.TotalSeconds), nano, 
+                    $"Illegally formatted stamp -- nano (value: {nano}) is negative and so " +
+                    $"is whole seconds (value: {(long)Math.Truncate(wholeSeconds.TotalSeconds)})."),
+            };
         }
-            
 
         /// <summary>
         /// How many whole seconds since unix epoch (negative indicates seconds preceding epoch)
