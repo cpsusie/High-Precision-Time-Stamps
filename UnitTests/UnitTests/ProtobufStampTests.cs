@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Grpc.Core.Logging;
 using HpTimeStamps;
 using Xunit;
 using Xunit.Abstractions;
@@ -63,8 +64,37 @@ namespace UnitTests
         [Fact]
         public void TestFailureCaseOne()
         {
-            PortableStamp failingValue = new DateTime(2333, 3, 5, 19, 20, 17, DateTimeKind.Utc);
-            failingValue += PortableDuration.FromNanoseconds(123_456_277);
+            
+            //_startedAt
+            //{ 2333 - 03 - 05T19: 20:17.123456277Z}
+            //Day: 5
+            //FractionalSeconds: 123456277
+            //Hour: 19
+            //Minutes: 20
+            //Month: 3
+            //NanosecondsSinceUtcEpoch: "73,596,262,817,123,456,277 nanoseconds since epoch."
+            //Seconds: 17
+            //TimeSinceEpoch: { 73,596,262,817,123,456,277 nanoseconds}
+            //Year: 2333
+            //_dateTimeNanosecondOffsetFromMinValueUtc: { 73596262817123456277}
+            //_serialized: null
+            //_result.Value
+            //{[TestResult] --Round Tripped Stamp: [2333 - 03 - 05T19: 20:17.123455765Z]; Pbf Seconds: [11460684017]; Pbf Nanos: [123456277].}
+            //PbfStamp: { HpTimeStamps.ProtobufFormatStamp}
+            //RoundTrippedValue: { 2333 - 03 - 05T19: 20:17.123455765Z}
+            //_pbfStamp: { HpTimeStamps.ProtobufFormatStamp}
+            //_roundTrippedValue: { 2333 - 03 - 05T19: 20:17.123455765Z}
+            const long nanoAdj = 123_456_277; 
+            const long tickAdj = 123_456_2;
+            const byte nanoDifferential = 77;
+            Assert.True(TimeSpan.TicksPerSecond == 10_000_000);
+            DateTime basisDateTime = new DateTime(2333, 3, 5, 19, 20, 17, DateTimeKind.Utc);
+            TimeSpan basisTickAdjustment = TimeSpan.FromTicks(tickAdj);
+            var conversionResults = BreakItDown(basisDateTime, basisTickAdjustment, nanoDifferential);
+            Assert.NotNull(conversionResults.ConvertedNormalWayPbs);
+
+            PortableStamp failingValue = basisDateTime;
+            failingValue += PortableDuration.FromNanoseconds(nanoAdj);
             StampConversionData.CreateConversionData(in failingValue, out StampConversionData convertData);
             Assert.False(convertData.HasResult);
 
@@ -86,6 +116,39 @@ namespace UnitTests
                     ?.ToString("N0") + "].");
             }
             Assert.True(convertData.ResultPasses);
+        }
+
+        private (PortableStamp ConvertedNormalWay, ProtobufFormatStamp ConvertedNormalWayPbf, ProtobufStamp
+            ConvertedNormalWayPbs, ProtobufFormatStamp NormalWayRoundTripToPbf, PortableStamp RoundTrippedNormal, PortableStamp ConvertedAlternateWay, ProtobufFormatStamp ConvertedAlternateWayPbf,
+            ProtobufStamp ConvertedAlternateWayPbs)
+            BreakItDown(DateTime startAt, TimeSpan addToMe, byte extraNanos)
+        {
+            ProtobufStamp alternate = ProtobufStamp.FromDateTime(startAt.ToUniversalTime());
+            Google.Protobuf.WellKnownTypes.Duration extra =
+                Google.Protobuf.WellKnownTypes.Duration.FromTimeSpan(addToMe) +
+                new Google.Protobuf.WellKnownTypes.Duration() { Seconds = 0, Nanos = extraNanos };
+            alternate += extra;
+            Helper.WriteLine("Using alternate protobuf stamp: [{0}].", alternate);
+            ProtobufFormatStamp altPbfFromPbs = new ProtobufFormatStamp(alternate.Seconds, alternate.Nanos);
+            PortableStamp alternateFromPbs = (PortableStamp)altPbfFromPbs;
+            Helper.WriteLine("Alternate pbf from pbs: [{0}].", altPbfFromPbs);
+            Helper.WriteLine("Alternate stamp from pbs: [{0}].", alternateFromPbs);
+
+            PortableStamp normalWay = startAt;
+            PortableDuration offset = (addToMe + PortableDuration.FromNanoseconds(extraNanos));
+            normalWay += offset;
+            ProtobufFormatStamp normalPbf = (ProtobufFormatStamp) normalWay;
+            ProtobufStamp normalPbs = new ProtobufStamp { Seconds = normalPbf.Seconds, Nanos = normalPbf.Nanoseconds };
+            ProtobufFormatStamp rtNw = new ProtobufFormatStamp(normalPbs.Seconds, normalPbs.Nanos);
+            PortableStamp rtPsNw = (PortableStamp)rtNw;
+            
+            Helper.WriteLine("Portable stamp normal way: [{0}].", normalWay);
+            Helper.WriteLine("Pbf normal way: [{0}].", normalPbf);
+            Helper.WriteLine("Pbs normal way: [{0}].", normalPbs);
+            Helper.WriteLine("Pbf normal way RT: [{0}].", rtNw);
+            Helper.WriteLine("Portable stamp normal way RT: [{0}].", rtPsNw);
+
+            return (normalWay, normalPbf, normalPbs, rtNw, rtPsNw, alternateFromPbs, altPbfFromPbs, alternate);
         }
 
         [Fact]
