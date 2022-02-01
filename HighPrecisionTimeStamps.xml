@@ -1782,6 +1782,26 @@
             The text that could not be deserialized into a portable monotonic timestamp.
             </summary>
         </member>
+        <member name="T:HpTimeStamps.InvalidProtobufStampException">
+            <summary>
+            Indicates that the protobuf formatted timestamp is not a valid value.
+            </summary>
+            <remarks>
+            Can be thrown in response to call to <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> type's
+            <see cref="M:HpTimeStamps.ProtobufFormatStamp.Validate"/> method.  Will also be thrown when attempting
+            to convert the protobuf format stamp to another type of stamp (<see cref="T:System.DateTime"/>,
+            <see cref="T:HpTimeStamps.MonotonicTimeStamp`1"/> or <see cref="T:HpTimeStamps.PortableMonotonicStamp"/>).</remarks>
+        </member>
+        <member name="P:HpTimeStamps.InvalidProtobufStampException.Seconds">
+            <summary>
+            Seconds component of invalid stamp
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.InvalidProtobufStampException.Nanos">
+            <summary>
+            Nanoseconds component of invalid stamp
+            </summary>
+        </member>
         <member name="T:HpTimeStamps.ITimeStampUtil">
             <summary>
             Note that the times retrieved are not more accurate in ABSOLUTE terms.
@@ -2607,6 +2627,14 @@
             <returns>A duration</returns>
             <exception cref="T:System.ArgumentException">Value not representable as a PortableDuration.</exception>
         </member>
+        <member name="M:HpTimeStamps.PortableDuration.FromSeconds(System.Int64)">
+            <summary>
+            Compute a duration from an integral value representing seconds.
+            </summary>
+            <param name="value">The value in seconds.</param>
+            <returns>A portable duration of the same value as the number of seconds
+            expressed by <paramref name="value"/>.</returns>
+        </member>
         <member name="M:HpTimeStamps.PortableDuration.FromStopwatchTicks(HpTimeStamps.BigMath.Int128@)">
             <summary>
             Create a duration from ticks
@@ -2825,6 +2853,21 @@
             A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in sort order.
             </returns>
         </member>
+        <member name="M:HpTimeStamps.PortableDuration.GetTotalWholeSecondsAndRemainder">
+            <summary>
+            For a given portable duration query the total whole seconds and the nanoseconds remainder.
+             </summary>
+            <returns>Total whole seconds (can be negative), also nanoseconds remainder.  Remainder always positive if
+            TotalWholeSeconds non-zero.</returns>
+        </member>
+        <member name="M:HpTimeStamps.PortableDuration.TryGetTotalNanoseconds">
+            <summary>
+            Attempt to get the total nanoseconds as a 64 bit int
+            without any loss of precision.
+            </summary>
+            <returns>The total value of the duration expressed in nanoseconds
+            if value fits in <see cref="T:System.Int64"/>, null otherwise.</returns>
+        </member>
         <member name="M:HpTimeStamps.PortableDuration.Multiply(System.Double)">
             <summary>
             Multiply this value by a specified factor
@@ -2977,6 +3020,11 @@
         <member name="P:HpTimeStamps.PortableMonotonicStamp.MaxValue">
             <summary>
             Maximum value representable
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.PortableMonotonicStamp.UnixEpochStamp">
+            <summary>
+            Portable stamp representing the unix epoch (Jan 1, 1970 @ midnight, UTC)
             </summary>
         </member>
         <member name="M:HpTimeStamps.PortableMonotonicStamp.op_Explicit(HpTimeStamps.MonotonicTimeStamp{HpTimeStamps.MonotonicStampContext}@)~HpTimeStamps.PortableMonotonicStamp">
@@ -3321,6 +3369,129 @@
             </summary>
             <param name="msg">Extra info that should go in message, if applicable</param>
             <param name="inner">Inner exception if applicable</param>
+        </member>
+        <member name="T:HpTimeStamps.ProtobufFormatStamp">
+            <summary>
+            A time stamp formatted to be easily convertible to and from a protobuf format and our portable monotonic stamps
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.ProtobufFormatStamp.UnixEpochTimeStamp">
+            <summary>
+            Portable monotonic stamp specifying the unix epoch
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.op_Implicit(System.ValueTuple{System.Int64,System.Int32})~HpTimeStamps.ProtobufFormatStamp">
+            <summary>
+            Implicitly convert a <see cref="T:System.ValueTuple`2"/> whose <see cref="F:System.ValueTuple`2.Item1"/> is of type <see cref="T:System.Int64"/> and
+            represents whole seconds since unix epoch and whose <see cref="F:System.ValueTuple`2.Item2"/> is of type <see cref="T:System.Int32"/> and represents
+            fractional seconds, nanoseconds resolution.
+            into a <see cref="T:HpTimeStamps.ProtobufFormatStamp"/>.  No validation performed. 
+            </summary>
+            <param name="convertMe">value to convert. </param>
+            <returns>Equivalent <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> given value of <paramref name="convertMe"/>.</returns>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.op_Explicit(HpTimeStamps.PortableMonotonicStamp@)~HpTimeStamps.ProtobufFormatStamp">
+            <summary>
+            Convert a portable monotonic timestamp into a format compatible with
+            google's protobuf timestamp.
+            </summary>
+            <param name="stamp"></param>
+            <returns>An easy-to-convert-to-protobuf representation of <paramref name="stamp"/>.</returns>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.op_Explicit(HpTimeStamps.ProtobufFormatStamp@)~HpTimeStamps.PortableMonotonicStamp">
+            <summary>
+            Convert a valid protobuf format stamp into a portable monotonic stamp.
+            </summary>
+            <param name="myStamp">value to convert</param>
+            <returns>The converted value.</returns>
+            <exception cref="T:HpTimeStamps.InvalidProtobufStampException">The protobuf stamp is not a valid value.</exception>
+        </member>
+        <member name="P:HpTimeStamps.ProtobufFormatStamp.Seconds">
+            <summary>
+            How many whole seconds since unix epoch (negative indicates seconds preceding epoch)
+            </summary>
+        </member>
+        <member name="P:HpTimeStamps.ProtobufFormatStamp.Nanoseconds">
+            <summary>
+            How many fractional seconds since unix epoch.  Valid values: 0 - 999_999_999 (inclusive)
+            </summary>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.#ctor(System.Int64,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="nanos"></param>
+            <param name="seconds"></param>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.Compare(HpTimeStamps.ProtobufFormatStamp@,HpTimeStamps.ProtobufFormatStamp@)">
+            <summary>
+            Compare to protobuf formatted stamps to establish an ordering between them
+            </summary>
+            <param name="lhs">left hand operand</param>
+            <param name="rhs">right hand operand</param>
+            <returns>A negative number if <paramref name="lhs"/> precedes <paramref name="rhs"/> in their ordering;
+            Zero if <paramref name="lhs"/> occupies the same position as <paramref name="rhs"/> in their ordering; and
+            A positive number if <paramref name="lhs"/> succeeds <paramref name="rhs"/> in their ordering
+            </returns>
+            <exception cref="T:HpTimeStamps.InvalidProtobufStampException"><paramref name="lhs"/> or <paramref name="rhs"/> (or both) are not
+            valid protbuf timestamp values and thus cannot be meaningfully compared.</exception>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.GetHashCode">
+            <summary>
+            Calculates value-based hashcode
+            </summary>
+            <returns>A hash code</returns>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.op_Equality(HpTimeStamps.ProtobufFormatStamp@,HpTimeStamps.ProtobufFormatStamp@)">
+            <summary>
+            Query to see whether <paramref name="lhs"/> has the same value as <paramref name="rhs"/>/
+            </summary>
+            <param name="lhs">The left comparand</param>
+            <param name="rhs">The right comparand</param>
+            <returns>True only if <paramref name="lhs"/> and <paramref name="rhs"/> have the same value.</returns>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.op_Inequality(HpTimeStamps.ProtobufFormatStamp@,HpTimeStamps.ProtobufFormatStamp@)">
+            <summary>
+            Query to see whether <paramref name="lhs"/> has a distinct value from <paramref name="rhs"/>.
+            </summary>
+            <param name="lhs">The left comparand</param>
+            <param name="rhs">The right comparand</param>
+            <returns>True only if <paramref name="lhs"/> and <paramref name="rhs"/> have distinct values.</returns>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.Equals(HpTimeStamps.ProtobufFormatStamp)">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.CompareTo(HpTimeStamps.ProtobufFormatStamp)">
+            <summary>
+            Compare the value of this stamp with that of another to establish an ordering.
+            </summary>
+            <param name="other">The other value</param>
+            <returns>A negative number if this <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> value precedes <paramref name="other"/> in the ordering.
+            Zero if this <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> value occupies the same place as <paramref name="other"/> in the ordering.
+            A positive number if this <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> value succeeds <paramref name="other"/> in the ordering.</returns>
+            <exception cref="T:HpTimeStamps.InvalidProtobufStampException">Either this <see cref="T:HpTimeStamps.ProtobufFormatStamp"/> value or <paramref name="other"/> (or both)
+            are invalid timestamp values and cannot be meaningfully compared.</exception>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.Equals(System.Object)">
+            <inheritdoc />
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.Validate">
+            <summary>
+            Check whether value is valid.
+            </summary>
+            <exception cref="T:HpTimeStamps.InvalidProtobufStampException">The protobuf stamp is not a valid value.</exception>
+        </member>
+        <member name="M:HpTimeStamps.ProtobufFormatStamp.Deconstruct(System.Int64@,System.Int32@)">
+            <summary>
+            Used for deconstructing into component parts
+            </summary>
+            <param name="seconds">seconds since unix epoch</param>
+            <param name="nanoseconds">fractional component of timestamp -- nanoseconds.</param>
+        </member>
+        <member name="F:HpTimeStamps.ProtobufFormatStamp.MaxNanos">
+            <summary>
+            Maximum per permissible value for the <see cref="P:HpTimeStamps.ProtobufFormatStamp.Nanoseconds"/> property
+            </summary>
         </member>
         <member name="T:HpTimeStamps.TimeStampSource">
             <summary>

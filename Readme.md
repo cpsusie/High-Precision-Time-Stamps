@@ -459,6 +459,10 @@ I have used this library to good effect in many projects, even closed-source pro
 4. An Amazon WorkSpaces Window Server (Windows 10 based Windows server) with (most vexingly) a stopwatch frequency of 2,441,366 ticks per second.  
 
 ### Release Notes
+
+#### Version 1.0.0.7-beta:  
+Added a protobuf-formatted timestamp designed for easy conversions to and from Google Protobuf's Timestamp class and our PortableMonotonic stamps.
+
 #### Version 1.0.0.6:
 To resolve [Issue 24][10], add Parse and TryParse methods to parse stringified PortableMonotonicTimestamps and PortableDurations.  These methods only work with values stringified via the default ToString() methods.  
       
