@@ -3,10 +3,15 @@
 namespace HpTimeStamps
 {
     /// <summary>
-    /// A time stamp formatted to be easily convertible to and from a protobuf format
+    /// A time stamp formatted to be easily convertible to and from a protobuf format and our portable monotonic stamps
     /// </summary>
     public readonly struct ProtobufFormatStamp : IEquatable<ProtobufFormatStamp>, IComparable<ProtobufFormatStamp>
     {
+        /// <summary>
+        /// Portable monotonic stamp specifying the unix epoch
+        /// </summary>
+        public static ref readonly PortableMonotonicStamp UnixEpochTimeStamp => ref TheUnixEpochStamp;
+
         /// <summary>
         /// Implicitly convert a <see cref="ValueTuple{T1,T2}"/> whose <see cref="ValueTuple{T1,T2}.Item1"/> is of type <see cref="long"/> and
         /// represents whole seconds since unix epoch and whose <see cref="ValueTuple{T1,T2}.Item2"/> is of type <see cref="int"/> and represents

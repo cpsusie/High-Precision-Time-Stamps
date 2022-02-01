@@ -79,6 +79,8 @@ namespace HpTimeStamps
 
         #region Readonly internal static values
 
+        
+
         /// <summary>
         /// Longest positive period representable in seconds
         /// </summary>
@@ -137,34 +139,7 @@ namespace HpTimeStamps
             TickInt value = TickInt.Parse(noCommas.AsSpan());
             return new(value);
         }
-        private static string StripCommas(string text)
-        {
-            bool commas = HasCommas(text.AsSpan());
-            if (!commas)
-            {
-                return text;
-            }
-            StringBuilder sb = new StringBuilder(text.Length);
-            foreach (char c in text)
-            {
-                if (c != ',')
-                {
-                    sb.Append(c);
-                }
-            }
 
-            return sb.ToString();
-
-            static bool HasCommas(in ReadOnlySpan<char> t)
-            {
-                for (int i = 0; i < t.Length; ++i)
-                {
-                    if (t[i] == ',')
-                        return true;
-                }
-                return false;
-            }
-        }
         private static string StripCommas(ReadOnlySpan<char> text)
         {
             bool commas = HasCommas(in text);
@@ -350,6 +325,18 @@ namespace HpTimeStamps
         public static PortableDuration FromSeconds(double value) => Interval(value, TicksPerSecond);
 
         /// <summary>
+        /// Compute a duration from an integral value representing seconds.
+        /// </summary>
+        /// <param name="value">The value in seconds.</param>
+        /// <returns>A portable duration of the same value as the number of seconds
+        /// expressed by <paramref name="value"/>.</returns>
+        public static PortableDuration FromSeconds(long value)
+        {
+            PdInt nanoSecondsFromSecondsConversionFactor = 1_000_000_000L;
+            return new PortableDuration(value * nanoSecondsFromSecondsConversionFactor);
+        }
+
+        /// <summary>
         /// Create a duration from ticks
         /// </summary>
         /// <param name="value">ticks</param>
@@ -357,7 +344,7 @@ namespace HpTimeStamps
         internal static PortableDuration FromStopwatchTicks(in TickInt value)
         {
             TickInt converted = ConvertDurationTicksToPortableDurationTicks(in value);
-            return new PortableDuration((TickInt) converted );
+            return new PortableDuration(converted );
         }
 
         #endregion
@@ -651,7 +638,8 @@ namespace HpTimeStamps
         /// <summary>
         /// For a given portable duration query the total whole seconds and the nanoseconds remainder.
         ///  </summary>
-        /// <returns>Total whole nanoseconds (can be negative), also nanoseconds remainder.  Remainder always positive.</returns>
+        /// <returns>Total whole seconds (can be negative), also nanoseconds remainder.  Remainder always positive if
+        /// TotalWholeSeconds non-zero.</returns>
         public (long TotalWholeSeconds, long RemainderNanoseconds) GetTotalWholeSecondsAndRemainder()
         {
             const long nanoSecsPerSec = 1_000_000_000L;
@@ -872,7 +860,7 @@ namespace HpTimeStamps
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static PdInt ConvertTimespanTicksToPortableDurationTicks(long timespanTicks) =>
-            (PdInt) timespanTicks * TicksPerSecondInternal / TimeSpan.TicksPerSecond;
+            timespanTicks * TicksPerSecondInternal / TimeSpan.TicksPerSecond;
         internal static long ConvertPortableDurationTicksToTimespanTicks(in PdInt pdTicks) =>
             (long) (pdTicks * TimeSpan.TicksPerSecond / TicksPerSecondInternal);
         internal static TickInt ConvertPortableDurationTicksToDurationTicks(in PdInt portableDurationTicks) =>

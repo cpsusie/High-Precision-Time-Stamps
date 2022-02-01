@@ -1,11 +1,6 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Grpc.Core.Logging;
 using HpTimeStamps;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,6 +28,18 @@ namespace UnitTests
         }
 
         [Fact]
+        public void TestAnotherCpsEpoch()
+        {
+            const long nanoAdj = -123_456_789L;
+            PortableStamp cpsEpoch = new DateTime(1978, 6, 10, 16, 20, 20, DateTimeKind.Utc);
+            PortableDuration adjVal = PortableDuration.FromNanoseconds(nanoAdj);
+            cpsEpoch += adjVal;
+            
+            TestPortableStampConversion(in cpsEpoch, "ANOTHER_CPS_EPOCH");
+            
+        }
+
+            [Fact]
         public void TestJpsEpoch()
         {
             PortableStamp testMe = new DateTime(1948, 11, 11, 11, 11, 11, DateTimeKind.Utc);
@@ -99,6 +106,10 @@ namespace UnitTests
             Assert.False(convertData.HasResult);
 
             ProtobufFormatStamp pbfFormat = (ProtobufFormatStamp)failingValue;
+            ProtobufStamp protoStampFromFailingValue = new Timestamp
+                { Seconds = pbfFormat.Seconds, Nanos = pbfFormat.Nanoseconds };
+            Assert.True(pbfFormat.Seconds == protoStampFromFailingValue.Seconds &&
+                        pbfFormat.Nanoseconds == protoStampFromFailingValue.Nanos);
             PortableStamp roundTripped = (PortableStamp)pbfFormat;
             TestResult tr = new TestResult(in pbfFormat, in roundTripped);
             convertData.ProvideResultValue(in tr);
@@ -376,7 +387,7 @@ namespace UnitTests
         }
 
         private readonly PortableStamp _startedAt =
-            (PortableStamp)MonotonicTimeStampUtil<MonotonicStampContext>.StampNow;
+            (PortableStamp)MonostampSrc.StampNow;
         private readonly LocklessWriteOnceValue<TestResult> _result = new();
         private static readonly StampConversionData TheInvalidDefaultValue = default;
     }
@@ -385,9 +396,20 @@ namespace UnitTests
     {
         public PortableStamp RoundTrippedValue => _roundTrippedValue;
         public ProtobufFormatStamp PbfStamp => _pbfStamp;
+        public ProtobufStamp FromPbf => _protostampFromPbf;
+        public ProtobufStamp FromDt => _protostampFromDateTime;
+        public bool ProtostampsEqual => _protobufStampsEqual;
 
-        internal TestResult(in ProtobufFormatStamp pbfStamp, in PortableStamp roundTrippedStamp) =>
-            (_pbfStamp, _roundTrippedValue) = (pbfStamp, roundTrippedStamp);
+        internal TestResult(in ProtobufFormatStamp pbfStamp, in PortableStamp roundTrippedStamp)
+        {
+            _pbfStamp = pbfStamp;
+            _roundTrippedValue = roundTrippedStamp;
+            _protostampFromPbf = new Timestamp{ Nanos = pbfStamp.Nanoseconds, Seconds = pbfStamp.Seconds };
+            _protostampFromDateTime = Timestamp.FromDateTime((DateTime)roundTrippedStamp);
+            int nanosZeroTo99 = _roundTrippedValue.FractionalSeconds % 99;
+            _protostampFromDateTime += new Google.Protobuf.WellKnownTypes.Duration { Nanos = nanosZeroTo99 };
+            _protobufStampsEqual = _protostampFromDateTime == _protostampFromPbf;
+        }
 
         public override int GetHashCode()
         {
@@ -395,22 +417,34 @@ namespace UnitTests
             unchecked
             {
                 hash = (hash * 397) ^ _roundTrippedValue.GetHashCode();
+                hash = (hash * 397) ^ _protostampFromPbf.GetHashCode();
+                hash = (hash * 397) ^ _protostampFromDateTime.GetHashCode();
+                hash = (hash * 397) ^ _protobufStampsEqual.GetHashCode();
             }
             return hash;
         }
 
         public static bool operator ==(in TestResult lhs, in TestResult rhs) =>
-            lhs._roundTrippedValue == rhs._roundTrippedValue && lhs._pbfStamp == rhs._pbfStamp;
+            lhs._roundTrippedValue == rhs._roundTrippedValue && lhs._pbfStamp == rhs._pbfStamp &&
+            lhs._protostampFromPbf == rhs._protostampFromPbf &&
+            lhs._protostampFromDateTime == rhs._protostampFromDateTime &&
+            lhs._protobufStampsEqual == rhs._protobufStampsEqual;
         public static bool operator !=(in TestResult lhs, in TestResult rhs) => !(lhs == rhs);
         public bool Equals(TestResult other) => other == this;
         public override bool Equals(object? obj) => obj is TestResult tr && tr == this;
+
         public override string ToString() =>
             $"[{nameof(TestResult)}] -- Round Tripped Stamp: [{_roundTrippedValue.ToString()}]; " +
-            $"Pbf Seconds: [{_pbfStamp.Seconds}]; Pbf Nanos: [{_pbfStamp.Nanoseconds}].";
+            $"Pbf Seconds: [{_pbfStamp.Seconds}]; Pbf Nanos: [{_pbfStamp.Nanoseconds}]; " +
+            $"Protostamp from pbf -- Seconds: [{_protostampFromPbf.Seconds}]; Nanos: [{_protostampFromPbf.Nanos}]; " +
+            $"Protodtamp from date time -- Seconds: [{_protostampFromPbf.Seconds}]; Nanos: [{_protostampFromPbf.Nanos}].";
 
 
-        private readonly PortableStamp _roundTrippedValue;
+        private readonly PortableStamp _roundTrippedValue;  
         private readonly ProtobufFormatStamp _pbfStamp;
+        private readonly ProtobufStamp _protostampFromPbf;
+        private readonly ProtobufStamp _protostampFromDateTime;
+        private readonly bool _protobufStampsEqual;
     }
 
     public readonly struct RandomStampGenerator
