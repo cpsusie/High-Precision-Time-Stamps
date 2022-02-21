@@ -214,8 +214,9 @@ namespace HpTimeStamps
 
         static PortableMonotonicStamp()
         {
-            MaxValueUtcDtNanoseconds = DateTime.MaxValue.ToUniversalTime().Ticks * (Int128)100;
             MinValueUtcDtNanoseconds = DateTime.MinValue.ToUniversalTime().Ticks * (Int128)100;
+            MaxValueUtcDtNanoseconds = (DateTime.MaxValue.ToUniversalTime().Ticks * (Int128)100) - MinValueUtcDtNanoseconds;
+            
             TheMinValue = new PortableMonotonicStamp(MinValueUtcDtNanoseconds);
             TheMaxValue = new PortableMonotonicStamp(MaxValueUtcDtNanoseconds);
             TheUnixEpochStamp = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -271,7 +272,7 @@ namespace HpTimeStamps
         /// DateTime because of overflow.</exception>
         [System.Diagnostics.Contracts.Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly DateTime ToUtcDateTime()
+        public readonly DateTime  ToUtcDateTime()
         {
             try
             {
